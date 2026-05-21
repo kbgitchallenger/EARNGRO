@@ -16,8 +16,8 @@ export default function JourneyCard() {
   const [arcGo,  setArcGo]  = useState(false)
   const [bars,   setBars]   = useState([0,0,0])
   const [vis,    setVis]    = useState(true)
-  const timer = useRef<ReturnType<typeof setInterval>>()
-
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  
   /* arc + bars fire on mount */
   useEffect(() => {
     const t = setTimeout(() => { setArcGo(true); setBars(PROFILES[0].bars) }, 700)
@@ -33,7 +33,11 @@ export default function JourneyCard() {
         setIdx(next); setProf(PROFILES[next]); setBars(PROFILES[next].bars); setVis(true)
       }, 280)
     }, 4500)
-    return () => clearInterval(timer.current)
+    return () => {
+  if (timer.current) {
+    clearInterval(timer.current)
+  }
+}
   }, [idx])
 
   const amberOff = arcGo ? 160 : 251
