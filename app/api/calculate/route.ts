@@ -1,0 +1,72 @@
+import Anthropic from '@anthropic-ai/sdk'
+import { NextResponse } from 'next/server'
+
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY!,
+})
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { industry, experience, role, city, salary, education, company, skills } = body
+
+    // Basic validation
+    if (!industry || !experience || !role || !city || !salary || !education || !company) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2025–2026. You have deep knowledge of actual salary benchmarks, hiring trends, and career growth patterns.
+
+Analyse this profile and return ONLY raw JSON — no markdown, no backticks, no explanation.
+
+PROFILE:
+Industry: ${industry}
+Experience: ${experience}
+Role: ${role}
+City: ${city}
+Current Annual CTC: ₹${Number(salary).toLocaleString('en-IN')}
+Education: ${education}
+Employer Type: ${company}
+Skills: ${skills || 'not specified'}
+
+Return exactly this JSON:
+{
+  "target_salary": <number, realistic annual CTC in INR>,
+  "salary_range_min": <number, 25th percentile>,
+  "salary_range_max": <number, 90th percentile>,
+  "gap_amount": <number, target minus current, min 0>,
+  "gap_percentage": <number, rounded>,
+  "months_to_close": <number, 6 to 30>,
+  "hiring_readiness_score": <number, 0 to 1000>,
+  "gap_percentile": <string>,
+  "market_context": <string, one sharp sentence>,
+  "data_source_note": <string>,
+  "gap_reasons": [<string>, <string>, <string>],
+  "close_actions": [<string>, <string>, <string>]
+}
+
+Rules: Be realistic. Tier 2 cities 20-35% below metro. Name actual certifications and companies. Skills must influence the result.`
+
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const raw = message.content
+      .map((b) => (b.type === 'text' ? b.text : ''))
+      .join('')
+      .replace(/```json|```/g, '')
+      .trim()
+
+    const result = JSON.parse(raw)
+    return NextResponse.json(result)
+
+  } catch (error) {
+    console.error('Calculate API error:', error)
+    return NextResponse.json(
+      { error: 'Analysis failed. Please try again.' },
+      { status: 500 }
+    )
+  }
+}
