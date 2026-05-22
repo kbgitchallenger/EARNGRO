@@ -1,5 +1,3 @@
-// app/(app)/growdna/page.tsx
-
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GrowDNAAssessment from '@/components/growdna/GrowDNAAssessment'
