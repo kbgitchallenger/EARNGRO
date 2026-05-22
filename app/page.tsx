@@ -117,9 +117,9 @@ export default function HomePage() {
       className="fade d2"
       style={{
         fontFamily: 'var(--serif)',
-        fontSize: 'clamp(42px,6vw,76px)',
+        fontSize: 'clamp(36px,9vw,76px)',
         fontWeight: 600,
-        lineHeight: 1.02,
+        lineHeight: 1.08,
         letterSpacing: '-2px',
         color: 'var(--ink)',
         marginBottom: 28,
@@ -166,7 +166,7 @@ export default function HomePage() {
         fontSize: 'clamp(16px,2vw,19px)',
         fontWeight: 300,
         color: 'var(--muted)',
-        maxWidth: 680,
+        maxWidth: 'min(680px, 92vw)',
         margin: '0 auto 44px',
         lineHeight: 1.8,
       }}
