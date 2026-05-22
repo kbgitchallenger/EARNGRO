@@ -37,42 +37,160 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── HERO ── */}
-      <section style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'108px 24px 64px', position:'relative', zIndex:1, textAlign:'center', overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:'-10%', left:'50%', transform:'translateX(-50%)', width:900, height:600, background:'radial-gradient(ellipse at center,rgba(14,122,90,0.07) 0%,rgba(232,146,42,0.04) 45%,transparent 70%)', pointerEvents:'none' }} />
+<section
+  style={{
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '108px 24px 64px',
+    position: 'relative',
+    zIndex: 1,
+    textAlign: 'center',
+    overflow: 'hidden',
+  }}
+>
+  <div
+    style={{
+      position: 'absolute',
+      top: '-10%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 900,
+      height: 600,
+      background:
+        'radial-gradient(ellipse at center,rgba(14,122,90,0.07) 0%,rgba(232,146,42,0.04) 45%,transparent 70%)',
+      pointerEvents: 'none',
+    }}
+  />
 
-        <div style={{ position:'relative', zIndex:1, maxWidth:800, width:'100%' }}>
-          {/* eyebrow tag */}
-          <div className="fade d1" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:11, fontWeight:600, padding:'6px 16px', borderRadius:99, marginBottom:28, letterSpacing:'0.05em', textTransform:'uppercase' }}>
-            <span style={{ width:7, height:7, background:'var(--teal)', borderRadius:'50%', animation:'pulse 2.2s ease-in-out infinite', display:'inline-block', flexShrink:0 }} />
-            AI-powered career intelligence platform
-          </div>
+  <div
+    style={{
+      position: 'relative',
+      zIndex: 1,
+      maxWidth: 980,
+      width: '100%',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      textAlign: 'center',
+    }}
+  >
+    {/* eyebrow tag */}
+    <div
+      className="fade d1"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        background: 'var(--teal-l)',
+        border: '1px solid var(--teal-mid)',
+        color: 'var(--teal-d)',
+        fontSize: 12,
+        fontWeight: 600,
+        padding: '8px 18px',
+        borderRadius: 99,
+        marginBottom: 32,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+      }}
+    >
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          background: 'var(--teal)',
+          borderRadius: '50%',
+          animation: 'pulse 2.2s ease-in-out infinite',
+          display: 'inline-block',
+          flexShrink: 0,
+        }}
+      />
 
-          {/* H1 */}
-<h1 className="fade d2" style={{ 
-  fontFamily:'var(--serif)', 
-  fontSize:'clamp(35px,5.8vw,68px)', // Slightly smaller font gives words room to stay on one line
-  fontWeight:600, 
-  lineHeight:1.1, 
-  letterSpacing:'-1px', 
-  color:'var(--ink)', 
-  marginBottom:20,
-  width: '100vw',        // Opens up width
-  maxWidth: '900px',     // Gives it a wider ceiling
-  marginLeft: 'auto',
-  marginRight: 'auto'
-}}>
-  <span style={{ color:'var(--muted-l)', fontWeight:400, display: 'block' }}>Someone</span>
-  <span style={{ display: 'block' }}>with your skills is already</span>
-  <em style={{ fontStyle:'italic', color:'var(--teal)', display: 'block', whiteSpace: 'nowrap' }}>
-    earning 2X more.
-  </em>
-</h1>
+      AI-powered career intelligence platform
+    </div>
 
-          {/* sub */}
-          <p className="fade d3" style={{ fontSize:'clamp(15px,2vw,18px)', fontWeight:300, color:'var(--muted)', maxWidth:520, margin:'0 auto 44px', lineHeight:1.75 }}>
-            EarnGro reveals your hidden <strong style={{ color:'var(--ink)', fontWeight:500 }}>Earning Gap</strong> — then builds a personalized AI roadmap to increase your salary, strengthen your career profile, and maximize your <br /><strong style={{ color:'var(--teal)', fontWeight:600 }}>market value.</strong>
-          </p>
-          
+    {/* H1 */}
+    <h1
+      className="fade d2"
+      style={{
+        fontFamily: 'var(--serif)',
+        fontSize: 'clamp(42px,6vw,76px)',
+        fontWeight: 600,
+        lineHeight: 1.02,
+        letterSpacing: '-2px',
+        color: 'var(--ink)',
+        marginBottom: 28,
+        maxWidth: '1000px',
+        marginInline: 'auto',
+        textAlign: 'center',
+      }}
+    >
+      <span
+        style={{
+          display: 'block',
+          color: 'var(--muted-l)',
+          fontWeight: 400,
+        }}
+      >
+        Someone with your skills
+      </span>
+
+      <span
+        style={{
+          display: 'block',
+        }}
+      >
+        is already earning
+      </span>
+
+      <em
+        style={{
+          display: 'block',
+          fontStyle: 'italic',
+          color: 'var(--teal)',
+          whiteSpace: 'nowrap',
+          fontSize: '1.08em',
+        }}
+      >
+        2X more.
+      </em>
+    </h1>
+
+    {/* sub */}
+    <p
+      className="fade d3"
+      style={{
+        fontSize: 'clamp(16px,2vw,19px)',
+        fontWeight: 300,
+        color: 'var(--muted)',
+        maxWidth: 680,
+        margin: '0 auto 44px',
+        lineHeight: 1.8,
+      }}
+    >
+      EarnGro reveals your hidden{' '}
+      <strong
+        style={{
+          color: 'var(--ink)',
+          fontWeight: 500,
+        }}
+      >
+        Earning Gap
+      </strong>{' '}
+      — then builds a personalized AI roadmap to increase your salary,
+      strengthen your career profile, and maximize your{' '}
+      <strong
+        style={{
+          color: 'var(--teal)',
+          fontWeight: 600,
+        }}
+      >
+        market value.
+      </strong>
+    </p>
           {/* journey card */}
           <div className="fade d4"><JourneyCard /></div>
 

@@ -86,9 +86,44 @@ export default function JourneyCard() {
             d="M18 100 A82 82 0 0 1 182 100" />
         </svg>
         <div style={{ position:'absolute', top:'52%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center' }}>
-          <div style={{ fontSize:10, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:3 }}>target CTC</div>
-          <div style={{ fontFamily:'var(--serif)', fontSize:28, fontWeight:600, color:'var(--teal-d)', lineHeight:1, letterSpacing:'-0.5px', ...fade }}>{prof.target}</div>
-          <div style={{ fontSize:11, color:'var(--teal)', fontWeight:500, marginTop:3, ...fade }}>↑ {prof.uplift}</div>
+          <br></br>
+          <div
+  style={{
+    fontSize: 9,color: 'var(--muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: 4,
+    whiteSpace: 'nowrap',
+  }}
+>
+  Projected CTC
+</div>
+
+<div
+  style={{
+    fontFamily: 'var(--serif)',
+    fontSize: 28,
+    fontWeight: 600,
+    color: 'var(--teal-d)',
+    lineHeight: 1,
+    letterSpacing: '-0.5px',
+    ...fade,
+  }}
+>
+  {prof.target}
+</div>
+
+<div
+  style={{
+    fontSize: 11,
+    color: 'var(--teal)',
+    fontWeight: 500,
+    marginTop: 4,
+    ...fade,
+  }}
+>
+  ↑ {prof.uplift}
+</div>
         </div>
       </div>
 
@@ -122,9 +157,9 @@ export default function JourneyCard() {
       </div>
 
       {/* footer */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingTop:14, borderTop:'1px solid var(--border-l)' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, paddingTop:14, borderTop:'1px solid var(--border-l)' }}>
         <div style={{ fontSize:12, color:'var(--muted)', ...fade }}>
-          Closes in <strong style={{ color:'var(--teal-d)' }}>{prof.months} months</strong>
+          Closes in {' '}<strong style={{ color:'var(--teal-d)' }}>{prof.months} months</strong>
         </div>
         <a href="#calculator" style={{ background:'var(--teal)', color:'#fff', fontSize:12, fontWeight:600, padding:'8px 18px', borderRadius:99, textDecoration:'none', boxShadow:'0 2px 8px rgba(14,122,90,0.2)', whiteSpace:'nowrap' }}>
           Find my gap →
