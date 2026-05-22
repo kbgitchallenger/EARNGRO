@@ -825,3 +825,487 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
   .dash-stats { grid-template-columns: 1fr; }
   .dash-header { flex-direction: column; }
 }
+
+
+/* ══════════════════════════════════════════
+   NAVBAR — mobile hide text links
+══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .nav-a-desktop { display: none; }
+  .nav-hide-mobile { display: none; }
+  .nav { padding: 12px 16px; }
+}
+
+/* ══════════════════════════════════════════
+   GROWDNA — Full screen shell
+══════════════════════════════════════════ */
+
+.growdna-shell {
+  min-height: 100vh;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.growdna-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(253,252,248,0.95);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.growdna-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.growdna-exit {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.growdna-exit:hover { color: var(--ink); border-color: var(--ink); }
+
+.growdna-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Progress ── */
+.dna-progress {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px 24px 0;
+}
+.dna-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.dna-progress-module {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.dna-progress-count {
+  font-size: 11px;
+  color: var(--muted);
+}
+.dna-progress-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dna-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), #1AA574);
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Question wrap ── */
+.dna-assessment {
+  width: 100%;
+  max-width: 800px;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+}
+
+.dna-question-wrap {
+  flex: 1;
+  padding: 32px 0 24px;
+}
+
+.dna-q-header {
+  margin-bottom: 28px;
+}
+.dna-q-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.dna-q-title {
+  font-family: var(--serif);
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+.dna-q-sub {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.6;
+  max-width: 560px;
+}
+.dna-multi-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amber-l);
+  border: 1px solid var(--amber-mid);
+  color: var(--amber);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 99px;
+  margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Option Grid ── */
+.option-grid {
+  display: grid;
+  gap: 10px;
+}
+.option-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.option-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.option-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Grouped options */
+.option-group {
+  grid-column: 1 / -1;
+}
+.option-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-l);
+}
+
+/* ── Option Card ── */
+.option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  position: relative;
+  width: 100%;
+  min-height: 60px;
+}
+.option-card:hover {
+  border-color: var(--teal-mid);
+  background: var(--teal-xl);
+  transform: translateY(-1px);
+  box-shadow: var(--sh-sm);
+}
+.option-card.selected {
+  border-color: var(--teal);
+  background: var(--teal-l);
+  box-shadow: 0 0 0 3px rgba(14,122,90,0.1);
+}
+.option-icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.option-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.option-sublabel {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.3;
+}
+.option-check {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 12px;
+  color: var(--teal);
+  font-weight: 700;
+}
+
+/* ── Tap Scale ── */
+.tapscale-wrap { max-width: 600px; }
+.tapscale-grid {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tapscale-seg {
+  padding: 14px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tapscale-seg:hover {
+  border-color: var(--teal-mid);
+  background: var(--teal-xl);
+}
+.tapscale-seg.selected {
+  border-color: var(--teal);
+  background: var(--teal-l);
+  box-shadow: 0 0 0 3px rgba(14,122,90,0.1);
+}
+.tapscale-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.tapscale-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--teal-xl);
+  border: 1px solid var(--teal-mid);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--teal-d);
+  font-weight: 400;
+  animation: up 0.3s ease;
+}
+.tapscale-insight-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* ── Salary Input ── */
+.salary-wrap { max-width: 420px; }
+.salary-input-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.salary-sym {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--muted);
+  font-weight: 500;
+  pointer-events: none;
+}
+.salary-input {
+  width: 100%;
+  padding: 16px 16px 16px 36px;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  letter-spacing: -0.5px;
+}
+.salary-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(14,122,90,0.08);
+}
+.salary-preview {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--teal-d);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.salary-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+/* ── Footer nav ── */
+.dna-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 32px;
+  border-top: 1px solid var(--border-l);
+  gap: 12px;
+}
+.dna-back-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dna-back-btn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.dna-back-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.dna-next-btn {
+  background: var(--teal);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px 32px;
+  border-radius: 99px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(14,122,90,0.22);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dna-next-btn:hover:not(:disabled):not(.disabled) {
+  background: var(--teal-d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(14,122,90,0.3);
+}
+.dna-next-btn.disabled, .dna-next-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.dna-submitting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dna-spin {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+.dna-error {
+  background: #FDF1F1;
+  border: 1px solid #F5CCCC;
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--red);
+  margin-top: 16px;
+}
+
+/* ── Existing result screen ── */
+.dna-existing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+.dna-existing-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: var(--sh-md);
+  position: relative;
+  overflow: hidden;
+}
+.dna-existing-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--amber), var(--teal));
+}
+.dna-existing-ico { font-size: 44px; margin-bottom: 16px; }
+.dna-existing-card h2 {
+  font-family: var(--serif);
+  font-size: 24px; font-weight: 600;
+  color: var(--ink); margin-bottom: 6px;
+}
+.dna-existing-card p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+.dna-existing-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 28px;
+}
+.dna-existing-stat {
+  background: var(--paper-2);
+  border: 1px solid var(--border-l);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+.des-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.des-value { font-size: 15px; font-weight: 600; color: var(--ink); }
+.des-value.teal { color: var(--teal); }
+.dna-existing-actions { display: flex; flex-direction: column; gap: 10px; }
+.btn-retake {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 11px 24px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-retake:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .growdna-header { padding: 12px 16px; }
+  .dna-assessment { padding: 0 16px; }
+  .dna-progress { padding: 16px 16px 0; }
+  .dna-q-title { font-size: 20px; }
+  .option-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .option-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .tapscale-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .dna-existing-card { padding: 32px 20px; }
+}
+@media (max-width: 480px) {
+  .option-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .option-card { padding: 10px 10px; min-height: 52px; }
+  .option-icon { font-size: 16px; }
+  .option-label { font-size: 12px; }
+  .tapscale-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}

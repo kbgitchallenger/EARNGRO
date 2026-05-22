@@ -1,130 +1,130 @@
-//app/api/growdna/route.ts
-export const dynamic = 'force-dynamic'
-
-import Anthropic from '@anthropic-ai/sdk'
+// app/api/growdna/route.ts
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-import { calculateScores } from '@/lib/growdna/questions'
+import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+const ARCHETYPES: Record<string, { name: string; desc: string }> = {
+  high_skill_low_market:  { name: 'The Hidden Gem',       desc: 'Strong skills, underexposed to market. One strategic move changes everything.' },
+  high_all:               { name: 'The Market Ready Pro', desc: 'Skills, visibility, mobility all aligned. You\'re primed to capture your full value.' },
+  low_negotiation:        { name: 'The Underpaid Expert',  desc: 'Skills are there but you consistently leave money on the table in negotiations.' },
+  tenure_trap:            { name: 'The Loyal Underpaid',   desc: 'Deep expertise in one place, but the market has moved on without you knowing.' },
+  career_switcher:        { name: 'The Strategic Climber', desc: 'Deliberate moves, growing comp, strong market awareness. On the right track.' },
+  fresher_high:           { name: 'The Fast Starter',      desc: 'Exceptional early signals. With the right first move, trajectory looks strong.' },
+  fresher_low:            { name: 'The Late Bloomer',      desc: 'Starting lean but skills can be built fast. First 18 months are everything.' },
+  default:                { name: 'The Growth Professional', desc: 'Solid foundation with clear gaps to address for significant income growth.' },
+}
 
-export async function POST(request: Request) {
+function detectArchetype(answers: Record<string, unknown>, scores: Record<string, number>): string {
+  const seniority = answers.seniority as string
+  if (seniority === 'fresher' || seniority === 'junior') {
+    return scores.skill_premium > 60 ? 'fresher_high' : 'fresher_low'
+  }
+  if (answers.promotion_velocity === 'stuck') return 'tenure_trap'
+  if (answers.negotiation_history === 'never' || answers.negotiation_history === 'joining_only') {
+    if (scores.skill_premium > 60) return 'low_negotiation'
+  }
+  if (answers.promotion_velocity === 'switched') return 'career_switcher'
+  if (scores.skill_premium > 70 && scores.visibility < 40) return 'high_skill_low_market'
+  if (scores.hrs > 700) return 'high_all'
+  return 'default'
+}
+
+export async function POST(req: Request) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
-    const { answers } = body
+    const { answers, scores } = await req.json()
 
-    if (!answers || !answers.industry || !answers.seniority || !answers.current_ctc) {
-      return NextResponse.json({ error: 'Missing required answers' }, { status: 400 })
-    }
+    // Build AI prompt
+    const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2025–2026.
 
-    // Calculate dimension scores locally
-    const scores = calculateScores(answers)
+Analyse this career profile from a GrowDNA assessment and return ONLY raw JSON.
 
-    // Build context string for Claude
-    const answerSummary = Object.entries(answers)
-      .map(([k, v]) => `${k}: ${Array.isArray(v) ? (v as string[]).join(', ') : v}`)
-      .join('\n')
+PROFILE:
+Industry: ${answers.industry}
+Seniority: ${answers.seniority}
+Role: ${answers.role}
+City: ${answers.city}
+Current Annual CTC: ₹${Number(answers.current_ctc).toLocaleString('en-IN')}
+Negotiation history: ${answers.negotiation_history}
+Growth investment level: ${answers.growth_investment ?? 0} out of 5
 
-    const prompt = `You are a senior career intelligence analyst for India and Southeast Asia, 2025–2026.
-
-A professional has completed the EarnGro GrowDNA assessment. Analyse their answers and return ONLY raw JSON — no markdown, no backticks.
-
-ASSESSMENT ANSWERS:
-${answerSummary}
-
-CALCULATED SCORES:
-Market Alignment: ${scores.market_alignment}/100
-Skill Premium: ${scores.skill_premium}/100
-Visibility: ${scores.visibility}/100
-Career Mobility: ${scores.mobility}/100
-Negotiation Behaviour: ${scores.negotiation}/100
-Hiring Readiness Score (HRS): ${scores.hrs}/1000
+DIMENSION SCORES (0-100):
+Market Alignment: ${scores.market_alignment}
+Skill Premium: ${scores.skill_premium}
+Visibility: ${scores.visibility}
+Mobility: ${scores.mobility}
+Negotiation: ${scores.negotiation}
+HRS (Hiring Readiness Score): ${scores.hrs} / 1000
 
 Return exactly this JSON:
 {
-  "career_archetype": <string, e.g. "The Strategic Climber", "The Hidden Gem", "The Market Mover", "The Deep Expert", "The Career Drifter", "The Visibility Gap", "The Negotiation Leaver">,
-  "archetype_desc": <string, 2 sharp sentences describing this archetype and what it means for their earnings>,
-  "earning_gap_estimate": <number, realistic annual gap in INR based on their profile — how much more they should earn>,
-  "target_salary": <number, realistic annual CTC in INR they should be earning>,
-  "months_to_close": <number, 6 to 30>,
-  "top_strengths": [<string>, <string>, <string>],
-  "critical_gaps": [<string>, <string>, <string>],
-  "immediate_actions": [
-    {"action": <string>, "impact": <string>, "timeline": <string>},
-    {"action": <string>, "impact": <string>, "timeline": <string>},
-    {"action": <string>, "impact": <string>, "timeline": <string>}
-  ],
-  "market_insight": <string, one sharp sentence about their specific market right now>,
-  "salary_range_min": <number, 25th percentile for their profile>,
-  "salary_range_max": <number, 90th percentile for their profile>,
-  "peer_comparison": <string, e.g. "68% of professionals with your profile earn more than you currently do">
+  "target_salary": <number, realistic market rate annual CTC in INR>,
+  "salary_range_min": <number, 25th percentile>,
+  "salary_range_max": <number, 90th percentile>,
+  "earning_gap": <number, target minus current, minimum 0>,
+  "gap_percentage": <number, rounded integer>,
+  "months_to_close": <number, 4 to 36>,
+  "market_context": <string, one sharp sentence about this profile in this market right now>,
+  "gap_reasons": [<string>, <string>, <string>],
+  "close_actions": [<string>, <string>, <string>]
 }
 
 Rules:
-- Be specific — name actual certifications, company types, skills by name
-- earning_gap_estimate = target_salary minus current_ctc (minimum 0)
-- For Government/PSU workers note the stability trade-off honestly
-- Tier 2 city profiles should get realistic local benchmarks
-- Career archetype must be one of the 7 listed above`
+- Be realistic — not inflated
+- Tier 2 cities: apply 20–30% discount
+- Government/PSU: acknowledge gap but note security trade-off
+- Freshers: modest gap, focus on trajectory
+- gap_reasons must name specific skills, companies, or certifications
+- close_actions must be specific with timelines and expected impact`
 
+    const client = new Anthropic()
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1200,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const raw = message.content
-      .map(b => (b.type === 'text' ? b.text : ''))
-      .join('')
-      .replace(/```json|```/g, '')
-      .trim()
+    const textBlock = message.content.find(b => b.type === 'text')
+    if (!textBlock || textBlock.type !== 'text') throw new Error('No AI response')
 
-    const aiResult = JSON.parse(raw)
+    const aiResult = JSON.parse(textBlock.text.replace(/```json|```/g, '').trim())
+    const archetypeKey = detectArchetype(answers, scores)
+    const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.default
 
-    // Save to Supabase grow_dna table
-    const { data: saved, error: saveError } = await supabase
-      .from('grow_dna')
-      .insert({
-        user_id: user.id,
-        industry: answers.industry,
-        experience: answers.seniority,
-        role: answers.role,
-        city: answers.city,
-        current_salary: answers.current_ctc,
-        education: answers.education_tier ?? answers.education ?? null,
-        company_type: answers.employer_trajectory ?? null,
-        skills: answers.premium_skills ?? answers.certifications_fresher ?? [],
-        career_archetype: aiResult.career_archetype,
-        earning_gap: aiResult.earning_gap_estimate,
-        target_salary: aiResult.target_salary,
-        hrs_score: scores.hrs,
-        months_to_close: aiResult.months_to_close,
-        gap_reasons: aiResult.critical_gaps,
-        close_actions: aiResult.immediate_actions.map((a: { action: string }) => a.action),
-        salary_range_min: aiResult.salary_range_min,
-        salary_range_max: aiResult.salary_range_max,
-        raw_ai_response: aiResult,
-      })
-      .select('id')
-      .single()
+    // Save to Supabase
+    const { error: saveError } = await supabase.from('grow_dna').insert({
+      user_id: user.id,
+      industry: answers.industry,
+      experience: answers.seniority,
+      role: answers.role,
+      city: answers.city,
+      current_salary: Number(answers.current_ctc),
+      education: answers.education_tier || answers.seniority,
+      company_type: answers.employer_trajectory || 'not specified',
+      skills: Array.isArray(answers.premium_skills) ? answers.premium_skills : [],
+      career_archetype: archetype.name,
+      earning_gap: aiResult.earning_gap,
+      target_salary: aiResult.target_salary,
+      hrs_score: scores.hrs,
+      months_to_close: aiResult.months_to_close,
+      gap_reasons: aiResult.gap_reasons,
+      close_actions: aiResult.close_actions,
+      salary_range_min: aiResult.salary_range_min,
+      salary_range_max: aiResult.salary_range_max,
+      raw_ai_response: aiResult,
+    })
 
     if (saveError) {
       console.error('Supabase save error:', saveError)
-      return NextResponse.json({ error: 'Failed to save results' }, { status: 500 })
+      return Response.json({ error: 'Save failed', detail: saveError }, { status: 500 })
     }
 
-    return NextResponse.json({
-      id: saved.id,
-      scores,
-      ...aiResult,
-    })
+    return Response.json({ success: true, archetype: archetype.name })
 
-  } catch (error) {
-    console.error('GrowDNA API error:', error)
-    return NextResponse.json({ error: 'Analysis failed. Please try again.' }, { status: 500 })
+  } catch (err) {
+    console.error('GrowDNA API error:', err)
+    return Response.json({ error: 'Analysis failed' }, { status: 500 })
   }
 }
