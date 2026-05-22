@@ -70,9 +70,9 @@ export default function HomePage() {
 
           {/* sub */}
           <p className="fade d3" style={{ fontSize:'clamp(15px,2vw,18px)', fontWeight:300, color:'var(--muted)', maxWidth:520, margin:'0 auto 44px', lineHeight:1.75 }}>
-            EarnGro reveals your exact <strong style={{ color:'var(--ink)', fontWeight:500 }}>Earning Gap</strong> — then builds a personalized AI roadmap to close it and maximize your <br />market value.
+            EarnGro reveals your hidden <strong style={{ color:'var(--ink)', fontWeight:500 }}>Earning Gap</strong> — then builds a personalized AI roadmap to increase your salary, strengthen your career profile, and maximize your <br /><strong style={{ color:'var(--teal)', fontWeight:600 }}>market value.</strong>
           </p>
-
+          
           {/* journey card */}
           <div className="fade d4"><JourneyCard /></div>
 
