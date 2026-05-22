@@ -44,7 +44,7 @@ export default function HomePage() {
           {/* eyebrow tag */}
           <div className="fade d1" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:11, fontWeight:600, padding:'6px 16px', borderRadius:99, marginBottom:28, letterSpacing:'0.05em', textTransform:'uppercase' }}>
             <span style={{ width:7, height:7, background:'var(--teal)', borderRadius:'50%', animation:'pulse 2.2s ease-in-out infinite', display:'inline-block', flexShrink:0 }} />
-            Smart & Powerful AI-powered salary intelligence
+            AI-powered career intelligence platform
           </div>
 
           {/* H1 */}
