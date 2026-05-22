@@ -15,24 +15,42 @@ const ARCHETYPES: Record<string, { name: string; desc: string }> = {
 
 function detectArchetype(answers: Record<string, unknown>, scores: Record<string, number>): string {
   const seniority = answers.seniority as string
+
   if (seniority === 'fresher' || seniority === 'junior') {
     return scores.skill_premium > 60 ? 'fresher_high' : 'fresher_low'
   }
+
   if (answers.promotion_velocity === 'stuck') return 'tenure_trap'
-  if (answers.negotiation_history === 'never' || answers.negotiation_history === 'joining_only') {
+
+  if (
+    answers.negotiation_history === 'never' ||
+    answers.negotiation_history === 'joining_only'
+  ) {
     if (scores.skill_premium > 60) return 'low_negotiation'
   }
+
   if (answers.promotion_velocity === 'switched') return 'career_switcher'
-  if (scores.skill_premium > 70 && scores.visibility < 40) return 'high_skill_low_market'
+
+  if (scores.skill_premium > 70 && scores.visibility < 40) {
+    return 'high_skill_low_market'
+  }
+
   if (scores.hrs > 700) return 'high_all'
+
   return 'default'
 }
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { answers, scores } = await req.json()
 
@@ -89,39 +107,64 @@ Rules:
 - immediate_actions: each action must have a concrete timeline (e.g. "30 days", "6 weeks") and measurable impact (e.g. "₹2–3L hike")`
 
     const client = new Anthropic()
+
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
     })
 
-    const textBlock = message.content.find(b => b.type === 'text')
-    if (!textBlock || textBlock.type !== 'text') throw new Error('No AI response')
+    const textBlock = message.content.find((b) => b.type === 'text')
 
-    const aiResult = JSON.parse(textBlock.text.replace(/```json|```/g, '').trim())
+    if (!textBlock || textBlock.type !== 'text') {
+      throw new Error('No AI response')
+    }
+
+    const aiResult = JSON.parse(
+      textBlock.text.replace(/```json|```/g, '').trim()
+    )
 
     // ── Save to Supabase ────────────────────────────────────────
-    const { error: saveError } = await supabase.from('grow_dna').insert({
-      user_id:          user.id,
-      industry:         answers.industry,
-      experience:       answers.seniority,
-      role:             answers.role,
-      city:             answers.city,
-      current_salary:   Number(answers.current_ctc),
-      education:        answers.education_tier || answers.seniority,
-      company_type:     answers.employer_trajectory || 'not specified',
-      skills:           Array.isArray(answers.premium_skills) ? answers.premium_skills : [],
-      career_archetype: archetype.name,
-      earning_gap:      aiResult.earning_gap_estimate,
-      target_salary:    aiResult.target_salary,
-      hrs_score:        scores.hrs,
-      months_to_close:  aiResult.months_to_close,
-      gap_reasons:      aiResult.critical_gaps,
-      close_actions:    aiResult.immediate_actions,
-      salary_range_min: aiResult.salary_range_min,
-      salary_range_max: aiResult.salary_range_max,
-      raw_ai_response:  aiResult,
-    })
+    const { data: saved, error: saveError } = await supabase
+      .from('grow_dna')
+      .insert({
+        user_id: user.id,
+        industry: answers.industry,
+        experience: answers.seniority,
+        role: answers.role,
+        city: answers.city,
+        current_salary: Number(answers.current_ctc),
+        education: answers.education_tier || answers.seniority,
+        company_type: answers.employer_trajectory || 'not specified',
+        skills: Array.isArray(answers.premium_skills)
+          ? answers.premium_skills
+          : [],
+        career_archetype: archetype.name,
+        earning_gap: aiResult.earning_gap_estimate,
+        target_salary: aiResult.target_salary,
+        hrs_score: scores.hrs,
+        months_to_close: aiResult.months_to_close,
+        gap_reasons: aiResult.critical_gaps,
+        close_actions: aiResult.immediate_actions,
+        salary_range_min: aiResult.salary_range_min,
+        salary_range_max: aiResult.salary_range_max,
+        raw_ai_response: aiResult,
+
+        dimension_scores: {
+          market_alignment: scores.market_alignment,
+          skill_premium: scores.skill_premium,
+          visibility: scores.visibility,
+          mobility: scores.mobility,
+          negotiation: scores.negotiation,
+        },
+      })
+      .select('id')
+      .single()
 
     if (saveError) {
       console.error('Supabase save error:', saveError)
@@ -130,31 +173,41 @@ Rules:
 
     // ── Return full AIResult shape the frontend expects ─────────
     return Response.json({
-      id:                   user.id,
-      career_archetype:     archetype.name,
-      archetype_desc:       archetype.desc,
+      assessment_id: saved?.id ?? user.id,
+
+      career_archetype: archetype.name,
+      archetype_desc: archetype.desc,
+
       earning_gap_estimate: aiResult.earning_gap_estimate,
-      target_salary:        aiResult.target_salary,
-      salary_range_min:     aiResult.salary_range_min,
-      salary_range_max:     aiResult.salary_range_max,
-      months_to_close:      aiResult.months_to_close,
-      peer_comparison:      aiResult.peer_comparison,
-      market_insight:       aiResult.market_insight,
-      top_strengths:        aiResult.top_strengths     ?? [],
-      critical_gaps:        aiResult.critical_gaps      ?? [],
-      immediate_actions:    aiResult.immediate_actions  ?? [],
+      target_salary: aiResult.target_salary,
+
+      salary_range_min: aiResult.salary_range_min,
+      salary_range_max: aiResult.salary_range_max,
+
+      months_to_close: aiResult.months_to_close,
+
+      peer_comparison: aiResult.peer_comparison,
+      market_insight: aiResult.market_insight,
+
+      top_strengths: aiResult.top_strengths ?? [],
+      critical_gaps: aiResult.critical_gaps ?? [],
+      immediate_actions: aiResult.immediate_actions ?? [],
+
       scores: {
         market_alignment: scores.market_alignment,
-        skill_premium:    scores.skill_premium,
-        visibility:       scores.visibility,
-        mobility:         scores.mobility,
-        negotiation:      scores.negotiation,
-        hrs:              scores.hrs,
+        skill_premium: scores.skill_premium,
+        visibility: scores.visibility,
+        mobility: scores.mobility,
+        negotiation: scores.negotiation,
+        hrs: scores.hrs,
       },
     })
-
   } catch (err) {
     console.error('GrowDNA API error:', err)
-    return Response.json({ error: 'Analysis failed' }, { status: 500 })
+
+    return Response.json(
+      { error: 'Analysis failed' },
+      { status: 500 }
+    )
   }
 }
