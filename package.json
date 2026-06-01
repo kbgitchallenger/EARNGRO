@@ -23,8 +23,10 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",
+    "mammoth": "^1.12.0",
     "next": "^16.2.6",
     "next-pwa": "^2.0.2",
+    "pdf-parse": "^2.4.5",
     "posthog-js": "^1.374.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.5.0",
@@ -49,5 +52,8 @@
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "canvas": "^3.2.3"
   }
 }
