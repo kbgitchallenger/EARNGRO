@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation'
 export default function AnalyzeClientButton({
   versionId,
   white,
+  label,
 }: {
   versionId: string
   white?: boolean
+  label?: string
 }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -27,22 +29,22 @@ export default function AnalyzeClientButton({
     }
   }
 
-  const bg = white ? '#fff' : 'var(--teal)'
-  const color = white ? 'var(--teal-d)' : '#fff'
-
   return (
     <button
       onClick={run}
       disabled={loading}
       style={{
-        background: bg, color, border: 'none',
-        borderRadius: 99, padding: '10px 22px',
-        fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1, fontFamily: 'var(--sans)',
+        background: white ? '#fff' : 'var(--teal)',
+        color: white ? 'var(--teal-d)' : '#fff',
+        border: 'none', borderRadius: 99,
+        padding: '11px 24px', fontSize: 13, fontWeight: 600,
+        cursor: loading ? 'not-allowed' : 'pointer',
+        opacity: loading ? 0.7 : 1,
+        fontFamily: 'var(--sans)',
         boxShadow: white ? '0 4px 14px rgba(0,0,0,0.15)' : '0 4px 14px rgba(14,122,90,0.22)',
       }}
     >
-      {loading ? 'Analysing…' : '🎯 Run ATS Analysis'}
+      {loading ? 'Analysing…' : (label ?? '🎯 Run ATS Analysis')}
     </button>
   )
 }

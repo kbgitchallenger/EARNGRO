@@ -57,11 +57,24 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const supabase = await createClient()
+    const isInternal = request.headers.get('x-internal') === 'true'
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-
+    if (!user && !isInternal) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    
     const { searchParams } = new URL(request.url)
     const versionId = searchParams.get('versionId')
+
+    let userId = user?.id
+if (!userId && isInternal) {
+  const body = await request.json()
+  const { data: v } = await supabase
+    .from('cv_versions')
+    .select('user_id')
+    .eq('id', body.versionId)
+    .single()
+  userId = v?.user_id
+  if (!userId) return NextResponse.json({ error: 'Version not found' }, { status: 404 })
+  }
 
     if (!versionId) {
       return NextResponse.json({ error: 'versionId required' }, { status: 400 })
