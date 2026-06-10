@@ -1,90 +1,65 @@
 import { z } from 'zod'
 
-// ── Certification as object (not string) ─────────────────────────
-export const CertificationSchema = z.object({
-  name: z.string(),
-  issuer: z.string().optional(),
-  year: z.string().optional(),
+export const KeywordMatchSchema = z.object({
+  keyword: z.string(),
+  found: z.boolean(),
+  weight: z.enum(['critical', 'high', 'medium', 'low']),
+  context: z.string().optional().nullable(),
 })
 
-// ── Parsed resume structure ───────────────────────────────────────
-export const ParsedResumeSchema = z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  location: z.string().optional(),
-  summary: z.string().optional(),
-  primary_role: z.string().optional(),
-  seniority_level: z.string().optional(),
-  experience: z.array(z.object({
-    company: z.string(),
-    role: z.string(),
-    start_date: z.string(),
-    end_date: z.string().optional(),
-    bullets: z.array(z.string()),
-    is_current: z.boolean().default(false),
-  })),
-  education: z.array(z.object({
-    institution: z.string(),
-    degree: z.string(),
-    year: z.string().optional(),
-  })),
-  skills: z.array(z.string()),
-  certifications: z.array(CertificationSchema).optional(),  // ← object, not string
-  total_experience_years: z.number(),
+export const SectionScoresSchema = z.object({
+  summary:     z.number().min(0).max(100),
+  experience:  z.number().min(0).max(100),
+  skills:      z.number().min(0).max(100),
+  education:   z.number().min(0).max(100),
+  formatting:  z.number().min(0).max(100),
+  achievements: z.number().min(0).max(100).optional().default(0),
 })
 
-// ── ATS result ────────────────────────────────────────────────────
+export const ImprovementSchema = z.object({
+  section:  z.string(),
+  issue:    z.string().optional(),
+  current:  z.string(),
+  improved: z.string(),
+  impact:   z.enum(['high', 'medium', 'low']).optional(),
+})
+
 export const ATSResultSchema = z.object({
-  ats_score: z.number().min(0).max(100),
-  recruiter_score: z.number().min(0).max(100),
-  market_alignment: z.number().min(0).max(100),
-  hiring_probability: z.number().min(0).max(100),
-  keyword_matches: z.array(z.object({
-    keyword: z.string(),
-    found: z.boolean(),
-    weight: z.enum(['critical', 'high', 'medium', 'low']),
-  })),
-  section_scores: z.object({
-    summary: z.number(),
-    experience: z.number(),
-    skills: z.number(),
-    education: z.number(),
-    formatting: z.number(),
-  }),
-  strengths: z.array(z.string()).max(5),
-  critical_issues: z.array(z.string()).max(5),
-  improvements: z.array(z.object({
-    section: z.string(),
-    current: z.string(),
-    improved: z.string(),
-  })).max(5),
-  ai_summary: z.string(),
+  ats_score:           z.number().min(0).max(100),
+  recruiter_score:     z.number().min(0).max(100),
+  market_alignment:    z.number().min(0).max(100),
+  hiring_probability:  z.number().min(0).max(100),
+  keyword_matches:     z.array(KeywordMatchSchema),
+  keyword_gaps:        z.array(z.string()),
+  section_scores:      SectionScoresSchema,
+  strengths:           z.array(z.string()).max(5),
+  critical_issues:     z.array(z.string()).max(5),
+  improvements:        z.array(ImprovementSchema).max(5),
+  ai_summary:          z.string(),
+  recruiter_first_impression: z.string().optional(),
+  ats_pass_likelihood: z.enum(['very_high','high','medium','low','very_low']).optional(),
 })
 
-// ── Market positioning ────────────────────────────────────────────
-export const MarketPositioningSchema = z.object({
-  headline: z.string(),
-  value_proposition: z.string(),
-  target_roles: z.array(z.string()),
-  target_industries: z.array(z.string()),
-  key_differentiators: z.array(z.string()),
-  salary_range_min: z.number().optional(),
-  salary_range_max: z.number().optional(),
-  market_readiness_score: z.number().min(0).max(100), // ← correct field name
+export const VersionComparisonSchema = z.object({
+  score_delta:        z.number(),
+  ats_delta:          z.number(),
+  recruiter_delta:    z.number(),
+  improvements_made:  z.array(z.string()),
+  regressions:        z.array(z.string()),
+  verdict:            z.enum(['significantly_better','better','same','worse']),
+  recommendation:     z.string(),
 })
 
-// ── Bullet optimisation ───────────────────────────────────────────
-export const BulletOptimizationSchema = z.object({
-  original: z.string(),
-  optimized: z.string(),
-  improvement_reason: z.string(),
-  impact_score: z.number().min(1).max(10),
+export const QuickScoreSchema = z.object({
+  ats_score:    z.number().min(0).max(100),
+  market_score: z.number().min(0).max(100),
+  top_issue:    z.string(),
+  top_strength: z.string(),
 })
 
-// ── Type exports ──────────────────────────────────────────────────
-export type ParsedResume        = z.infer<typeof ParsedResumeSchema>
-export type ATSResult           = z.infer<typeof ATSResultSchema>
-export type MarketPositioning   = z.infer<typeof MarketPositioningSchema>
-export type Certification       = z.infer<typeof CertificationSchema>
-export type BulletOptimization  = z.infer<typeof BulletOptimizationSchema>
+export type ATSResult          = z.infer<typeof ATSResultSchema>
+export type KeywordMatch       = z.infer<typeof KeywordMatchSchema>
+export type SectionScores      = z.infer<typeof SectionScoresSchema>
+export type Improvement        = z.infer<typeof ImprovementSchema>
+export type VersionComparison  = z.infer<typeof VersionComparisonSchema>
+export type QuickScore         = z.infer<typeof QuickScoreSchema>
