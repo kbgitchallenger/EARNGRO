@@ -79,6 +79,7 @@ export class ATSService {
 
     } catch (err) {
       await analysisRepository.updateStatus(analysis.id, 'failed')
+      console.error('ATS analyze failed:', err)
       throw err
     }
   }

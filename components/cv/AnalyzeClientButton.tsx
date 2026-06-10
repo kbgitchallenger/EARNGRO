@@ -13,38 +13,58 @@ export default function AnalyzeClientButton({
   label?: string
 }) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   async function run() {
     setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/cv/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ versionId }),
       })
-      if (res.ok) router.refresh()
+
+      const data = await res.json()
+      console.log('Analyze response:', res.status, data)
+
+      if (!res.ok) {
+        setError(data.error ?? `Error ${res.status}`)
+        return
+      }
+
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Request failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <button
-      onClick={run}
-      disabled={loading}
-      style={{
-        background: white ? '#fff' : 'var(--teal)',
-        color: white ? 'var(--teal-d)' : '#fff',
-        border: 'none', borderRadius: 99,
-        padding: '11px 24px', fontSize: 13, fontWeight: 600,
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1,
-        fontFamily: 'var(--sans)',
-        boxShadow: white ? '0 4px 14px rgba(0,0,0,0.15)' : '0 4px 14px rgba(14,122,90,0.22)',
-      }}
-    >
-      {loading ? 'Analysing…' : (label ?? '🎯 Run ATS Analysis')}
-    </button>
+    <div>
+      <button
+        onClick={run}
+        disabled={loading}
+        style={{
+          background: white ? '#fff' : 'var(--teal)',
+          color: white ? 'var(--teal-d)' : '#fff',
+          border: 'none', borderRadius: 99,
+          padding: '11px 24px', fontSize: 13, fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? 0.7 : 1,
+          fontFamily: 'var(--sans)',
+          boxShadow: white ? '0 4px 14px rgba(0,0,0,0.15)' : '0 4px 14px rgba(14,122,90,0.22)',
+        }}
+      >
+        {loading ? 'Analysing…' : (label ?? '🎯 Run ATS Analysis')}
+      </button>
+      {error && (
+        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--red)', background: 'var(--red-l)', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px' }}>
+          {error}
+        </div>
+      )}
+    </div>
   )
 }
