@@ -9,6 +9,10 @@ const EMPTY: ParsedResume = {
   name: '', email: '', phone: '', location: '', summary: '',
   experience: [], education: [], skills: [], certifications: [],
   total_experience_years: 0,
+  seniority_level: 'junior',   // ← add
+  primary_role: '',              // ← add
+  languages: [],                 // ← add
+  industry_signals: [],          // ← add
 }
 
 const inp: React.CSSProperties = {

@@ -1,6 +1,6 @@
-import type { ParsedResume, ATSResult } from '../lib/ai/validators/resume.validator'
 import type { ATSResult as ATSScore } from '../lib/ai/validators/ats.validator'
-
+import type { ParsedResume } from '../lib/ai/validators/resume.validator'
+import type { ATSResult } from '../lib/ai/validators/ats.validator'
 // ── Database row types ────────────────────────────────────────────
 
 export interface CVVersion {

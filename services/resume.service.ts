@@ -85,56 +85,54 @@ export class ResumeService {
       const positioning = await callAIJSON(
         MARKET_POSITIONING_PROMPT(
           {
-  name: parsed.name,
-  email: parsed.email,
-  phone: parsed.phone,
-  location: parsed.location,
-  summary: parsed.summary,
+            name: parsed.name,
+            email: parsed.email,
+            phone: parsed.phone,
+            location: parsed.location,
+            summary: parsed.summary,
 
-  primary_role:
-    parsed.primary_role ??
-    parsed.experience?.[0]?.role ??
-    'Professional',
+            primary_role: parsed.primary_role ??
+              parsed.experience?.[0]?.role ??
+              'Professional',
 
-  seniority_level:
-    parsed.seniority_level ??
-    this.calculateSeniorityLevel(parsed),
+            seniority_level: parsed.seniority_level ??
+              this.calculateSeniorityLevel(parsed),
 
-  total_experience_years:
-    parsed.total_experience_years,
+            total_experience_years: parsed.total_experience_years,
 
-  skills: parsed.skills ?? [],
+            skills: parsed.skills ?? [],
 
-  experience:
-    parsed.experience?.map(e => ({
-      company: e.company,
-      role: e.role ?? '',
-      start_date: e.start_date ?? '',
-      end_date: e.end_date,
-      bullets: e.bullets ?? [],
-      is_current: e.is_current ?? false,
-    })) ?? [],
+            experience: parsed.experience?.map(e => ({
+              company: e.company,
+              role: e.role,
+              start_date: e.start_date,
+              end_date: e.end_date,
+              bullets: e.bullets,
+              is_current: e.is_current,
+              achievements: e.achievements ?? [],
+            })) ?? [],
 
-  education:
-    parsed.education?.map(e => ({
-      institution: e.institution,
-      degree: e.degree,
-      year: e.year,
-    })) ?? [],
+            education: parsed.education?.map(e => ({
+              institution: e.institution,
+              degree: e.degree,
+              year: e.year,
+            })) ?? [],
 
-  certifications:
-    parsed.certifications?.map(c => ({
-      name: c.name,
-      issuer: c.issuer,
-      year: c.year,
-    })) ?? [],
-},
+            certifications: parsed.certifications?.map(c => ({
+              name: c.name,
+              issuer: c.issuer,
+              year: c.year,
+            })) ?? [],
+
+            languages: [],
+            industry_signals: []
+          },
           city
         ),
         MarketPositioningSchema,
         { maxTokens: 800 }
       )
-      return positioning.market_readiness_score
+      return positioning.market_score
     } catch {
       // Fallback heuristic
       const expScore = Math.min(parsed.total_experience_years * 5, 40)
