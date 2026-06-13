@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await request.json()
+    console.log('Analyze request body:', body)
     const { versionId, jobDescription } = BodySchema.parse(body)
 
     // Fetch version data
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
       .select('id, raw_text, parsed_data, user_id')
       .eq('id', versionId)
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (error || !version) {
       return NextResponse.json({ error: 'Resume version not found' }, { status: 404 })
@@ -48,9 +49,14 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('ATS analyze error:', err)
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request', details: err.flatten() }, { status: 400 })
+      const flattened = err.flatten()
+      console.error('Zod validation error - Field Errors:', flattened.fieldErrors)
+      console.error('Zod validation error - Form Errors:', flattened.formErrors)
+      return NextResponse.json({ error: 'Invalid request', details: flattened }, { status: 400 })
     }
-    return NextResponse.json({ error: 'Analysis failed' }, { status: 500 })
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('ATS analyze error details:', errorMessage)
+    return NextResponse.json({ error: 'Analysis failed', details: errorMessage }, { status: 500 })
   }
 }
 

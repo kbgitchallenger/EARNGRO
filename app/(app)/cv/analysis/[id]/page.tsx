@@ -1,3 +1,4 @@
+//app/(app)/cv/analysis/[id]/page.tsx
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
@@ -19,10 +20,10 @@ export default async function CVAnalysisPage({
 
   const { data: version } = await supabase
     .from('cv_versions')
-    .select('id, name, version_number, source, market_score, created_at, raw_text, parsed_data, file_name, parse_status')
+    .select('id, name, version_number, source, market_score, created_at, raw_text, parsed_data, file_name')
     .eq('id', id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!version) redirect('/cv/history')
 
@@ -45,7 +46,7 @@ export default async function CVAnalysisPage({
   } | null
 
   // Determine page state
-  const isParsing = !version.raw_text && version.parse_status !== 'failed'
+  const isParsing = !version.raw_text
   const hasParsed = !!version.raw_text
   const hasAnalysis = !!analysis
 

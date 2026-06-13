@@ -282,10 +282,26 @@ export default function Calculator() {
           ))}
 
           {/* CTA buttons */}
+          {/* Save nudge — conversion moment */}
+          <div style={{ background: 'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius: 'var(--r-lg)', padding: '20px 20px', marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+                  💾 Save your result + get your full roadmap
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                  Free account · No credit card · Takes 30 seconds
+                </div>
+              </div>
+              <a href="/signup" style={{ background: '#fff', color: 'var(--teal-d)', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', flexShrink: 0 }}>
+                Create free account →
+              </a>
+            </div>
+          </div>
+
+          {/* CTA buttons */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            <button onClick={() => window.location.href='/signup'} style={{ width:'100%', padding:14, background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:14, fontWeight:600, border:'none', borderRadius:'var(--r-md)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7, boxShadow:'0 4px 16px rgba(14,122,90,0.2)' }}>
-              Get my full GrowPath roadmap →
-            </button>
             <button onClick={share} style={{ width:'100%', padding:12, background:'var(--paper)', color:'var(--teal-d)', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, border:'1.5px solid var(--teal-mid)', borderRadius:'var(--r-md)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
               Share my Earning Gap on LinkedIn

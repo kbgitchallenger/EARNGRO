@@ -53,50 +53,34 @@ ${
 }
 
 ==================================================
-RETURN EXACTLY THIS JSON STRUCTURE
+RETURN EXACTLY THIS JSON STRUCTURE (valid example)
 ==================================================
 
 {
-  "ats_score": <number 0-100>,
-  "recruiter_score": <number 0-100>,
-  "market_alignment": <number 0-100>,
-  "hiring_probability": <number 0-100>,
-
+  "ats_score": 75,
+  "recruiter_score": 78,
+  "market_alignment": 82,
+  "hiring_probability": 80,
   "keyword_matches": [
-    {
-      "keyword": "string",
-      "found": true,
-      "weight": "critical"
-    }
+    {"keyword": "React", "found": true, "weight": "critical"},
+    {"keyword": "TypeScript", "found": true, "weight": "high"}
   ],
-
-  "keyword_gaps": [
-    "string"
-  ],
-
+  "keyword_gaps": ["Python", "AWS"],
   "section_scores": {
-    "summary": <number 0-100>,
-    "experience": <number 0-100>,
-    "skills": <number 0-100>,
-    "education": <number 0-100>,
-    "formatting": <number 0-100>
+    "summary": 70,
+    "experience": 85,
+    "skills": 80,
+    "education": 75,
+    "formatting": 90
   },
-
-  "strengths": [
-    "string"
-  ],
-
-  "critical_issues": [
-    "string"
-  ],
-
+  "strengths": ["5+ years experience", "Strong technical skills"],
+  "critical_issues": ["Weak summary section"],
   "improvements": [
-    {
-      "section": "string",
-      "current": "string",
-      "improved": "string"
-    }
+    {"section": "summary", "current": "Experienced engineer", "improved": "Senior React engineer with 5+ years building scalable web apps at tech companies"},
+    {"section": "skills", "current": "List format", "improved": "Organized by category with proficiency levels"}
   ],
+  "ai_summary": "Strong candidate with solid experience and modern tech stack."
+}
 
   "ai_summary": "string"
 }
@@ -144,8 +128,17 @@ IMPROVEMENT RULES
 - Must improve recruiter readability
 
 ==================================================
-IMPORTANT
+IMPORTANT - JSON FORMATTING RULES
 ==================================================
+
+1. Return ONLY raw JSON
+2. No markdown code blocks
+3. No backticks
+4. No trailing commas
+5. Properly escape all strings with backslashes for special characters
+6. Ensure all arrays and objects are properly closed
+7. No comments in JSON
+8. Start with { and end with }
 
 Output ONLY valid JSON.
 No markdown.

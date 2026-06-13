@@ -9,16 +9,45 @@ export interface AICallOptions {
 }
 
 function extractJSON(raw: string): unknown {
-  // Remove markdown fences
-  let cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim()
+  // Remove markdown fences properly
+  let cleaned = raw
+    .replace(/^```json\s*/i, '')  // Remove opening ```json
+    .replace(/^```\s*/i, '')      // Remove opening ```
+    .replace(/```\s*$/i, '')      // Remove closing ```
+    .trim()
 
   // Find first { and last }
   const start = cleaned.indexOf('{')
   const end = cleaned.lastIndexOf('}')
-  if (start === -1 || end === -1) throw new Error('No JSON object found in response')
+  if (start === -1 || end === -1) {
+    console.error('No JSON braces found. Raw response length:', raw.length)
+    console.error('First 500 chars:', raw.substring(0, 500))
+    throw new Error('No JSON object found in response')
+  }
 
   cleaned = cleaned.slice(start, end + 1)
-  return JSON.parse(cleaned)
+  
+  try {
+    return JSON.parse(cleaned)
+  } catch (e) {
+    // Try to fix common JSON issues
+    try {
+      // Remove trailing commas before ] or }
+      cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1')
+      // Remove unescaped newlines in strings (be careful)
+      cleaned = cleaned.replace(/:\s*"([^"]*)[\n\r]+([^"]*)"/g, ': "$1 $2"')
+      return JSON.parse(cleaned)
+    } catch {
+      // Log context around the error position
+      const match = (e as any)?.message?.match(/position (\d+)/)
+      if (match) {
+        const pos = parseInt(match[1], 10)
+        console.error(`JSON error at position ${pos}:`)
+        console.error('Context:', cleaned.substring(Math.max(0, pos - 50), pos + 50))
+      }
+      throw new Error(`Invalid JSON in AI response: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
 }
 
 export async function callAIJSON<T extends ZodSchema>(
@@ -29,7 +58,7 @@ export async function callAIJSON<T extends ZodSchema>(
   const message = await anthropic.messages.create({
     model: options.model ?? 'claude-sonnet-4-5',
     max_tokens: options.maxTokens ?? 1024,
-    system: 'You are a JSON API. Return ONLY a valid JSON object. No markdown, no backticks, no explanation. Start your response with { and end with }.',
+    system: 'You are a JSON API. Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no trailing commas. Start your response with { and end with }. Ensure all strings are properly escaped.',
     messages: [{ role: 'user', content: prompt }],
   })
 

@@ -333,24 +333,30 @@ export default function HomePage() {
       <section id="waitlist" style={{ padding:'100px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:800, height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
         <div className="reveal r1" style={{ maxWidth:540, margin:'0 auto', position:'relative', zIndex:1 }}>
-          <div style={{ display:'inline-block', background:'var(--amber-l)', border:'1px solid var(--amber-mid)', color:'var(--amber)', fontSize:10, fontWeight:700, padding:'5px 16px', borderRadius:99, marginBottom:22, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-            Launching soon · India & SEA
+          <div style={{ display:'inline-block', background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:10, fontWeight:700, padding:'5px 16px', borderRadius:99, marginBottom:22, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            Free forever · India & Southeast Asia
           </div>
           <h2 style={{ fontFamily:'var(--serif)', fontSize:'clamp(30px,5vw,52px)', fontWeight:600, color:'var(--ink)', marginBottom:14, letterSpacing:'-0.5px', lineHeight:1.1 }}>
-            Join the waitlist.<br/>Close your <em style={{ fontStyle:'italic', color:'var(--teal)' }}>gap</em> first.
+            Ready to close your <em style={{ fontStyle:'italic', color:'var(--teal)' }}>gap?</em>
           </h2>
           <p style={{ fontSize:15, color:'var(--muted)', fontWeight:300, marginBottom:36, lineHeight:1.7 }}>
-            Be among the first 500 users. Get early access, founding member pricing, and a 1-on-1 GrowPath session with our team.
+            Create your free account and get your personalised GrowPath — a month-by-month AI roadmap to your target salary.
           </p>
-          <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal)', color:'#fff', fontSize:15, fontWeight:600, padding:'14px 32px', borderRadius:99, textDecoration:'none', boxShadow:'0 4px 20px rgba(14,122,90,0.22)' }}>
-            Create free account →
-          </Link>
-          <p style={{ fontSize:11, color:'var(--muted-l)', marginTop:14 }}>No credit card. Free forever on basic plan.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal)', color:'#fff', fontSize:15, fontWeight:600, padding:'14px 32px', borderRadius:99, textDecoration:'none', boxShadow:'0 4px 20px rgba(14,122,90,0.22)' }}>
+              Create free account →
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <p style={{ fontSize:12, color:'var(--muted-l)' }}>No credit card. Free forever.</p>
+              <span style={{ color: 'var(--border)', fontSize: 12 }}>·</span>
+              <Link href="/login" style={{ fontSize:12, color:'var(--teal)', textDecoration:'none', fontWeight:500 }}>Already have an account? Log in →</Link>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+     <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.4)' }}>
           <div style={{ width:26, height:26, background:'linear-gradient(135deg,var(--teal),#1AA574)', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#fff' }}>EG</div>
           EarnGro
