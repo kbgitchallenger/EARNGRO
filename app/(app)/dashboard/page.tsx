@@ -232,20 +232,20 @@ export default async function DashboardPage() {
           <div className="dash-actions">
 
             {/* Primary action */}
-            <Link href="/interview" className="action-card" style={{ borderTop: '3px solid var(--teal)' }}>
-              <div className="action-ico">🎯</div>
-              <div className="action-body">
-                <div className="action-title">AI Interview Practice</div>
-                <div className="action-desc">Boost your HRS score with a mock interview session</div>
-              </div>
-              <div className="action-arrow">→</div>
-            </Link>
-
+            
             <Link href="/cv" className="action-card">
               <div className="action-ico">📄</div>
               <div className="action-body">
                 <div className="action-title">CV Builder & ATS Scorer</div>
                 <div className="action-desc">Score your CV against real job descriptions</div>
+              </div>
+              <div className="action-arrow">→</div>
+            </Link>
+            <Link href="/interview" className="action-card" style={{ borderTop: '3px solid var(--teal)' }}>
+              <div className="action-ico">🎯</div>
+              <div className="action-body">
+                <div className="action-title">AI Interview Practice</div>
+                <div className="action-desc">Boost your HRS score with a mock interview session</div>
               </div>
               <div className="action-arrow">→</div>
             </Link>
