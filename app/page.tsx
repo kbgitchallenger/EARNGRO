@@ -1,5 +1,3 @@
-//app/page.tsx
-
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import JourneyCard from '@/components/JourneyCard'
@@ -38,166 +36,137 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── HERO ── */}
-<section
-  style={{
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '108px 24px 64px',
-    position: 'relative',
-    zIndex: 1,
-    textAlign: 'center',
-    overflow: 'hidden',
-  }}
->
-  <div
-    style={{
-      position: 'absolute',
-      top: '-10%',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: 900,
-      height: 600,
-      background:
-        'radial-gradient(ellipse at center,rgba(14,122,90,0.07) 0%,rgba(232,146,42,0.04) 45%,transparent 70%)',
-      pointerEvents: 'none',
-    }}
-  />
-
-  <div
-    style={{
-      position: 'relative',
-      zIndex: 1,
-      maxWidth: 980,
-      width: '100%',
-      margin: '0 auto',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      textAlign: 'center',
-    }}
-  >
-    {/* eyebrow tag */}
-    <div
-      className="fade d1"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        background: 'var(--teal-l)',
-        border: '1px solid var(--teal-mid)',
-        color: 'var(--teal-d)',
-        fontSize: 12,
-        fontWeight: 600,
-        padding: '8px 18px',
-        borderRadius: 99,
-        marginBottom: 32,
-        letterSpacing: '0.05em',
-        textTransform: 'uppercase',
-      }}
-    >
-      <span
+      <section
         style={{
-          width: 7,
-          height: 7,
-          background: 'var(--teal)',
-          borderRadius: '50%',
-          animation: 'pulse 2.2s ease-in-out infinite',
-          display: 'inline-block',
-          flexShrink: 0,
-        }}
-      />
-
-      AI-powered career intelligence platform
-    </div>
-
-    {/* H1 */}
-    <h1
-      className="fade d2"
-      style={{
-        fontFamily: 'var(--serif)',
-        fontSize: 'clamp(36px,9vw,76px)',
-        fontWeight: 600,
-        lineHeight: 1.08,
-        letterSpacing: '-2px',
-        color: 'var(--ink)',
-        marginBottom: 28,
-        maxWidth: '1000px',
-        marginInline: 'auto',
-        textAlign: 'center',
-      }}
-    >
-      <span
-        style={{
-          display: 'block',
-          color: 'var(--muted-l)',
-          fontWeight: 400,
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '108px 24px 64px',
+          position: 'relative',
+          zIndex: 1,
+          textAlign: 'center',
+          overflow: 'hidden',   // contains the 900px glow blob
         }}
       >
-        Someone with your skills
-      </span>
+        {/* FIX 1 ─ glow blob uses fixed px width; clamp it so it can't scroll horizontally */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-10%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'min(900px, 200vw)',   // ← was: width: 900 (caused overflow on tiny screens)
+            height: 600,
+            background:
+              'radial-gradient(ellipse at center,rgba(14,122,90,0.07) 0%,rgba(232,146,42,0.04) 45%,transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
 
-      <span
-        style={{
-          display: 'block',
-        }}
-      >
-        is already earning
-      </span>
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            maxWidth: 980,
+            width: '100%',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+          }}
+        >
+          {/* eyebrow tag */}
+          <div
+            className="fade d1"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'var(--teal-l)',
+              border: '1px solid var(--teal-mid)',
+              color: 'var(--teal-d)',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '8px 18px',
+              borderRadius: 99,
+              marginBottom: 32,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                background: 'var(--teal)',
+                borderRadius: '50%',
+                animation: 'pulse 2.2s ease-in-out infinite',
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+            AI-powered career intelligence platform
+          </div>
 
-      <em
-        style={{
-          display: 'block',
-          fontStyle: 'italic',
-          color: 'var(--teal)',
-          whiteSpace: 'nowrap',
-          fontSize: '1.08em',
-        }}
-      >
-        2X more.
-      </em>
-    </h1>
+          {/* H1 */}
+          <h1
+            className="fade d2"
+            style={{
+              fontFamily: 'var(--serif)',
+              fontSize: 'clamp(36px,9vw,76px)',
+              fontWeight: 600,
+              lineHeight: 1.08,
+              letterSpacing: '-2px',
+              color: 'var(--ink)',
+              marginBottom: 28,
+              maxWidth: '1000px',
+              marginInline: 'auto',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ display: 'block', color: 'var(--muted-l)', fontWeight: 400 }}>
+              Someone with your skills
+            </span>
+            <span style={{ display: 'block' }}>is already earning</span>
+            <em style={{ display: 'block', fontStyle: 'italic', color: 'var(--teal)', whiteSpace: 'nowrap', fontSize: '1.08em' }}>
+              2X more.
+            </em>
+          </h1>
 
-    {/* sub */}
-    <p
-      className="fade d3"
-      style={{
-        fontSize: 'clamp(16px,2vw,19px)',
-        fontWeight: 300,
-        color: 'var(--muted)',
-        maxWidth: 'min(680px, 92vw)',
-        margin: '0 auto 44px',
-        lineHeight: 1.8,
-      }}
-    >
-      EarnGro reveals your hidden{' '}
-      <strong
-        style={{
-          color: 'var(--ink)',
-          fontWeight: 500,
-        }}
-      >
-        Earning Gap
-      </strong>{' '}
-      — then builds a personalized AI roadmap to increase your salary,
-      strengthen your career profile, and maximize your{' '}
-      <strong
-        style={{
-          color: 'var(--teal)',
-          fontWeight: 600,
-        }}
-      >
-        market value.
-      </strong>
-    </p>
+          {/* sub */}
+          <p
+            className="fade d3"
+            style={{
+              fontSize: 'clamp(16px,2vw,19px)',
+              fontWeight: 300,
+              color: 'var(--muted)',
+              maxWidth: 'min(680px, 92vw)',
+              margin: '0 auto 44px',
+              lineHeight: 1.8,
+            }}
+          >
+            EarnGro reveals your hidden{' '}
+            <strong style={{ color: 'var(--ink)', fontWeight: 500 }}>Earning Gap</strong>{' '}
+            — then builds a personalized AI roadmap to increase your salary, strengthen your
+            career profile, and maximize your{' '}
+            <strong style={{ color: 'var(--teal)', fontWeight: 600 }}>market value.</strong>
+          </p>
+
           {/* journey card */}
           <div className="fade d4"><JourneyCard /></div>
 
           {/* CTAs */}
-          <div className="fade d5" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, flexWrap:'wrap', marginBottom:52 }}>
-            <a href="#calculator" style={{ background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, padding:'14px 30px', borderRadius:99, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(14,122,90,0.22)', transition:'all 0.22s' }}>
+          <div
+            className="fade d5"
+            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, flexWrap:'wrap', marginBottom:52 }}
+          >
+            <a
+              href="#calculator"
+              style={{ background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, padding:'14px 30px', borderRadius:99, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(14,122,90,0.22)', transition:'all 0.22s' }}
+            >
               <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               Calculate my Earning Gap — free
             </a>
@@ -208,8 +177,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PROOF STRIP ── */}
-      <div style={{ background:'var(--ink)', padding:'13px 40px', display:'flex', alignItems:'center', justifyContent:'center', gap:32, flexWrap:'wrap', position:'relative', zIndex:1 }}>
+      {/* ── PROOF STRIP ──
+          FIX 2 ─ use className="proof" so CSS handles padding (no inline padding:40px on mobile) */}
+      <div className="proof" style={{ position:'relative', zIndex:1 }}>
         {[
           ['₹6.8L','average gap found'],
           ['14 months','average to close'],
@@ -217,15 +187,18 @@ export default function HomePage() {
           ['2,400+','gaps analysed in beta'],
           ['India & SEA','market data'],
         ].map(([v,l],i) => (
-          <div key={i} style={{ fontSize:12, color:'rgba(255,255,255,0.45)', display:'flex', alignItems:'center', gap:7 }}>
-            <strong style={{ color:'rgba(255,255,255,0.85)', fontWeight:600 }}>{v}</strong>{l}
+          <div key={i} className="proof-item">
+            <strong>{v}</strong>{l}
           </div>
         ))}
       </div>
 
-      {/* ── TICKER ── */}
-      <div style={{ background:'var(--teal-xl)', overflow:'hidden', borderTop:'1px solid var(--teal-mid)', borderBottom:'1px solid var(--teal-mid)', padding:'10px 0', position:'relative', zIndex:1 }}>
-        <div style={{ display:'flex', animation:'tick 30s linear infinite', width:'max-content' }}>
+      {/* ── TICKER ──
+          FIX 3 ─ animation name was 'tick' but keyframe is 'ticker' (or add @keyframes tick alias in CSS) */}
+      <div
+        style={{ background:'var(--teal-xl)', overflow:'hidden', borderTop:'1px solid var(--teal-mid)', borderBottom:'1px solid var(--teal-mid)', padding:'10px 0', position:'relative', zIndex:1 }}
+      >
+        <div style={{ display:'flex', animation:'ticker 30s linear infinite', width:'max-content' }}>
           {[...TICKER, ...TICKER].map((item,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:9, padding:'0 28px', fontSize:12, color:'var(--muted)', whiteSpace:'nowrap', borderRight:'1px solid var(--teal-mid)' }}>
               <span style={{ color:'var(--teal-d)', fontWeight:700, fontFamily:'var(--serif)', fontSize:14 }}>{item.amt}</span>
@@ -280,8 +253,10 @@ export default function HomePage() {
       </section>
 
       {/* ── CALCULATOR ── */}
-      <div id="calculator" style={{ background:'var(--paper-2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1 }}>
-        <div style={{ maxWidth:700, margin:'0 auto', padding:'88px 24px' }}>
+      <div id="calculator" style={{ background:'var(--paper-2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1, overflow:'hidden' }}>
+        {/* FIX 4 ─ same blob fix: clamp width so it doesn't escape the overflow:hidden */}
+        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ maxWidth:700, margin:'0 auto', padding:'88px 24px', position:'relative', zIndex:1 }}>
           <div className="reveal r1" style={{ textAlign:'center', marginBottom:40 }}>
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
               <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
@@ -331,7 +306,8 @@ export default function HomePage() {
 
       {/* ── WAITLIST → SIGNUP ── */}
       <section id="waitlist" style={{ padding:'100px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:800, height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
+        {/* FIX 5 ─ same blob fix */}
+        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
         <div className="reveal r1" style={{ maxWidth:540, margin:'0 auto', position:'relative', zIndex:1 }}>
           <div style={{ display:'inline-block', background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:10, fontWeight:700, padding:'5px 16px', borderRadius:99, marginBottom:22, letterSpacing:'0.08em', textTransform:'uppercase' }}>
             Free forever · India & Southeast Asia
@@ -342,13 +318,13 @@ export default function HomePage() {
           <p style={{ fontSize:15, color:'var(--muted)', fontWeight:300, marginBottom:36, lineHeight:1.7 }}>
             Create your free account and get your personalised GrowPath — a month-by-month AI roadmap to your target salary.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal)', color:'#fff', fontSize:15, fontWeight:600, padding:'14px 32px', borderRadius:99, textDecoration:'none', boxShadow:'0 4px 20px rgba(14,122,90,0.22)' }}>
               Create free account →
             </Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap', justifyContent:'center' }}>
               <p style={{ fontSize:12, color:'var(--muted-l)' }}>No credit card. Free forever.</p>
-              <span style={{ color: 'var(--border)', fontSize: 12 }}>·</span>
+              <span style={{ color:'var(--border)', fontSize:12 }}>·</span>
               <Link href="/login" style={{ fontSize:12, color:'var(--teal)', textDecoration:'none', fontWeight:500 }}>Already have an account? Log in →</Link>
             </div>
           </div>
@@ -356,7 +332,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
-     <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+      <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.4)' }}>
           <div style={{ width:26, height:26, background:'linear-gradient(135deg,var(--teal),#1AA574)', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#fff' }}>EG</div>
           EarnGro
