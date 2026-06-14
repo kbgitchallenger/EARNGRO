@@ -16,7 +16,8 @@ export default function Navbar() {
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 48px',
+      // FIX: was '0 48px' — 48px side padding on a 375px phone leaves no room
+      padding: '0 clamp(16px, 4vw, 48px)',
       height: 60,
       background: scrolled ? 'rgba(253,252,248,0.97)' : 'rgba(253,252,248,0.92)',
       backdropFilter: 'blur(16px)',
@@ -39,17 +40,20 @@ export default function Navbar() {
         </span>
       </Link>
 
-      {/* Desktop links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="nav-hide-mobile">
-        <Link href="/#how-it-works" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400 }}>How it works</Link>
-        <Link href="/#calculator" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400 }}>Free calculator</Link>
-        <Link href="/login" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 500 }}>Log in</Link>
+      {/* Desktop links — FIX: was nav-hide-mobile (hid at 640px only).
+          Now uses nav-links-desktop which hides at 780px via updated globals.css */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="nav-links-desktop">
+        <Link href="/#how-it-works" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400, whiteSpace: 'nowrap' }}>How it works</Link>
+        <Link href="/#calculator"   style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400, whiteSpace: 'nowrap' }}>Free calculator</Link>
+        <Link href="/login"         style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>Log in</Link>
       </div>
 
       {/* CTA */}
       <Link href="/signup" style={{
         background: 'var(--teal)', color: '#fff',
-        fontSize: 13, fontWeight: 600, padding: '9px 20px',
+        fontSize: 13, fontWeight: 600,
+        // FIX: tighter padding on mobile so it doesn't crowd the logo
+        padding: 'clamp(7px, 1.5vw, 9px) clamp(14px, 3vw, 20px)',
         borderRadius: 99, textDecoration: 'none',
         boxShadow: '0 2px 8px rgba(14,122,90,0.2)',
         whiteSpace: 'nowrap', flexShrink: 0,
