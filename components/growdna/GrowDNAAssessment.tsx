@@ -10,7 +10,36 @@ import {
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {
   userId: string
-  existingResult: { id: string; career_archetype: string; earning_gap: number; hrs_score: number; created_at: string } | null
+  existingResult: {
+    id: string
+    career_archetype: string
+    earning_gap: number
+    hrs_score: number
+    created_at: string
+    target_salary?: number | null
+    months_to_close?: number | null
+    current_salary?: number | null
+    salary_range_min?: number | null
+    salary_range_max?: number | null
+    dimension_scores?: {
+      market_alignment?: number
+      skill_premium?: number
+      visibility?: number
+      mobility?: number
+      negotiation?: number
+    } | null
+    raw_ai_response?: {
+      archetype_desc?: string
+      market_insight?: string
+      peer_comparison?: string
+      top_strengths?: string[]
+      immediate_actions?: { action: string; impact: string; timeline: string }[]
+    } | null
+    gap_reasons?: string[] | null
+    close_actions?: { action: string; impact: string; timeline: string }[] | string[] | null
+    role?: string | null
+    city?: string | null
+  } | null
 }
 
 interface AIResult {
@@ -381,22 +410,41 @@ export default function GrowDNAAssessment({ userId, existingResult }: Props) {
 
   // ── Existing result screen → full ResultPanel ─────────────────
   if (showExisting && existingResult) {
-    const mapped: AIResult = {
-      id:                   existingResult.id,
-      career_archetype:     existingResult.career_archetype,
-      archetype_desc:       '',
-      earning_gap_estimate: existingResult.earning_gap ?? 0,
-      target_salary:        0,
-      months_to_close:      0,
-      top_strengths:        [],
-      critical_gaps:        [],
-      immediate_actions:    [],
-      market_insight:       '',
-      salary_range_min:     0,
-      salary_range_max:     0,
-      peer_comparison:      `Last assessed ${new Date(existingResult.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-      scores: { market_alignment: 0, skill_premium: 0, visibility: 0, mobility: 0, negotiation: 0, hrs: existingResult.hrs_score ?? 0 },
-    }
+    const ai = existingResult.raw_ai_response ?? {}
+const ds = existingResult.dimension_scores ?? {}
+
+// Normalise close_actions — can be string[] or object[]
+const rawActions = existingResult.close_actions ?? []
+const normActions: { action: string; impact: string; timeline: string }[] = rawActions.map(a =>
+  typeof a === 'string'
+    ? { action: a, impact: '', timeline: '' }
+    : a as { action: string; impact: string; timeline: string }
+)
+
+const mapped: AIResult = {
+  id:                   existingResult.id,
+  career_archetype:     existingResult.career_archetype ?? 'The Growth Professional',
+  archetype_desc:       ai.archetype_desc ?? '',
+  earning_gap_estimate: existingResult.earning_gap ?? 0,
+  target_salary:        existingResult.target_salary ?? 0,
+  months_to_close:      existingResult.months_to_close ?? 0,
+  top_strengths:        ai.top_strengths ?? [],
+  critical_gaps:        existingResult.gap_reasons ?? [],
+  immediate_actions:    ai.immediate_actions ?? normActions,
+  market_insight:       ai.market_insight ?? '',
+  salary_range_min:     existingResult.salary_range_min ?? 0,
+  salary_range_max:     existingResult.salary_range_max ?? 0,
+  peer_comparison:      ai.peer_comparison
+    ?? `Last assessed ${new Date(existingResult.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+  scores: {
+    market_alignment: ds.market_alignment ?? 0,
+    skill_premium:    ds.skill_premium    ?? 0,
+    visibility:       ds.visibility       ?? 0,
+    mobility:         ds.mobility         ?? 0,
+    negotiation:      ds.negotiation      ?? 0,
+    hrs:              existingResult.hrs_score ?? 0,
+  },
+}
     return (
       <div style={{ padding: '24px 24px 0' }}>
         <ResultPanel result={mapped} onRetake={() => setShowExisting(false)} />

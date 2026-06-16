@@ -12,14 +12,20 @@ export default async function GrowDNAPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Check if already completed
   const { data: existing } = await supabase
     .from('grow_dna')
-    .select('id, career_archetype, earning_gap, hrs_score, created_at')
+    .select(`
+      id, career_archetype, earning_gap, hrs_score, created_at,
+      target_salary, months_to_close, current_salary,
+      dimension_scores, raw_ai_response,
+      role, city, industry, experience,
+      gap_reasons, close_actions,
+      salary_range_min, salary_range_max
+    `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   return (
     <GrowDNAAssessment
