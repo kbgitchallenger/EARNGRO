@@ -30,7 +30,7 @@ export const ATSResultSchema = z.object({
   market_alignment:    z.number().min(0).max(100),
   hiring_probability:  z.number().min(0).max(100),
   keyword_matches:     z.array(KeywordMatchSchema).max(20),
-  keyword_gaps:        z.array(z.string()).max(10),
+  keyword_gaps: z.array(z.string()),
   section_scores:      SectionScoresSchema,
   strengths:           z.array(z.string()).max(10),
   critical_issues:     z.array(z.string()).max(10),

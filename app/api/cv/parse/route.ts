@@ -32,7 +32,11 @@ export async function POST(request: Request) {
     )
 
     // Fire-and-forget ATS analysis after successful parse
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cv/analyze`, {
+    
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL 
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+      fetch(`${appUrl}/api/cv/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ versionId }),
