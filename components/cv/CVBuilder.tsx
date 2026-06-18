@@ -9,10 +9,8 @@ const EMPTY: ParsedResume = {
   name: '', email: '', phone: '', location: '', summary: '',
   experience: [], education: [], skills: [], certifications: [],
   total_experience_years: 0,
-  seniority_level: 'junior',   // ← add
-  primary_role: '',              // ← add
-  languages: [],                 // ← add
-  industry_signals: [],          // ← add
+  languages: [],
+  industry_signals: []
 }
 
 const inp: React.CSSProperties = {
@@ -81,6 +79,50 @@ export default function CVBuilder({ initialData }: { initialData?: ParsedResume 
     set('education', (data.education ?? []).filter((_, j) => j !== i))
   }
 
+  function exportPDF() {
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) return
+
+  const previewEl = document.getElementById('cv-preview-print')
+  if (!previewEl) return
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${data.name || 'Resume'} — EarnGro</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Georgia, serif; font-size: 12px; color: #1a1a1a; padding: 32px 40px; line-height: 1.5; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; font-family: Arial, sans-serif; }
+        .contact { font-size: 11px; color: #555; margin-bottom: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+        .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #0e7a5a; border-bottom: 1px solid #0e7a5a; padding-bottom: 3px; margin: 14px 0 8px; }
+        .exp-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .exp-role { font-weight: 700; font-size: 13px; font-family: Arial, sans-serif; }
+        .exp-company { color: #555; font-size: 12px; }
+        .exp-date { font-size: 11px; color: #888; font-family: Arial, sans-serif; }
+        ul { padding-left: 16px; margin: 4px 0; }
+        li { margin-bottom: 2px; font-size: 11px; }
+        .skills-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+        .skill-chip { background: #f0faf5; border: 1px solid #c8e9db; color: #095c43; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-family: Arial, sans-serif; }
+        .edu-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .cert-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 11px; }
+        @media print { body { padding: 20px 24px; } }
+      </style>
+    </head>
+    <body>
+      ${previewEl.innerHTML}
+    </body>
+    </html>
+  `)
+  printWindow.document.close()
+  printWindow.focus()
+  setTimeout(() => {
+    printWindow.print()
+    printWindow.close()
+  }, 400)
+}
+
   async function save() {
     setSaving(true)
     try {
@@ -119,7 +161,7 @@ export default function CVBuilder({ initialData }: { initialData?: ParsedResume 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Resume name" style={{ ...inp, width: 160 }} />
           <button
-            onClick={() => window.print()}
+            onClick={exportPDF}
             style={{ background: 'var(--paper)', color: 'var(--ink)', border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)', padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -184,9 +226,15 @@ export default function CVBuilder({ initialData }: { initialData?: ParsedResume 
                   </div>
                   <label style={lbl}>Achievements / Bullets</label>
                   {(exp.bullets ?? []).map((b, bi) => (
-                    <div key={bi} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                      <input style={{ ...inp, flex: 1 }} value={b} onChange={e => setBullet(i, bi, e.target.value)} placeholder="Achieved X by doing Y resulting in Z" />
-                      <button onClick={() => removeBullet(i, bi)} style={{ padding: '0 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, color: 'var(--red)', cursor: 'pointer', fontSize: 14 }}>×</button>
+                    <div key={bi} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'flex-start' }}>
+                      <textarea
+                        style={{ ...inp, flex: 1, minHeight: 48, resize: 'vertical', lineHeight: 1.5 }}
+                        value={b}
+                        onChange={e => setBullet(i, bi, e.target.value)}
+                        placeholder="Achieved X by doing Y resulting in Z"
+                        rows={2}
+                      />
+                      <button onClick={() => removeBullet(i, bi)} style={{ padding: '8px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, color: 'var(--red)', cursor: 'pointer', fontSize: 14, flexShrink: 0, marginTop: 2 }}>×</button>
                     </div>
                   ))}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>

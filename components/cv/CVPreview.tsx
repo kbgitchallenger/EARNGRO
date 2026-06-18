@@ -5,7 +5,7 @@ import type { ParsedResume } from '@/lib/ai/validators/resume.validator'
 export default function CVPreview({ data }: { data: ParsedResume }) {
   return (
     <>
-      <div id="cv-print-area" style={{
+      <div id="cv-preview-print" style={{
         background: '#fff',
         border: '1px solid var(--border)',
         borderRadius: 'var(--r-lg)',
