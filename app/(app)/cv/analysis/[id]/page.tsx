@@ -51,7 +51,7 @@ export default async function CVAnalysisPage({
   const hasAnalysis = !!analysis
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 80px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
 
       {/* Header */}
       <div style={{ padding: '20px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>

@@ -100,17 +100,21 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         )}
       </div>
 
-      {/* Section scores */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Section breakdown</div>
-        {Object.entries(data.section_scores ?? {}).map(([k, v]) => (
-          <Bar key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={v as number} color={scoreColor(v as number)} />
-        ))}
-      </div>
+            {/* Section scores + Keywords — 2 column on desktop */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 14 }} className="ats-2col">
+
+        {/* Section scores */}
+        <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Section breakdown</div>
+          {Object.entries(data.section_scores ?? {}).map(([k, v]) => (
+            <Bar key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={v as number} color={scoreColor(v as number)} />
+          ))}
+        </div>
 
       {/* Keywords */}
-      {data.keyword_matches?.length > 0 && (
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+      {/* Keywords */}
+        {data.keyword_matches?.length > 0 && (
+          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>
             Keywords — {found.length}/{data.keyword_matches.length} found
           </div>
@@ -131,7 +135,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           )}
         </div>
       )}
-
+        </div>
       {/* Strengths + Issues */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 18 }}>
@@ -165,6 +169,13 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           ))}
         </div>
       )}
+      <style>{`
+        @media (max-width: 860px) {
+          .ats-2col {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

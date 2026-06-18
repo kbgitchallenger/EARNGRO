@@ -1,3 +1,4 @@
+//app/(app)/cv/upload/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CVUploadZone from '@/components/cv/CVUploadZone'
@@ -23,7 +24,7 @@ export default async function CVUploadPage() {
   const hasVersions = versions && versions.length > 0
 
   return (
-    <div>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       {/* Previous versions hint */}
       {hasVersions && (
         <div style={{

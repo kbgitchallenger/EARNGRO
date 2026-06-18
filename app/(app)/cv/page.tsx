@@ -1,3 +1,4 @@
+//app/(app)/cv/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CVUploadZone from '@/components/cv/CVUploadZone'
@@ -21,7 +22,7 @@ export default async function CVUploadPage() {
   const parsedLatest = latest?.parsed_data as { name?: string; total_experience_years?: number; skills?: string[] } | null
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
       {/* Hero — if resume exists show intelligence summary */}
       {latest ? (
