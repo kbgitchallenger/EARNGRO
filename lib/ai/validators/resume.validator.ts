@@ -40,8 +40,12 @@ export const ParsedResumeSchema = z.object({
   certifications:         z.array(CertificationSchema).optional().default([]),
   languages:              z.array(z.string()).optional().default([]),
   total_experience_years: z.number().min(0),
-  seniority_level:        z.enum(['fresher', 'junior', 'mid', 'senior', 'leadership']),
-  primary_role:           z.string(),
+  // NOTE: made optional — RESUME_NORMALIZE_PROMPT does not ask the AI for these,
+  // so requiring them caused every single parse to fail Zod validation.
+  // resume.service.ts already has fallback logic for both (calculateSeniorityLevel,
+  // and experience[0].role ?? 'Professional'), so optional is safe here.
+  seniority_level:        z.enum(['fresher', 'junior', 'mid', 'senior', 'leadership']).optional(),
+  primary_role:           z.string().optional(),
   industry_signals:       z.array(z.string()).optional().default([]),
 })
 

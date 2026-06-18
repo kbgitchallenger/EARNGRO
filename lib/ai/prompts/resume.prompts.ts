@@ -14,6 +14,8 @@ Return exactly this JSON structure:
   "phone": "string or omit if not found",
   "location": "string — city/country or omit",
   "summary": "string — professional summary or omit",
+  "primary_role": "string — the candidate's main/most recent job title or professional identity",
+  "seniority_level": "one of: fresher, junior, mid, senior, leadership",
   "experience": [
     {
       "company": "string",
@@ -43,11 +45,14 @@ Return exactly this JSON structure:
 }
 
 Rules:
+- seniority_level MUST be exactly one of these five strings: "fresher", "junior", "mid", "senior", "leadership" — no other values, no capitalization changes, no synonyms
+- seniority_level guide: 0 years = fresher, 1-3 years = junior, 3-7 years = mid, 7-15 years = senior, 15+ years or people-management scope = leadership
+- primary_role is required — infer it from the most recent/relevant experience entry if not explicitly stated as a title
 - Extract ALL experience entries, even short ones
 - Preserve bullet points as individual array items
 - total_experience_years should be a realistic number based on dates
 - certifications is an array of objects, never strings
-- If a field is not found, omit it entirely rather than returning null
+- If a field is not found, omit it entirely rather than returning null (primary_role and seniority_level are the only fields that must always be present)
 `
 
 export const MARKET_POSITIONING_PROMPT = (

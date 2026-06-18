@@ -58,13 +58,19 @@ export class ResumeService {
       throw err
     }
 
+    // Persist raw_text immediately — extraction succeeded even if normalization
+    // later fails, and the user shouldn't lose their extracted text to a
+    // downstream AI/schema issue. parsed_data is added once normalization succeeds.
+    await resumeRepository.update(versionId, {
+      raw_text: result.raw_text,
+    })
+
     await resumeRepository.updateParseJob(jobId, {
       status: 'normalizing',
       parse_method: result.parse_method,
     })
 
     await resumeRepository.update(versionId, {
-      raw_text: result.raw_text,
       parsed_data: result.parsed_data,
     })
 
@@ -95,7 +101,7 @@ export class ResumeService {
               parsed.experience?.[0]?.role ??
               'Professional',
 
-            seniority_level: parsed.seniority_level ??
+            seniority_level: this.normalizeSeniorityLevel(parsed.seniority_level) ??
               this.calculateSeniorityLevel(parsed),
 
             total_experience_years: parsed.total_experience_years,
@@ -143,12 +149,24 @@ export class ResumeService {
     }
   }
 
-  private calculateSeniorityLevel(parsed: ParsedResume): string {
+  private normalizeSeniorityLevel(
+    level: string | undefined
+  ): 'fresher' | 'junior' | 'mid' | 'senior' | 'leadership' | undefined {
+    const validLevels = ['fresher', 'junior', 'mid', 'senior', 'leadership'] as const
+    return validLevels.includes(level as any)
+      ? (level as 'fresher' | 'junior' | 'mid' | 'senior' | 'leadership')
+      : undefined
+  }
+
+  private calculateSeniorityLevel(
+    parsed: ParsedResume
+  ): 'fresher' | 'junior' | 'mid' | 'senior' | 'leadership' {
     const years = parsed.total_experience_years
-    if (years >= 15) return 'senior'
-    if (years >= 7) return 'mid'
-    if (years >= 3) return 'junior'
-    return 'entry'
+    if (years >= 15) return 'leadership'
+    if (years >= 7) return 'senior'
+    if (years >= 3) return 'mid'
+    if (years >= 1) return 'junior'
+    return 'fresher'
   }
 
   async saveBuilderVersion(
