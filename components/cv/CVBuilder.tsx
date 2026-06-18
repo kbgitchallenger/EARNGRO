@@ -116,13 +116,23 @@ export default function CVBuilder({ initialData }: { initialData?: ParsedResume 
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Resume name" style={{ ...inp, width: 180 }} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Resume name" style={{ ...inp, width: 160 }} />
+          <button
+            onClick={() => window.print()}
+            style={{ background: 'var(--paper)', color: 'var(--ink)', border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)', padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Save PDF
+          </button>
           <button onClick={save} disabled={saving} style={{ background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', padding: '9px 22px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>
             {saving ? 'Saving…' : '💾 Save & Analyse'}
           </button>
         </div>
       </div>
+      
 
       {/* Two-column layout on desktop */}
       <div style={{ display: 'grid', gridTemplateColumns: activeTab === 'preview' ? '1fr' : 'repeat(auto-fit,minmax(320px,1fr))', gap: 16 }}>
