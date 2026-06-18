@@ -265,7 +265,7 @@ export default function GapPage({ attempts, userId }: Props) {
   ] as const
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 0 80px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
 
       {/* ── HERO ── */}
       <div ref={heroRef} style={{ padding: '28px 20px 0' }}>
@@ -408,9 +408,10 @@ export default function GapPage({ attempts, userId }: Props) {
 
         {/* ── OVERVIEW TAB ── */}
         {activeTab === 'overview' && (
-          <div>
-            {/* Radar chart */}
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 14, alignItems: 'start' }} className="gap-overview-grid">
+
+            {/* LEFT COLUMN — Radar chart */}
+            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px' }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>5 Earning Dimensions</div>
               <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>
                 {prev ? 'Solid line = latest · Dashed = previous assessment' : 'Your current profile across 5 key earning factors'}
@@ -449,48 +450,53 @@ export default function GapPage({ attempts, userId }: Props) {
               </div>
             </div>
 
-            {/* Salary range band */}
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Market Salary Range — Your Profile</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ textAlign: 'center', minWidth: 52 }}>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3 }}>25th %ile</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{fmt(latest.salary_range_min)}</div>
+            {/* RIGHT COLUMN — Salary range + strengths */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Salary range band */}
+              <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Market Salary Range — Your Profile</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ textAlign: 'center', minWidth: 52 }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3 }}>25th %ile</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{fmt(latest.salary_range_min)}</div>
+                  </div>
+                  <div style={{ flex: 1, position: 'relative', height: 20 }}>
+                    <div style={{ position: 'absolute', inset: '50% 0', transform: 'translateY(-50%)', height: 8, background: 'linear-gradient(90deg,var(--amber-mid),var(--teal))', borderRadius: 99 }} />
+                    {(() => {
+                      const pct = Math.min(95, Math.max(5, ((latest.current_salary - latest.salary_range_min) / (latest.salary_range_max - latest.salary_range_min)) * 100))
+                      return (
+                        <div style={{ position: 'absolute', top: '50%', left: `${pct}%`, transform: 'translate(-50%,-50%)', width: 16, height: 16, background: 'white', border: '2.5px solid var(--teal-d)', borderRadius: '50%' }}>
+                          <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', fontSize: 9, color: 'var(--teal-d)', fontWeight: 700, whiteSpace: 'nowrap' }}>You</div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  <div style={{ textAlign: 'center', minWidth: 52 }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3 }}>90th %ile</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{fmt(latest.salary_range_max)}</div>
+                  </div>
                 </div>
-                <div style={{ flex: 1, position: 'relative', height: 20 }}>
-                  <div style={{ position: 'absolute', inset: '50% 0', transform: 'translateY(-50%)', height: 8, background: 'linear-gradient(90deg,var(--amber-mid),var(--teal))', borderRadius: 99 }} />
-                  {/* Current salary marker */}
-                  {(() => {
-                    const pct = Math.min(95, Math.max(5, ((latest.current_salary - latest.salary_range_min) / (latest.salary_range_max - latest.salary_range_min)) * 100))
-                    return (
-                      <div style={{ position: 'absolute', top: '50%', left: `${pct}%`, transform: 'translate(-50%,-50%)', width: 16, height: 16, background: 'white', border: '2.5px solid var(--teal-d)', borderRadius: '50%' }}>
-                        <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', fontSize: 9, color: 'var(--teal-d)', fontWeight: 700, whiteSpace: 'nowrap' }}>You</div>
-                      </div>
-                    )
-                  })()}
-                </div>
-                <div style={{ textAlign: 'center', minWidth: 52 }}>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3 }}>90th %ile</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{fmt(latest.salary_range_max)}</div>
+                <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>
+                  Current: <strong style={{ color: 'var(--ink)' }}>{fmt(latest.current_salary)}</strong> · Target: <strong style={{ color: 'var(--teal)' }}>{fmt(latest.target_salary)}</strong>
                 </div>
               </div>
-              <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>
-                Current: <strong style={{ color: 'var(--ink)' }}>{fmt(latest.current_salary)}</strong> · Target: <strong style={{ color: 'var(--teal)' }}>{fmt(latest.target_salary)}</strong>
-              </div>
+
+              {/* Top strengths */}
+              {latest.raw_ai_response?.top_strengths && (
+                <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: '20px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-d)', marginBottom: 14 }}>✅ Your top strengths</div>
+                  {latest.raw_ai_response.top_strengths.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < latest.raw_ai_response.top_strengths!.length - 1 ? '1px solid var(--teal-mid)' : 'none' }}>
+                      <div style={{ width: 22, height: 22, minWidth: 22, borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginTop: 1 }}>{i + 1}</div>
+                      <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55 }}>{s}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
             </div>
 
-            {/* Top strengths */}
-            {latest.raw_ai_response?.top_strengths && (
-              <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-d)', marginBottom: 14 }}>✅ Your top strengths</div>
-                {latest.raw_ai_response.top_strengths.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < 2 ? '1px solid var(--teal-mid)' : 'none' }}>
-                    <div style={{ width: 22, height: 22, minWidth: 22, borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginTop: 1 }}>{i + 1}</div>
-                    <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55 }}>{s}</div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -705,6 +711,11 @@ export default function GapPage({ attempts, userId }: Props) {
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+        @media (max-width: 860px) {
+          .gap-overview-grid {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </div>
