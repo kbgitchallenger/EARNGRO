@@ -1,6 +1,7 @@
 // app/api/growdna/route.ts
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { deductCredits, hasUsedFeature } from '@/services/credits.service'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
   high_skill_low_market:  { name: 'The Hidden Gem',          desc: 'Strong skills, underexposed to market. One strategic move changes everything.' },
@@ -19,37 +20,63 @@ function detectArchetype(answers: Record<string, unknown>, scores: Record<string
   if (seniority === 'fresher' || seniority === 'junior') {
     return scores.skill_premium > 60 ? 'fresher_high' : 'fresher_low'
   }
-
   if (answers.promotion_velocity === 'stuck') return 'tenure_trap'
-
   if (
     answers.negotiation_history === 'never' ||
     answers.negotiation_history === 'joining_only'
   ) {
     if (scores.skill_premium > 60) return 'low_negotiation'
   }
-
   if (answers.promotion_velocity === 'switched') return 'career_switcher'
-
-  if (scores.skill_premium > 70 && scores.visibility < 40) {
-    return 'high_skill_low_market'
-  }
-
+  if (scores.skill_premium > 70 && scores.visibility < 40) return 'high_skill_low_market'
   if (scores.hrs > 700) return 'high_all'
-
   return 'default'
 }
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // ── FREE TIER GATE — 1 free GrowDNA, then paid only ─────────
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+
+    const plan = profile?.plan ?? 'free'
+
+    if (plan === 'free') {
+      const alreadyUsed = await hasUsedFeature(user.id, 'growdna')
+      if (alreadyUsed) {
+        return Response.json(
+          {
+            error: 'FREE_LIMIT_REACHED',
+            message: "You've used your free GrowDNA assessment. Upgrade to Grow for unlimited retakes.",
+          },
+          { status: 402 }
+        )
+      }
+    }
+
+    // ── CREDIT CHECK — deduct before calling Claude ─────────────
+    const credit = await deductCredits(user.id, 'growdna')
+
+    if (!credit.allowed) {
+      return Response.json(
+        {
+          error: 'INSUFFICIENT_CREDITS',
+          message: "You've used your free GrowDNA assessment. Upgrade to Grow for unlimited retakes.",
+          balance: credit.balance,
+          required: credit.cost,
+        },
+        { status: 402 }
+      )
     }
 
     const { answers, scores } = await req.json()
@@ -57,7 +84,6 @@ export async function POST(req: Request) {
     const archetypeKey = detectArchetype(answers, scores)
     const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.default
 
-    // ── AI prompt — returns the exact shape the frontend needs ──
     const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2026–2027.
 
 Analyse this career profile from a GrowDNA assessment and return ONLY raw JSON — no markdown, no backticks.
@@ -111,23 +137,15 @@ Rules:
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      messages: [{ role: 'user', content: prompt }],
     })
 
     const textBlock = message.content.find((b) => b.type === 'text')
-
     if (!textBlock || textBlock.type !== 'text') {
       throw new Error('No AI response')
     }
 
-    const aiResult = JSON.parse(
-      textBlock.text.replace(/```json|```/g, '').trim()
-    )
+    const aiResult = JSON.parse(textBlock.text.replace(/```json|```/g, '').trim())
 
     // ── Save to Supabase ────────────────────────────────────────
     const { data: saved, error: saveError } = await supabase
@@ -141,9 +159,7 @@ Rules:
         current_salary: Number(answers.current_ctc),
         education: answers.education_tier || answers.seniority,
         company_type: answers.employer_trajectory || 'not specified',
-        skills: Array.isArray(answers.premium_skills)
-          ? answers.premium_skills
-          : [],
+        skills: Array.isArray(answers.premium_skills) ? answers.premium_skills : [],
         career_archetype: archetype.name,
         earning_gap: aiResult.earning_gap_estimate,
         target_salary: aiResult.target_salary,
@@ -154,7 +170,6 @@ Rules:
         salary_range_min: aiResult.salary_range_min,
         salary_range_max: aiResult.salary_range_max,
         raw_ai_response: aiResult,
-
         dimension_scores: {
           market_alignment: scores.market_alignment,
           skill_premium: scores.skill_premium,
@@ -168,31 +183,22 @@ Rules:
 
     if (saveError) {
       console.error('Supabase save error:', saveError)
-      // Don't block the user — log and continue
     }
 
-    // ── Return full AIResult shape the frontend expects ─────────
     return Response.json({
       assessment_id: saved?.id ?? user.id,
-
       career_archetype: archetype.name,
       archetype_desc: archetype.desc,
-
       earning_gap_estimate: aiResult.earning_gap_estimate,
       target_salary: aiResult.target_salary,
-
       salary_range_min: aiResult.salary_range_min,
       salary_range_max: aiResult.salary_range_max,
-
       months_to_close: aiResult.months_to_close,
-
       peer_comparison: aiResult.peer_comparison,
       market_insight: aiResult.market_insight,
-
       top_strengths: aiResult.top_strengths ?? [],
       critical_gaps: aiResult.critical_gaps ?? [],
       immediate_actions: aiResult.immediate_actions ?? [],
-
       scores: {
         market_alignment: scores.market_alignment,
         skill_premium: scores.skill_premium,
@@ -201,13 +207,10 @@ Rules:
         negotiation: scores.negotiation,
         hrs: scores.hrs,
       },
+      credits_remaining: credit.balance,
     })
   } catch (err) {
     console.error('GrowDNA API error:', err)
-
-    return Response.json(
-      { error: 'Analysis failed' },
-      { status: 500 }
-    )
+    return Response.json({ error: 'Analysis failed' }, { status: 500 })
   }
 }

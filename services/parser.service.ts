@@ -9,7 +9,9 @@ import type { ParseResult } from '@/types/resume.types'
 export class ParserService {
 
   async parse(fileUrl: string, mimeType: string): Promise<ParseResult> {
+    const t0 = Date.now()
     const buffer = await this.fetchBuffer(fileUrl)
+    console.log(`⏱ Fetch buffer: ${Date.now() - t0}ms, size: ${buffer.length} bytes`)
 
     let rawText = ''
     let parseMethod: 'pdf' | 'docx' | 'ocr'
@@ -18,19 +20,27 @@ export class ParserService {
     const isDOCX = mimeType.includes('wordprocessingml') || fileUrl.toLowerCase().includes('.docx')
 
     if (isPDF) {
+      const t1 = Date.now()
       try {
         rawText = await parsePDF(buffer)
         parseMethod = 'pdf'
-      } catch {
+        console.log(`⏱ pdf-parse SUCCESS: ${Date.now() - t1}ms, chars: ${rawText.length}`)
+      } catch (pdfErr) {
+        console.log(`⏱ pdf-parse FAILED at ${Date.now() - t1}ms:`, pdfErr instanceof Error ? pdfErr.message : pdfErr)
+        const t2 = Date.now()
         try {
           rawText = await ocrFallback(buffer)
           parseMethod = 'ocr'
-        } catch {
+          console.log(`⏱ OCR fallback SUCCESS: ${Date.now() - t2}ms, chars: ${rawText.length}`)
+        } catch (ocrErr) {
+          console.log(`⏱ OCR fallback FAILED at ${Date.now() - t2}ms:`, ocrErr instanceof Error ? ocrErr.message : ocrErr)
           throw new Error('Could not extract text from this PDF. Please ensure it is not scanned or password-protected.')
         }
       }
     } else if (isDOCX) {
+      const t1 = Date.now()
       const extracted = await parseDOCX(buffer)
+      console.log(`⏱ DOCX parse: ${Date.now() - t1}ms`)
       if (!extracted) throw new Error('Could not extract text from DOCX file.')
       rawText = extracted
       parseMethod = 'docx'
@@ -42,7 +52,10 @@ export class ParserService {
       throw new Error('Resume appears empty or unreadable.')
     }
 
+    const t3 = Date.now()
     const parsedData = await this.normalize(rawText)
+    console.log(`⏱ AI normalize: ${Date.now() - t3}ms`)
+    console.log(`⏱ TOTAL pipeline: ${Date.now() - t0}ms`)
 
     return {
       raw_text: rawText,

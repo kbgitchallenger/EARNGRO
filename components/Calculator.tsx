@@ -76,25 +76,33 @@ export default function Calculator() {
     requestAnimationFrame(tick)
   }
 
-  async function run() {
-    if (!validate()) return
-    setState('loading'); setStep(0)
-    for (let i = 0; i < 4; i++) setTimeout(() => setStep(i), i * 950)
-    try {
-      const res = await fetch('/api/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, salary: parseFloat(f.salary) }),
-      })
-      if (!res.ok) throw new Error('API ' + res.status)
-      const data: Result = await res.json()
-      setResult(data); setState('result')
-      setTimeout(() => { if (gapEl.current) countUp(gapEl.current, fmt(data.gap_amount)) }, 300)
-    } catch (e) {
+ async function run() {
+  if (!validate()) return
+  setState('loading'); setStep(0)
+  for (let i = 0; i < 4; i++) setTimeout(() => setStep(i), i * 950)
+  try {
+    const res = await fetch('/api/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...f, salary: parseFloat(f.salary) }),
+    })
+
+    if (res.status === 429) {
+      const data = await res.json()
       setState('form')
-      setError('Analysis failed. Please check your connection and try again.')
+      setError(data.message ?? "You've reached today's free limit — create an account for unlimited access.")
+      return
     }
+
+    if (!res.ok) throw new Error('API ' + res.status)
+    const data: Result = await res.json()
+    setResult(data); setState('result')
+    setTimeout(() => { if (gapEl.current) countUp(gapEl.current, fmt(data.gap_amount)) }, 300)
+  } catch (e) {
+    setState('form')
+    setError('Analysis failed. Please check your connection and try again.')
   }
+}
 
   function share() {
     if (!result) return
@@ -169,8 +177,18 @@ export default function Calculator() {
             <input type="text" style={inp} placeholder="e.g. Python, AWS, Salesforce, financial modelling" value={f.skills} onChange={e => set('skills',e.target.value)} />
           </div>
 
-          {error && <div style={{ background:'var(--red-l)', border:'1px solid #F5CCCC', borderRadius:'var(--r-md)', padding:'10px 14px', fontSize:13, color:'var(--red)', marginBottom:14 }}>{error}</div>}
-
+          {error && (
+  error.includes('today\'s free limit') ? (
+    <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '14px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+      <div style={{ fontSize: 13, color: 'var(--teal-d)', lineHeight: 1.5 }}>{error}</div>
+      <a href="/signup" style={{ background: 'var(--teal)', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+        Create free account →
+      </a>
+    </div>
+  ) : (
+    <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
+  )
+)}
           <button onClick={run} style={{ width:'100%', padding:14, background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, border:'none', borderRadius:'var(--r-md)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 4px 16px rgba(14,122,90,0.22)' }}>
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Analyse my Earning Gap

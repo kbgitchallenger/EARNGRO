@@ -1,3 +1,4 @@
+//app/api/cv/parse/route.ts
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // seconds — extend for AI processing
 

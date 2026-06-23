@@ -1,14 +1,18 @@
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function ocrFallback(buffer: Buffer): Promise<string> {
+  const MAX_OCR_SIZE = 3 * 1024 * 1024 // 3MB
+  if (buffer.length > MAX_OCR_SIZE) {
+    throw new Error('File too large for OCR fallback. Please upload a smaller or text-based PDF.')
+  }
+
   console.log('🤖 Using Claude vision as OCR fallback...')
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
-    // Send PDF buffer directly to Claude — it supports PDF documents natively
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       messages: [
         {
