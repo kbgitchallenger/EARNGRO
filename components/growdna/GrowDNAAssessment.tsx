@@ -6,10 +6,16 @@ import {
   MODULE_A, getModuleBQuestions, MODULE_C,
   type Question, type Option, calculateScores
 } from '@/lib/growdna/questions'
-
+import {
+  checkTeamScaleConsistency,
+  checkSeniorityConsistency,
+  checkPLConsistency,
+  type CVFacts,
+} from '@/lib/growdna/cvConsistency'
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {
   userId: string
+  cvFacts?: CVFacts
   existingResult: {
     id: string
     career_archetype: string
@@ -336,13 +342,14 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 }
 
 // ── Main Component ────────────────────────────────────────────────
-export default function GrowDNAAssessment({ userId, existingResult }: Props) {
+export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Props) {
   const [answers, setAnswers]       = useState<Answers>({})
   const [currentIdx, setCurrentIdx] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState('')
   const [result, setResult]         = useState<AIResult | null>(null)
   const [showExisting, setShowExisting] = useState(!!existingResult)
+  const [nudge, setNudge] = useState<string | null>(null)
 
   const seniority = (answers.seniority as string) || 'mid'
   const questions: Question[] = [...MODULE_A, ...getModuleBQuestions(seniority), ...MODULE_C]
@@ -362,9 +369,23 @@ export default function GrowDNAAssessment({ userId, existingResult }: Props) {
   }
 
   function setMCQ(qid: string, val: string) {
-    setAnswers(prev => ({ ...prev, [qid]: val }))
-    setTimeout(() => { if (!isLast) setCurrentIdx(i => i + 1) }, 280)
+  setAnswers(prev => ({ ...prev, [qid]: val }))
+  setNudge(null)
+
+  if (cvFacts) {
+    let warning = null
+    if (qid === 'team_scale') warning = checkTeamScaleConsistency(val, cvFacts)
+    if (qid === 'seniority') warning = checkSeniorityConsistency(val, cvFacts)
+    if (qid === 'pl_exposure') warning = checkPLConsistency(val, cvFacts)
+
+    if (warning) {
+      setNudge(warning.message)
+      return // don't auto-advance — let them see the nudge first
+    }
   }
+
+  setTimeout(() => { if (!isLast) setCurrentIdx(i => i + 1) }, 280)
+}
 
   function toggleMulti(qid: string, val: string) {
     setAnswers(prev => {
@@ -505,7 +526,22 @@ const mapped: AIResult = {
         {current?.type === 'salary' && (
           <SalaryInput value={getAnswer('current_ctc') as number | undefined} onChange={setSalary} />
         )}
-
+        {nudge && (
+  <div className="dna-nudge">
+    <span className="dna-nudge-icon">💡</span>
+    <span className="dna-nudge-text">{nudge}</span>
+    <button
+      type="button"
+      className="dna-nudge-dismiss"
+      onClick={() => {
+        setNudge(null)
+        if (!isLast) setCurrentIdx(i => i + 1)
+      }}
+    >
+      Confirm & continue →
+    </button>
+  </div>
+)}
         {error && <div className="dna-error">{error}</div>}
       </div>
 

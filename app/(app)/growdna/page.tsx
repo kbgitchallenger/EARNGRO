@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GrowDNAAssessment from '@/components/growdna/GrowDNAAssessment'
+import { extractCVFacts } from '@/lib/growdna/cvConsistency'
 
 export const metadata = {
   title: 'GrowDNA Assessment — EarnGro',
@@ -26,6 +27,17 @@ export default async function GrowDNAPage() {
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+
+  // Pull latest CV's parsed data for cross-validation — read-only, no AI call
+  const { data: latestCV } = await supabase
+    .from('cv_versions')
+    .select('parsed_data')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const cvFacts = extractCVFacts(latestCV?.parsed_data ?? null)
 
   return (
     <GrowDNAAssessment

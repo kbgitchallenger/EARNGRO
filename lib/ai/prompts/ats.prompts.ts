@@ -71,7 +71,8 @@ RETURN EXACTLY THIS JSON STRUCTURE (valid example)
     "experience": 85,
     "skills": 80,
     "education": 75,
-    "formatting": 90
+    "formatting": 90,
+    "achievements": 82
   },
   "strengths": ["5+ years experience", "Strong technical skills"],
   "critical_issues": ["Weak summary section"],
@@ -80,9 +81,6 @@ RETURN EXACTLY THIS JSON STRUCTURE (valid example)
     {"section": "skills", "current": "List format", "improved": "Organized by category with proficiency levels"}
   ],
   "ai_summary": "Strong candidate with solid experience and modern tech stack."
-}
-
-  "ai_summary": "string"
 }
 
 ==================================================
@@ -102,6 +100,11 @@ SCORING RULES
 - Penalize weak formatting
 - Penalize generic summaries
 
+section_scores.achievements specifically:
+- Score 0-30 if the resume has no quantified, measurable outcomes anywhere
+- Score 40-60 if some metrics exist but impact is vague or not tied to a clear action
+- Score 70-100 if there are strong, specific business-impact numbers (₹ amounts, percentages, scale, before/after) clearly tied to what the person did
+- Never default this to 0 — actively search experience bullets for numbers, percentages, currency amounts, and scale indicators before scoring
 ==================================================
 KEYWORD MATCH RULES
 ==================================================

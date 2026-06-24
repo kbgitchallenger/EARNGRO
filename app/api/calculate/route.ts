@@ -1,16 +1,50 @@
+export const dynamic = 'force-dynamic'
+
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
 
+function getClientIP(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  const realIP = request.headers.get('x-real-ip')
+  if (realIP) return realIP
+  return 'unknown'
+}
+
 export async function POST(request: Request) {
   try {
+    // ── Rate limit check — 1 free calculation per IP per day ──
+    const ip = getClientIP(request)
+    const supabase = await createClient()
+
+    const { error: rateLimitError } = await supabase
+      .from('calculator_rate_limits')
+      .insert({ ip_address: ip })
+
+    if (rateLimitError) {
+      if (rateLimitError.code === '23505') {
+        // Unique constraint violation — already used today
+        return NextResponse.json(
+          {
+            error: 'RATE_LIMIT',
+            message: "You've reached today's free limit — create an account for unlimited access.",
+          },
+          { status: 429 }
+        )
+      }
+      // Any other DB error — log but don't block the user
+      console.error('Rate limit check failed:', rateLimitError)
+    }
+
+    // ── Existing logic — unchanged ──
     const body = await request.json()
     const { industry, experience, role, city, salary, education, company, skills } = body
 
-    // Basic validation
     if (!industry || !experience || !role || !city || !salary || !education || !company) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }

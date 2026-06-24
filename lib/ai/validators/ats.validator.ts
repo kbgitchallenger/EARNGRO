@@ -13,7 +13,7 @@ export const SectionScoresSchema = z.object({
   skills:      z.number().min(0).max(100),
   education:   z.number().min(0).max(100),
   formatting:  z.number().min(0).max(100),
-  achievements: z.number().min(0).max(100).optional().default(0),
+  achievements: z.number().min(0).max(100),
 })
 
 export const ImprovementSchema = z.object({
