@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { deductCredits, hasUsedFeature } from '@/services/credits.service'
+import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
   high_skill_low_market:  { name: 'The Hidden Gem',          desc: 'Strong skills, underexposed to market. One strategic move changes everything.' },
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
 
     const archetypeKey = detectArchetype(answers, scores)
     const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.default
+    const dimensionExplanations = getDimensionExplanations(answers)
 
     const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2026–2027.
 
@@ -176,6 +178,7 @@ Rules:
           visibility: scores.visibility,
           mobility: scores.mobility,
           negotiation: scores.negotiation,
+          explanations: dimensionExplanations,
         },
       })
       .select('id')
@@ -206,6 +209,7 @@ Rules:
         mobility: scores.mobility,
         negotiation: scores.negotiation,
         hrs: scores.hrs,
+        explanations: dimensionExplanations,
       },
       credits_remaining: credit.balance,
     })

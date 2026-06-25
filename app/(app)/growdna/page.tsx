@@ -39,10 +39,11 @@ export default async function GrowDNAPage() {
 
   const cvFacts = extractCVFacts(latestCV?.parsed_data ?? null)
 
-  return (
+ return (
     <GrowDNAAssessment
       userId={user.id}
       existingResult={existing ?? null}
+      cvFacts={cvFacts}
     />
   )
 }

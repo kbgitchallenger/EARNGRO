@@ -33,6 +33,7 @@ interface Props {
       visibility?: number
       mobility?: number
       negotiation?: number
+      explanations?: Record<string, string[]>
     } | null
     raw_ai_response?: {
       archetype_desc?: string
@@ -69,6 +70,7 @@ interface AIResult {
     mobility: number
     negotiation: number
     hrs: number
+    explanations?: Record<string, string[]>
   }
 }
 
@@ -197,19 +199,25 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
   const emoji = ARCHETYPE_EMOJI[result.career_archetype] ?? '🎯'
 
   // Normalise scores — API may return them nested or flat
-  const raw = result as unknown as Record<string, number>
+ const raw = result as unknown as Record<string, number | Record<string, string[]>>
   const s   = result.scores ?? {}
-  const sc  = (k: string) => (s as Record<string, number>)[k] ?? raw[k] ?? 0
+const sc = (k: string) => {
+  const v1 = (s as Record<string, unknown>)[k]
+  if (typeof v1 === 'number') return v1
+  const v2 = raw[k]
+  if (typeof v2 === 'number') return v2
+  return 0
+}
 
   const dims = [
-    { label: 'Market Alignment', val: sc('market_alignment'), color: 'var(--amber)' },
-    { label: 'Skill Premium',    val: sc('skill_premium'),    color: 'var(--teal)'  },
-    { label: 'Visibility',       val: sc('visibility'),       color: '#7C3AED'      },
-    { label: 'Career Mobility',  val: sc('mobility'),         color: '#0891B2'      },
-    { label: 'Negotiation',      val: sc('negotiation'),      color: '#DC2626'      },
+    { key: 'market_alignment', label: 'Market Alignment', val: sc('market_alignment'), color: 'var(--amber)' },
+    { key: 'skill_premium',    label: 'Skill Premium',    val: sc('skill_premium'),    color: 'var(--teal)'  },
+    { key: 'visibility',       label: 'Visibility',       val: sc('visibility'),       color: '#7C3AED'      },
+    { key: 'mobility',         label: 'Career Mobility',  val: sc('mobility'),         color: '#0891B2'      },
+    { key: 'negotiation',      label: 'Negotiation',      val: sc('negotiation'),      color: '#DC2626'      },
   ]
   const hrs = sc('hrs')
-
+  const explanations = result.scores?.explanations ?? {}
   // Null-safe field access
   const strengths     = result.top_strengths      ?? []
   const gaps          = result.critical_gaps       ?? []
@@ -258,21 +266,30 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
           </div>
         )}
       </div>
-
-      {/* 5 Earning dimensions */}
+{/* 5 Earning dimensions */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Your 5 earning dimensions</div>
-        {dims.map(d => (
-          <div key={d.label} style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{d.label}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: d.color }}>{d.val}/100</span>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Your 5 earning dimensions</div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>Based directly on your answers below</div>
+        {dims.map(d => {
+          const notes = explanations[d.key] ?? []
+          return (
+            <div key={d.label} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{d.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: d.color }}>{d.val}/100</span>
+              </div>
+              <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: notes.length ? 8 : 0 }}>
+                <div style={{ height: '100%', background: d.color, width: `${d.val}%`, borderRadius: 99, transition: 'width 1s ease' }} />
+              </div>
+              {notes.map((note, i) => (
+                <div key={i} style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, paddingLeft: 2, marginBottom: 3, display: 'flex', gap: 6 }}>
+                  <span style={{ color: d.color, flexShrink: 0 }}>•</span>
+                  <span>{note}</span>
+                </div>
+              ))}
             </div>
-            <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: d.color, width: `${d.val}%`, borderRadius: 99, transition: 'width 1s ease' }} />
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Strengths & Gaps */}
@@ -464,7 +481,9 @@ const mapped: AIResult = {
     mobility:         ds.mobility         ?? 0,
     negotiation:      ds.negotiation      ?? 0,
     hrs:              existingResult.hrs_score ?? 0,
+    explanations:     ds.explanations,
   },
+
 }
     return (
       <div style={{ padding: '24px 24px 0' }}>
