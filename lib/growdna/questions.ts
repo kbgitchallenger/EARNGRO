@@ -421,20 +421,29 @@ export const MODULE_C: Question[] = [
 
 import { getTrackForIndustry, type CareerTrack } from './tracks'
 import { MODULE_B_SALES_MID, MODULE_B_SALES_SENIOR } from './tracks/salesField'
+import { MODULE_B_OPS_MID, MODULE_B_OPS_SENIOR } from './tracks/operationsIndustrial'
 // Additional track imports will be added here as each track is built
+
 
 export function getModuleBQuestions(seniority: string, industry?: string): Question[] {
   const track: CareerTrack = industry ? getTrackForIndustry(industry) : 'corporate_white_collar'
 
-  // Sales & Field track — fully built example
+  // Sales & Field track
   if (track === 'sales_field') {
     if (seniority === 'mid')    return MODULE_B_SALES_MID
     if (seniority === 'senior') return MODULE_B_SALES_SENIOR
-    // Fresher/junior/leadership on sales track fall back to corporate
-    // questions for now — sales-specific versions come in the next pass
+    // Fresher/junior/leadership fall through to corporate default below
   }
 
-  // Default — existing corporate_white_collar questions (current behavior preserved)
+  // Operations & Industrial track
+  if (track === 'operations_industrial') {
+    if (seniority === 'mid')    return MODULE_B_OPS_MID
+    if (seniority === 'senior') return MODULE_B_OPS_SENIOR
+    // Fresher/junior/leadership fall through to corporate default below
+  }
+
+  // Default — corporate_white_collar questions (also the fallback for
+  // any track/seniority combination not yet built out)
   switch (seniority) {
     case 'fresher':
     case 'junior':     return MODULE_B_FRESHER

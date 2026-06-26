@@ -73,6 +73,13 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   'revenue_ownership.team_25cr_plus':     { dimension: 'mobility', text: 'Owning a ₹25Cr+ team revenue number places you in senior sales leadership compensation territory.' },
   'sales_team_scale.national_head':       { dimension: 'mobility', text: 'Leading a 25+ rep national/zonal team is a director-equivalent scope in sales organisations.' },
 
+// ── Operations & Industrial — mapped to mobility and skill_premium ──
+  'ops_scale_managed.multi_site':         { dimension: 'mobility', text: 'Managing multiple sites or locations is a regional-scope signal that typically commands a higher band than single-site roles.' },
+  'cost_impact.major_savings':            { dimension: 'skill_premium', text: 'A major, quantified cost reduction (₹50L+ or 20%+ efficiency) is exactly the kind of measurable impact that moves operations compensation.' },
+  'cost_impact.no_clear_impact':          { dimension: 'skill_premium', text: 'No clearly quantified impact yet — this is the fastest lever to pull, since even one measured improvement noticeably strengthens your profile.' },
+  'ops_team_scale.regional_ops_head':     { dimension: 'mobility', text: 'Leading a regional or national operations team of 1000+ places you in senior operations leadership territory.' },
+  'capex_budget_ownership.capex_25cr_plus': { dimension: 'mobility', text: 'Owning ₹25Cr+ in budget or capital expenditure is the operations-track equivalent of P&L ownership in corporate roles — a strong senior-level signal.' },
+
 }
 
 // Mobility also derives from seniority for freshers/juniors with no
