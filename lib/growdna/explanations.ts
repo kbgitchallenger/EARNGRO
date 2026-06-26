@@ -66,6 +66,13 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   'negotiation_history.last_year':    { dimension: 'negotiation', text: 'Negotiating within the last year is a healthy habit forming — keep it consistent.' },
   'negotiation_history.recently':     { dimension: 'negotiation', text: 'Negotiating in the last 6 months puts you among active market participants — a real positive signal.' },
   'negotiation_history.regularly':    { dimension: 'negotiation', text: 'Negotiating every review cycle is top-5% behaviour — this is actively protecting your market value.' },
+
+  // ── Sales & Field — quota/deal/revenue signals (mapped to mobility) ──
+  'quota_attainment.exceed_consistently': { dimension: 'mobility', text: 'Consistently exceeding quota by 110%+ puts you in the top quartile of sales performers — this strongly lifts your market mobility.' },
+  'quota_attainment.below_target':        { dimension: 'mobility', text: 'Below-target attainment is the fastest-moving lever in sales comp — even one strong quarter materially shifts this.' },
+  'revenue_ownership.team_25cr_plus':     { dimension: 'mobility', text: 'Owning a ₹25Cr+ team revenue number places you in senior sales leadership compensation territory.' },
+  'sales_team_scale.national_head':       { dimension: 'mobility', text: 'Leading a 25+ rep national/zonal team is a director-equivalent scope in sales organisations.' },
+
 }
 
 // Mobility also derives from seniority for freshers/juniors with no

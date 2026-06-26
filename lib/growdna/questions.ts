@@ -419,19 +419,34 @@ export const MODULE_C: Question[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-export function getModuleBQuestions(seniority: string): Question[] {
+import { getTrackForIndustry, type CareerTrack } from './tracks'
+import { MODULE_B_SALES_MID, MODULE_B_SALES_SENIOR } from './tracks/salesField'
+// Additional track imports will be added here as each track is built
+
+export function getModuleBQuestions(seniority: string, industry?: string): Question[] {
+  const track: CareerTrack = industry ? getTrackForIndustry(industry) : 'corporate_white_collar'
+
+  // Sales & Field track — fully built example
+  if (track === 'sales_field') {
+    if (seniority === 'mid')    return MODULE_B_SALES_MID
+    if (seniority === 'senior') return MODULE_B_SALES_SENIOR
+    // Fresher/junior/leadership on sales track fall back to corporate
+    // questions for now — sales-specific versions come in the next pass
+  }
+
+  // Default — existing corporate_white_collar questions (current behavior preserved)
   switch (seniority) {
     case 'fresher':
-    case 'junior':    return MODULE_B_FRESHER
-    case 'mid':       return MODULE_B_MID
-    case 'senior':    return MODULE_B_SENIOR
-    case 'leadership':return MODULE_B_LEADERSHIP
-    default:          return MODULE_B_MID
+    case 'junior':     return MODULE_B_FRESHER
+    case 'mid':        return MODULE_B_MID
+    case 'senior':     return MODULE_B_SENIOR
+    case 'leadership': return MODULE_B_LEADERSHIP
+    default:           return MODULE_B_MID
   }
 }
 
-export function getAllQuestions(seniority: string): Question[] {
-  return [...MODULE_A, ...getModuleBQuestions(seniority), ...MODULE_C]
+export function getAllQuestions(seniority: string, industry?: string): Question[] {
+  return [...MODULE_A, ...getModuleBQuestions(seniority, industry), ...MODULE_C]
 }
 
 export interface DimensionScores {
