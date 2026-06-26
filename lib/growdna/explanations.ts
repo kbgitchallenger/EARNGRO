@@ -80,7 +80,18 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   'ops_team_scale.regional_ops_head':     { dimension: 'mobility', text: 'Leading a regional or national operations team of 1000+ places you in senior operations leadership territory.' },
   'capex_budget_ownership.capex_25cr_plus': { dimension: 'mobility', text: 'Owning ₹25Cr+ in budget or capital expenditure is the operations-track equivalent of P&L ownership in corporate roles — a strong senior-level signal.' },
 
+  // ── Healthcare — mapped to market_alignment and skill_premium ──
+  'clinical_practice_setting.corporate_hospital': { dimension: 'market_alignment', text: 'Corporate hospital chains pay significantly above government and smaller private setups for the same specialisation.' },
+  'specialization_tier.super_specialist':         { dimension: 'skill_premium', text: 'Super-specialisations like cardiology and oncology command the highest premiums in healthcare due to scarcity.' },
+  'department_leadership.medical_director':       { dimension: 'mobility', text: 'A Medical Director or CMO role represents the senior leadership ceiling in clinical healthcare careers.' },
+
+  // ── Public Service — mapped to mobility and visibility ──
+  'grade_pay_level.fast_track_exam':    { dimension: 'mobility', text: 'Fast-tracking via a competitive exam is the public-service equivalent of being promoted faster than peers.' },
+  'senior_admin_scope.national_secretariat': { dimension: 'mobility', text: 'A ministry-level secretariat posting is the highest administrative scope achievable in civil services.' },
+  'policy_influence.national_policy':   { dimension: 'visibility', text: 'Shaping national policy is a strong visibility and influence signal, relevant well beyond your current role.' },
+
 }
+
 
 // Mobility also derives from seniority for freshers/juniors with no
 // promotion_velocity question — handled separately in getExplanations()

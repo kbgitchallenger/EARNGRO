@@ -109,7 +109,12 @@ export const MODULE_A: Question[] = [
       { value: 'research',          label: 'Research / Academia',     icon: '🔬', score: 6  },
       { value: 'founder_role',      label: 'Founder / Entrepreneur',  icon: '🚀', score: 9  },
       { value: 'general_mgmt',      label: 'General Management',      icon: '🏢', score: 9  },
+      { value: 'healthcare_clinical', label: 'Doctor / Clinical Practice', icon: '⚕️', score: 8 },
+      { value: 'nursing_allied',    label: 'Nursing / Allied Health',  icon: '🏥', score: 6  },
+      { value: 'teaching_education', label: 'Teaching / Academic Faculty', icon: '🎓', score: 5 },
+      { value: 'civil_services',    label: 'Civil Services / Govt. Administration', icon: '🏛️', score: 5 },
       { value: 'other_role',        label: 'Other function',          icon: '🔷', score: 5  },
+    
     ],
   },
   {
@@ -422,6 +427,8 @@ export const MODULE_C: Question[] = [
 import { getTrackForRoleAndIndustry, type CareerTrack } from './tracks'
 import { MODULE_B_SALES_MID, MODULE_B_SALES_SENIOR } from './tracks/salesField'
 import { MODULE_B_OPS_MID, MODULE_B_OPS_SENIOR } from './tracks/operationsIndustrial'
+import { MODULE_B_HEALTHCARE_MID, MODULE_B_HEALTHCARE_SENIOR } from './tracks/healthcare'
+import { MODULE_B_PUBLIC_MID, MODULE_B_PUBLIC_SENIOR } from './tracks/publicService'
 // Additional track imports will be added here as each track is built
 
 
@@ -459,8 +466,8 @@ export function getModuleBQuestions(
     default:           return MODULE_B_MID
   }
 }
-export function getAllQuestions(seniority: string, industry?: string): Question[] {
-  return [...MODULE_A, ...getModuleBQuestions(seniority, industry), ...MODULE_C]
+export function getAllQuestions(seniority: string, role?: string, industry?: string): Question[] {
+return [...MODULE_A, ...getModuleBQuestions(seniority, role, industry), ...MODULE_C]
 }
 
 export interface DimensionScores {
