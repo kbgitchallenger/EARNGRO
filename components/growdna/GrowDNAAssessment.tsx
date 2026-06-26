@@ -369,8 +369,9 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
   const [nudge, setNudge] = useState<string | null>(null)
 
   const seniority = (answers.seniority as string) || 'mid'
+  const role = answers.role as string | undefined
   const industry = answers.industry as string | undefined
-  const questions: Question[] = [...MODULE_A, ...getModuleBQuestions(seniority, industry), ...MODULE_C]
+  const questions: Question[] = [...MODULE_A, ...getModuleBQuestions(seniority, role, industry), ...MODULE_C]
   
   const current = questions[currentIdx]
   const totalQ  = questions.length

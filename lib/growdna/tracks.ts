@@ -45,38 +45,55 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
   },
 }
 
-// Maps each MODULE_A industry value to its career track.
-// This is the single source of truth for routing — update here only.
-export const INDUSTRY_TO_TRACK: Record<string, CareerTrack> = {
-  // Technology group → corporate
-  tech_product:   'corporate_white_collar',
-  tech_services:  'corporate_white_collar',
-  startup_vc:     'corporate_white_collar',
-  ecommerce:      'corporate_white_collar',
-  media_content:  'creative_freelance',
-
-  // Business Services group → mostly corporate, legal stays corporate
-  banking:        'corporate_white_collar',
-  consulting:     'corporate_white_collar',
-  real_estate:    'sales_field',
-  legal:          'corporate_white_collar',
-  hr_staffing:    'corporate_white_collar',
-
-  // Core Economy group → operations
-  manufacturing:  'operations_industrial',
-  fmcg:           'operations_industrial',
-  healthcare:     'healthcare',
-  logistics:      'operations_industrial',
-  construction:   'operations_industrial',
-
-  // Public & Other group
-  govt_psu:       'public_service',
-  education:      'public_service',
-  nonprofit:      'public_service',
-  defence:        'public_service',
-  other:          'corporate_white_collar', // safe default
+// ════════════════════════════════════════════════════════════════
+// PRIMARY ROUTING — Role determines the track.
+// Role defines competency. This is deterministic for any functional
+// role that means the same thing regardless of which industry it
+// sits in (an engineer is an engineer at a bank or at a startup).
+// ════════════════════════════════════════════════════════════════
+export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
+  engineering:       'corporate_white_collar',
+  data_science:      'corporate_white_collar',
+  data_engineering:  'corporate_white_collar',
+  devops_cloud:      'corporate_white_collar',
+  product:           'corporate_white_collar',
+  design:            'corporate_white_collar', // refined when creative_freelance track is built
+  marketing:         'corporate_white_collar',
+  content:           'corporate_white_collar', // refined when creative_freelance track is built
+  sales:             'sales_field',
+  finance:           'corporate_white_collar',
+  hr:                'corporate_white_collar',
+  operations:        'operations_industrial',
+  consulting_role:   'corporate_white_collar',
+  legal_role:        'corporate_white_collar',
+  research:          'corporate_white_collar', // can be overridden by industry below
+  founder_role:      'corporate_white_collar',
+  general_mgmt:      'corporate_white_collar', // can be overridden by industry below
+  other_role:        'corporate_white_collar', // can be overridden by industry below
 }
 
-export function getTrackForIndustry(industry: string): CareerTrack {
-  return INDUSTRY_TO_TRACK[industry] ?? 'corporate_white_collar'
+// ════════════════════════════════════════════════════════════════
+// SECONDARY MODIFIER — Industry only disambiguates roles that are
+// genuinely ambiguous on their own. It NEVER overrides a role with
+// clear functional meaning (engineering, sales, operations, etc.).
+// ════════════════════════════════════════════════════════════════
+const AMBIGUOUS_ROLES = new Set(['other_role', 'general_mgmt', 'research'])
+
+const INDUSTRY_TRACK_OVERRIDE: Record<string, CareerTrack> = {
+  healthcare: 'healthcare',
+  govt_psu:   'public_service',
+  education:  'public_service',
+  nonprofit:  'public_service',
+  defence:    'public_service',
+}
+
+export function getTrackForRoleAndIndustry(role: string, industry?: string): CareerTrack {
+  const baseTrack = ROLE_TO_TRACK[role] ?? 'corporate_white_collar'
+
+  if (AMBIGUOUS_ROLES.has(role) && industry) {
+    const override = INDUSTRY_TRACK_OVERRIDE[industry]
+    if (override) return override
+  }
+
+  return baseTrack
 }

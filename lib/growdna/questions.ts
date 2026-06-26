@@ -419,14 +419,20 @@ export const MODULE_C: Question[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-import { getTrackForIndustry, type CareerTrack } from './tracks'
+import { getTrackForRoleAndIndustry, type CareerTrack } from './tracks'
 import { MODULE_B_SALES_MID, MODULE_B_SALES_SENIOR } from './tracks/salesField'
 import { MODULE_B_OPS_MID, MODULE_B_OPS_SENIOR } from './tracks/operationsIndustrial'
 // Additional track imports will be added here as each track is built
 
 
-export function getModuleBQuestions(seniority: string, industry?: string): Question[] {
-  const track: CareerTrack = industry ? getTrackForIndustry(industry) : 'corporate_white_collar'
+export function getModuleBQuestions(
+  seniority: string,
+  role?: string,
+  industry?: string
+): Question[] {
+  const track: CareerTrack = role
+    ? getTrackForRoleAndIndustry(role, industry)
+    : 'corporate_white_collar'
 
   // Sales & Field track
   if (track === 'sales_field') {
@@ -453,7 +459,6 @@ export function getModuleBQuestions(seniority: string, industry?: string): Quest
     default:           return MODULE_B_MID
   }
 }
-
 export function getAllQuestions(seniority: string, industry?: string): Question[] {
   return [...MODULE_A, ...getModuleBQuestions(seniority, industry), ...MODULE_C]
 }
