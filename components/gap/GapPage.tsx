@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
+import { getChangeNarrative, type ChangeNarrative } from '@/lib/growdna/changeNarrative'
 
 // ── Types ────────────────────────────────────────────────────────
 interface DimensionScores {
@@ -103,6 +103,73 @@ const HRS_LEVELS = [
 
 function getHRSLevel(hrs: number) {
   return HRS_LEVELS.find(l => hrs >= l.min && hrs < l.max) ?? HRS_LEVELS[HRS_LEVELS.length - 1]
+}
+
+// ── Celebration / Change narrative card ────────────────────────────
+function CelebrationCard({
+  narrative,
+  attemptId,
+}: {
+  narrative: ChangeNarrative
+  attemptId: string
+}) {
+  const [showCelebration, setShowCelebration] = useState(false)
+
+  useEffect(() => {
+    if (!narrative.isCelebration) return
+    const key = `earngro_celebrated_${attemptId}`
+    const alreadyCelebrated = typeof window !== 'undefined' && localStorage.getItem(key)
+    if (!alreadyCelebrated) {
+      setShowCelebration(true)
+      if (typeof window !== 'undefined') localStorage.setItem(key, '1')
+    }
+  }, [narrative.isCelebration, attemptId])
+
+  const isCelebrating = narrative.isCelebration && showCelebration
+
+  return (
+    <div
+      style={{
+        background: isCelebrating
+          ? 'linear-gradient(135deg, var(--teal-l), var(--teal-xl))'
+          : 'linear-gradient(135deg, var(--teal-xl), var(--paper))',
+        border: `1px solid ${isCelebrating ? 'var(--teal)' : 'var(--teal-mid)'}`,
+        borderRadius: 'var(--r-lg)',
+        padding: '18px 20px',
+        marginBottom: 16,
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+        animation: isCelebrating ? 'celebrateGlow 1.6s ease-out' : 'none',
+      }}
+    >
+      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>
+        {narrative.isCelebration ? '🎉' : '👋'}
+      </span>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.5, marginBottom: narrative.standingLine ? 4 : 6 }}>
+          {narrative.headline}
+        </div>
+        {narrative.standingLine && (
+          <div style={{ fontSize: 13, color: 'var(--teal-d)', fontWeight: 500, lineHeight: 1.5, marginBottom: 6 }}>
+            {narrative.standingLine}
+          </div>
+        )}
+        <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
+          {narrative.nextStep}
+        </div>
+      </div>
+      {isCelebrating && (
+        <style>{`
+          @keyframes celebrateGlow {
+            0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(14,122,90,0.35); }
+            40% { transform: scale(1.01); box-shadow: 0 0 0 8px rgba(14,122,90,0.12); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(14,122,90,0); }
+          }
+        `}</style>
+      )}
+    </div>
+  )
 }
 
 // ── Radar Chart (pure SVG — no library needed) ───────────────────
@@ -235,7 +302,6 @@ export default function GapPage({ attempts, userId }: Props) {
   const prev = attempts[1]
   const changeNarrative = prev ? getChangeNarrative(latest, prev) : null
 
-
   // Animate numbers on mount
   useEffect(() => {
     if (!latest) return
@@ -314,28 +380,9 @@ export default function GapPage({ attempts, userId }: Props) {
           </div>
         </div>
 
-{changeNarrative && (
-  <div style={{
-    background: 'linear-gradient(135deg, var(--teal-xl), var(--paper))',
-    border: '1px solid var(--teal-mid)',
-    borderRadius: 'var(--r-lg)',
-    padding: '18px 20px',
-    marginBottom: 16,
-    display: 'flex',
-    gap: 12,
-    alignItems: 'flex-start',
-  }}>
-    <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>👋</span>
-    <div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.5, marginBottom: 6 }}>
-        {changeNarrative.headline}
-      </div>
-      <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
-        {changeNarrative.nextStep}
-      </div>
-    </div>
-  </div>
-)}
+        {changeNarrative && (
+          <CelebrationCard narrative={changeNarrative} attemptId={latest.id} />
+        )}
 
         {/* Key metrics — 2x2 grid on mobile, 4 cols on desktop */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>

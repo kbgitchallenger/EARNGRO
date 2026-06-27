@@ -38,6 +38,16 @@ function fmtMoney(n: number): string {
 export interface ChangeNarrative {
   headline: string
   nextStep: string
+  isCelebration: boolean
+  standingLine?: string
+}
+
+function getStandingLine(dim: keyof DimensionScores, score: number): string {
+  const label = DIMENSION_LABELS[dim]
+  if (score >= 80) return `That puts your ${label} in the strongest band we track — well above where most profiles sit.`
+  if (score >= 60) return `That puts your ${label} solidly above average for your profile type.`
+  if (score >= 40) return `That's real progress on ${label} — you're closing in on the stronger band.`
+  return `Every point on ${label} compounds — this is meaningful early movement.`
 }
 
 export function getChangeNarrative(
@@ -69,12 +79,15 @@ export function getChangeNarrative(
 
   // Priority: gap closing > HRS movement > single dimension movement
   // (gap closing is the headline metric of the whole product)
+
   if (gapMeaningful && gapDelta > 0) {
     return {
       headline: `Your Earning Gap closed by ${fmtMoney(gapDelta)} since your last check-in — real movement.`,
       nextStep: biggestDim
         ? DIMENSION_NEXT_STEP[biggestDim]
         : 'Keep the momentum — another assessment in a few weeks will show if this trend holds.',
+      isCelebration: true,
+      standingLine: biggestDim ? getStandingLine(biggestDim, latest.dimension_scores[biggestDim]) : undefined,
     }
   }
 
@@ -84,6 +97,7 @@ export function getChangeNarrative(
       nextStep: biggestDim
         ? DIMENSION_NEXT_STEP[biggestDim]
         : 'Markets shift — this is a good moment to revisit your GrowPath actions.',
+      isCelebration: false,
     }
   }
 
@@ -92,6 +106,8 @@ export function getChangeNarrative(
     return {
       headline: `Your Hiring Readiness Score ${direction} ${Math.abs(Math.round(hrsDelta))} points since your last check-in${biggestDim ? ` — ${DIMENSION_LABELS[biggestDim]} moved the most` : ''}.`,
       nextStep: biggestDim ? DIMENSION_NEXT_STEP[biggestDim] : 'Keep checking in to track what\'s driving this.',
+      isCelebration: hrsDelta > 0,
+      standingLine: hrsDelta > 0 && biggestDim ? getStandingLine(biggestDim, latest.dimension_scores[biggestDim]) : undefined,
     }
   }
 
@@ -100,6 +116,8 @@ export function getChangeNarrative(
     return {
       headline: `Your ${DIMENSION_LABELS[biggestDim]} moved ${direction} ${Math.abs(Math.round(biggestDelta))} points since your last check-in — the biggest shift in your profile.`,
       nextStep: DIMENSION_NEXT_STEP[biggestDim],
+      isCelebration: biggestDelta > 0,
+      standingLine: biggestDelta > 0 ? getStandingLine(biggestDim, latest.dimension_scores[biggestDim]) : undefined,
     }
   }
 
