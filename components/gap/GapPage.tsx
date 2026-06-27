@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
 
 // ── Types ────────────────────────────────────────────────────────
 interface DimensionScores {
@@ -232,6 +233,8 @@ export default function GapPage({ attempts, userId }: Props) {
 
   const latest = attempts[0]
   const prev = attempts[1]
+  const changeNarrative = prev ? getChangeNarrative(latest, prev) : null
+
 
   // Animate numbers on mount
   useEffect(() => {
@@ -310,6 +313,29 @@ export default function GapPage({ attempts, userId }: Props) {
             </div>
           </div>
         </div>
+
+{changeNarrative && (
+  <div style={{
+    background: 'linear-gradient(135deg, var(--teal-xl), var(--paper))',
+    border: '1px solid var(--teal-mid)',
+    borderRadius: 'var(--r-lg)',
+    padding: '18px 20px',
+    marginBottom: 16,
+    display: 'flex',
+    gap: 12,
+    alignItems: 'flex-start',
+  }}>
+    <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>👋</span>
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.5, marginBottom: 6 }}>
+        {changeNarrative.headline}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
+        {changeNarrative.nextStep}
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Key metrics — 2x2 grid on mobile, 4 cols on desktop */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
