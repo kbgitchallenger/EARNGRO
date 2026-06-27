@@ -5,6 +5,11 @@ export type CareerTrack =
   | 'healthcare'
   | 'creative_freelance'
   | 'sales_field'
+  | 'marketing_brand'
+  | 'finance_accounting'
+  | 'hr_people'
+  | 'design_creative'
+  | 'consulting_strategy'
 
 export interface TrackInfo {
   id: CareerTrack
@@ -43,6 +48,32 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
     label: 'Sales & Field',
     description: 'Field sales, business development, account management',
   },
+  marketing_brand: {
+    id: 'marketing_brand',
+    label: 'Marketing & Brand',
+    description: 'Performance, product, brand, and analytics marketing',
+  },
+  finance_accounting: {
+    id: 'finance_accounting',
+    label: 'Finance & Accounting',
+    description: 'FP&A, investment banking, audit, treasury, controllership',
+  },
+  hr_people: {
+    id: 'hr_people',
+    label: 'HR & People',
+    description: 'HRBP, talent acquisition, comp & benefits, L&D',
+  },
+  design_creative: {
+    id: 'design_creative',
+    label: 'Design & Creative',
+    description: 'Product/UX, visual/brand, design research, design systems',
+  },
+  consulting_strategy: {
+    id: 'consulting_strategy',
+    label: 'Consulting & Strategy',
+    description: 'Strategy, Big 4 advisory, boutique, implementation consulting',
+  },
+
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -52,24 +83,28 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
 // sits in (an engineer is an engineer at a bank or at a startup).
 // ════════════════════════════════════════════════════════════════
 export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
-  engineering:       'corporate_white_collar',
-  data_science:      'corporate_white_collar',
-  data_engineering:  'corporate_white_collar',
-  devops_cloud:      'corporate_white_collar',
-  product:           'corporate_white_collar',
-  design:            'corporate_white_collar', // refined when creative_freelance track is built
-  marketing:         'corporate_white_collar',
-  content:           'corporate_white_collar', // refined when creative_freelance track is built
-  sales:             'sales_field',
-  finance:           'corporate_white_collar',
-  hr:                'corporate_white_collar',
-  operations:        'operations_industrial',
-  consulting_role:   'corporate_white_collar',
-  legal_role:        'corporate_white_collar',
-  research:          'corporate_white_collar', // can be overridden by industry below
-  founder_role:      'corporate_white_collar',
-  general_mgmt:      'corporate_white_collar', // can be overridden by industry below
-  other_role:        'corporate_white_collar', // can be overridden by industry below
+  engineering:         'corporate_white_collar',
+  data_science:        'corporate_white_collar',
+  data_engineering:    'corporate_white_collar',
+  devops_cloud:        'corporate_white_collar',
+  product:             'corporate_white_collar',
+  marketing:         'marketing_brand',
+  design:            'design_creative',
+  finance:           'finance_accounting',
+  hr:                'hr_people',
+  consulting_role:   'consulting_strategy',
+  content:             'corporate_white_collar',
+  sales:               'sales_field',
+  operations:          'operations_industrial',
+  legal_role:          'corporate_white_collar',
+  research:            'corporate_white_collar',
+  founder_role:        'corporate_white_collar',
+  general_mgmt:        'corporate_white_collar',
+  healthcare_clinical: 'healthcare',
+  nursing_allied:      'healthcare',
+  teaching_education:  'public_service',
+  civil_services:      'public_service',
+  other_role:          'corporate_white_collar',
 }
 
 // ════════════════════════════════════════════════════════════════

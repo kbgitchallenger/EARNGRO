@@ -90,6 +90,29 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   'senior_admin_scope.national_secretariat': { dimension: 'mobility', text: 'A ministry-level secretariat posting is the highest administrative scope achievable in civil services.' },
   'policy_influence.national_policy':   { dimension: 'visibility', text: 'Shaping national policy is a strong visibility and influence signal, relevant well beyond your current role.' },
 
+  // ── Marketing — mapped to skill_premium and mobility ──
+  'marketing_specialization.performance_growth': { dimension: 'skill_premium', text: 'Performance/growth marketing currently commands the highest premium in marketing due to direct, measurable revenue attribution.' },
+  'marketing_specialization.brand_marketing':     { dimension: 'skill_premium', text: 'Brand marketing is valued but typically commands a more moderate premium than performance-driven specialisations, since impact is harder to attribute directly.' },
+  'marketing_leadership_scope.cmo_equivalent':    { dimension: 'mobility', text: 'A CMO or Head of Marketing role represents the senior leadership ceiling in marketing careers.' },
+
+  // ── Finance — mapped to skill_premium and mobility ──
+  'finance_specialization.ib_corp_finance':       { dimension: 'skill_premium', text: 'Investment banking and corporate finance roles command the highest premiums within the finance function.' },
+  'finance_certifications.none_finance_cert':     { dimension: 'skill_premium', text: 'No formal finance certification yet — a CA, CFA, or FRM is one of the fastest ways to materially shift this dimension.' },
+  'finance_leadership_scope.cfo_equivalent':       { dimension: 'mobility', text: 'A CFO or Finance Head role represents the senior leadership ceiling in finance careers.' },
+
+  // ── HR — mapped to skill_premium and mobility ──
+  'hr_specialization.comp_benefits':              { dimension: 'skill_premium', text: 'Compensation & Benefits is typically the highest-paying specialisation within HR due to its direct link to overall organisational pay strategy.' },
+  'hr_leadership_scope.chro_equivalent':           { dimension: 'mobility', text: 'A CHRO or Head of HR role represents the senior leadership ceiling in HR careers.' },
+
+  // ── Design — mapped to skill_premium and mobility ──
+  'design_portfolio_evidence.strong_portfolio_metrics': { dimension: 'skill_premium', text: 'A portfolio with measured impact (conversion, engagement, etc.) is the single strongest signal design recruiters screen for.' },
+  'design_portfolio_evidence.early_career_design': { dimension: 'skill_premium', text: 'Still building your portfolio — this is the fastest lever to pull, since even 1-2 strong case studies with measurable outcomes shift this meaningfully.' },
+  'design_leadership_scope.head_of_design':       { dimension: 'mobility', text: 'A Head of Design or VP Design role represents the senior leadership ceiling in design careers.' },
+
+  // ── Consulting — mapped to skill_premium and mobility ──
+  'consulting_context.mbb_strategy':              { dimension: 'skill_premium', text: 'Strategy consulting at a top-tier (MBB-equivalent) firm commands the highest premium in the consulting market.' },
+  'consulting_leadership_scope.partner_principal': { dimension: 'mobility', text: 'Reaching Partner or Principal represents the senior leadership ceiling in consulting careers.' },
+
 }
 
 

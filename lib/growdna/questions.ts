@@ -319,12 +319,12 @@ export const MODULE_B_SENIOR: Question[] = [
     columns: 2,
     branch: ['senior'],
     options: [
-      { value: 'speaker',        label: 'Conference speaker',           icon: '🎤', score: 9 },
+      { value: 'speaker',        label: 'Conference speaker',          icon: '🎤', score: 9 },
       { value: 'author',         label: 'Author / blogger',            icon: '✍️', score: 8 },
       { value: 'linkedin_active',label: 'LinkedIn creator 10K+',       icon: '💼', score: 7 },
       { value: 'advisory',       label: 'Advisory / board roles',      icon: '🤝', score: 9 },
       { value: 'media',          label: 'Media mentions',              icon: '📰', score: 8 },
-      { value: 'patents',        label: 'Patents / key contributions',  icon: '🔬', score: 7 },
+      { value: 'patents',        label: 'Patents / key contributions', icon: '🔬', score: 7 },
       { value: 'no_visibility',  label: 'Low public profile',          icon: '🔒', score: 1 },
     ],
   },
@@ -455,6 +455,20 @@ export function getModuleBQuestions(
     // Fresher/junior/leadership fall through to corporate default below
   }
 
+// Healthcare track
+  if (track === 'healthcare') {
+    if (seniority === 'mid')    return MODULE_B_HEALTHCARE_MID
+    if (seniority === 'senior') return MODULE_B_HEALTHCARE_SENIOR
+    // Fresher/junior/leadership fall through to corporate default below
+  }
+
+  // Public Service track
+  if (track === 'public_service') {
+    if (seniority === 'mid')    return MODULE_B_PUBLIC_MID
+    if (seniority === 'senior') return MODULE_B_PUBLIC_SENIOR
+    // Fresher/junior/leadership fall through to corporate default below
+  }
+  
   // Default — corporate_white_collar questions (also the fallback for
   // any track/seniority combination not yet built out)
   switch (seniority) {
