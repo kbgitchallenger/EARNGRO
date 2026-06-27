@@ -429,6 +429,12 @@ import { MODULE_B_SALES_MID, MODULE_B_SALES_SENIOR } from './tracks/salesField'
 import { MODULE_B_OPS_MID, MODULE_B_OPS_SENIOR } from './tracks/operationsIndustrial'
 import { MODULE_B_HEALTHCARE_MID, MODULE_B_HEALTHCARE_SENIOR } from './tracks/healthcare'
 import { MODULE_B_PUBLIC_MID, MODULE_B_PUBLIC_SENIOR } from './tracks/publicService'
+import { MODULE_B_MARKETING_MID, MODULE_B_MARKETING_SENIOR } from './tracks/marketing'
+import { MODULE_B_FINANCE_MID, MODULE_B_FINANCE_SENIOR } from './tracks/finance'
+import { MODULE_B_HR_MID, MODULE_B_HR_SENIOR } from './tracks/hr'
+import { MODULE_B_DESIGN_MID, MODULE_B_DESIGN_SENIOR } from './tracks/design'
+import { MODULE_B_CONSULTING_MID, MODULE_B_CONSULTING_SENIOR } from './tracks/consulting'
+
 // Additional track imports will be added here as each track is built
 
 
@@ -469,6 +475,36 @@ export function getModuleBQuestions(
     // Fresher/junior/leadership fall through to corporate default below
   }
   
+  // Marketing & Brand track
+  if (track === 'marketing_brand') {
+    if (seniority === 'mid')    return MODULE_B_MARKETING_MID
+    if (seniority === 'senior') return MODULE_B_MARKETING_SENIOR
+  }
+
+  // Finance & Accounting track
+  if (track === 'finance_accounting') {
+    if (seniority === 'mid')    return MODULE_B_FINANCE_MID
+    if (seniority === 'senior') return MODULE_B_FINANCE_SENIOR
+  }
+
+  // HR & People track
+  if (track === 'hr_people') {
+    if (seniority === 'mid')    return MODULE_B_HR_MID
+    if (seniority === 'senior') return MODULE_B_HR_SENIOR
+  }
+
+  // Design & Creative track
+  if (track === 'design_creative') {
+    if (seniority === 'mid')    return MODULE_B_DESIGN_MID
+    if (seniority === 'senior') return MODULE_B_DESIGN_SENIOR
+  }
+
+  // Consulting & Strategy track
+  if (track === 'consulting_strategy') {
+    if (seniority === 'mid')    return MODULE_B_CONSULTING_MID
+    if (seniority === 'senior') return MODULE_B_CONSULTING_SENIOR
+  }
+
   // Default — corporate_white_collar questions (also the fallback for
   // any track/seniority combination not yet built out)
   switch (seniority) {
