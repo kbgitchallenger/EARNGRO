@@ -112,7 +112,28 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   // ── Consulting — mapped to skill_premium and mobility ──
   'consulting_context.mbb_strategy':              { dimension: 'skill_premium', text: 'Strategy consulting at a top-tier (MBB-equivalent) firm commands the highest premium in the consulting market.' },
   'consulting_leadership_scope.partner_principal': { dimension: 'mobility', text: 'Reaching Partner or Principal represents the senior leadership ceiling in consulting careers.' },
+// ── Founder — mapped to market_alignment and mobility ──
+  'funding_stage.series_c_plus':         { dimension: 'market_alignment', text: 'Series C+ funding or profitable scaling places your venture in the strongest market position for a founder.' },
+  'founder_revenue_scale.pre_arr':        { dimension: 'market_alignment', text: 'Pre-revenue stage means market positioning is currently driven by potential rather than proven traction — this is the biggest lever to pull next.' },
+  'founder_fundraising_track_record.multi_round_tier1': { dimension: 'mobility', text: 'Raising multiple rounds from tier-1 investors is one of the strongest market-credibility signals a founder can have.' },
 
+  // ── Legal — mapped to skill_premium and mobility ──
+  'legal_practice_setting.top_tier_law_firm': { dimension: 'skill_premium', text: 'Top-tier law firms command the highest billables and compensation in the legal market.' },
+  'legal_leadership_scope.partner_law_firm':  { dimension: 'mobility', text: 'Making Partner at a law firm represents the senior leadership ceiling in private practice.' },
+
+  // ── Research — mapped to skill_premium and mobility ──
+  'research_setting.industry_research':   { dimension: 'skill_premium', text: 'Industry/corporate research labs typically pay significantly more than academic settings for equivalent expertise.' },
+  'publication_record.no_publications':   { dimension: 'skill_premium', text: 'No publications yet — even one paper in a credible venue is the fastest lever to strengthen your research profile.' },
+  'research_seniority_status.tenured_professor': { dimension: 'mobility', text: 'Tenure represents the senior career ceiling in academic research paths.' },
+
+  // ── Content — mapped to skill_premium and visibility ──
+  'content_audience_proof.large_owned_audience': { dimension: 'visibility', text: 'Owning a sizable audience (10K+) is one of the strongest, most portable assets in content careers.' },
+  'content_work_model.own_platform_content':     { dimension: 'mobility', text: 'Building and monetising your own platform is the highest-upside path in content careers, though it carries more income variability.' },
+
+  // ── Administration & Office Management — mapped to skill_premium and mobility ──
+  'admin_support_scope.ea_senior_exec':        { dimension: 'skill_premium', text: 'Supporting C-suite or promoter-level leadership is the highest-paying scope within administrative roles.' },
+  'admin_systems_ownership.none_systems_admin': { dimension: 'skill_premium', text: 'Mostly reactive task support — owning even one process end-to-end (like vendor or budget management) is the fastest way to strengthen this.' },
+  'admin_leadership_scope.chief_of_staff':      { dimension: 'mobility', text: 'A Chief of Staff or Head of Administration role represents the senior leadership ceiling in administrative careers.' },
 }
 
 

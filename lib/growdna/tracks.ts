@@ -1,5 +1,5 @@
 export type CareerTrack =
-  | 'corporate_white_collar'
+ | 'corporate_white_collar'
   | 'operations_industrial'
   | 'public_service'
   | 'healthcare'
@@ -10,6 +10,12 @@ export type CareerTrack =
   | 'hr_people'
   | 'design_creative'
   | 'consulting_strategy'
+  | 'founder_entrepreneur'
+  | 'legal_compliance'
+  | 'research_academia'
+  | 'content_creative'
+  | 'office_administration'
+
 
 export interface TrackInfo {
   id: CareerTrack
@@ -73,7 +79,31 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
     label: 'Consulting & Strategy',
     description: 'Strategy, Big 4 advisory, boutique, implementation consulting',
   },
-
+  founder_entrepreneur: {
+    id: 'founder_entrepreneur',
+    label: 'Founder & Entrepreneur',
+    description: 'Funding stage, revenue, equity, and runway — not employer-based comp',
+  },
+  legal_compliance: {
+    id: 'legal_compliance',
+    label: 'Legal & Compliance',
+    description: 'Law firm vs in-house, PQE years, deal and litigation experience',
+  },
+  research_academia: {
+    id: 'research_academia',
+    label: 'Research & Academia',
+    description: 'Publication record, grant funding, tenure-track status',
+  },
+  content_creative: {
+    id: 'content_creative',
+    label: 'Content & Independent Creative',
+    description: 'Writing, content creation, and independent/freelance creative work',
+  },
+  office_administration: {
+    id: 'office_administration',
+    label: 'Administration & Office Management',
+    description: 'Executive assistants, office managers, secretarial and admin operations',
+  },
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -93,18 +123,19 @@ export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
   finance:           'finance_accounting',
   hr:                'hr_people',
   consulting_role:   'consulting_strategy',
-  content:             'corporate_white_collar',
+  content:             'content_creative',
   sales:               'sales_field',
   operations:          'operations_industrial',
-  legal_role:          'corporate_white_collar',
-  research:            'corporate_white_collar',
-  founder_role:        'corporate_white_collar',
+  legal_role:          'legal_compliance',
+  research:            'research_academia',
+  founder_role:        'founder_entrepreneur',
   general_mgmt:        'corporate_white_collar',
   healthcare_clinical: 'healthcare',
   nursing_allied:      'healthcare',
   teaching_education:  'public_service',
   civil_services:      'public_service',
   other_role:          'corporate_white_collar',
+  admin_office:        'office_administration',
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -112,7 +143,7 @@ export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
 // genuinely ambiguous on their own. It NEVER overrides a role with
 // clear functional meaning (engineering, sales, operations, etc.).
 // ════════════════════════════════════════════════════════════════
-const AMBIGUOUS_ROLES = new Set(['other_role', 'general_mgmt', 'research'])
+const AMBIGUOUS_ROLES = new Set(['other_role', 'general_mgmt'])
 
 const INDUSTRY_TRACK_OVERRIDE: Record<string, CareerTrack> = {
   healthcare: 'healthcare',

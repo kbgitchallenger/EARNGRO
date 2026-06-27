@@ -113,8 +113,8 @@ export const MODULE_A: Question[] = [
       { value: 'nursing_allied',    label: 'Nursing / Allied Health',  icon: '🏥', score: 6  },
       { value: 'teaching_education', label: 'Teaching / Academic Faculty', icon: '🎓', score: 5 },
       { value: 'civil_services',    label: 'Civil Services / Govt. Administration', icon: '🏛️', score: 5 },
+      { value: 'admin_office',      label: 'Administration / Office Management / EA', icon: '🗂️', score: 5 },
       { value: 'other_role',        label: 'Other function',          icon: '🔷', score: 5  },
-    
     ],
   },
   {
@@ -220,19 +220,20 @@ export const MODULE_B_MID: Question[] = [
     module: 'B',
     type: 'mcq',
     title: 'How would you describe your employer journey?',
-    subtitle: 'Employer brand is the #1 salary multiplier at your career level.',
+    subtitle: 'Employer brand is one of the strongest salary multipliers at your career level.',
     required: true,
     columns: 2,
     branch: ['mid'],
     options: [
-      { value: 'faang_unicorn',  label: 'FAANG / Unicorn',              icon: '🦄', sublabel: 'Highest brand premium',       score: 10 },
-      { value: 'large_mnc',     label: 'Large Global MNC',             icon: '🌐', sublabel: 'Strong, steady comp',          score: 8  },
-      { value: 'large_indian',  label: 'Large Indian listed co',       icon: '🏭', sublabel: 'Good brand, moderate ceiling', score: 6  },
-      { value: 'mid_company',   label: 'Mid-size company',             icon: '🏢', sublabel: 'Depends on niche',             score: 5  },
-      { value: 'small_startup', label: 'Early-stage startup',          icon: '🌱', sublabel: 'Equity upside, lower base',    score: 4  },
-      { value: 'declining',     label: 'Company in difficulty',        icon: '📉', sublabel: 'Affects perceived value',      score: 2  },
+      { value: 'marquee_employer', label: 'Marquee / top-tier name in your field', icon: '🏆', sublabel: 'Highest brand premium',       score: 10 },
+      { value: 'large_mnc',        label: 'Large Global organisation',              icon: '🌐', sublabel: 'Strong, steady comp',          score: 8  },
+      { value: 'large_indian',     label: 'Large Indian listed organisation',       icon: '🏭', sublabel: 'Good brand, moderate ceiling', score: 6  },
+      { value: 'mid_company',      label: 'Mid-size organisation',                  icon: '🏢', sublabel: 'Depends on sector/niche',     score: 5  },
+      { value: 'small_org',        label: 'Early-stage / small organisation',       icon: '🌱', sublabel: 'Often equity upside, lower base', score: 4 },
+      { value: 'declining',        label: 'Organisation facing difficulty',         icon: '📉', sublabel: 'Affects perceived value',      score: 2  },
     ],
   },
+
   {
     id: 'promotion_velocity',
     module: 'B',
@@ -251,24 +252,21 @@ export const MODULE_B_MID: Question[] = [
     ],
   },
   {
-    id: 'premium_skills',
+    id: 'differentiated_expertise',
     module: 'B',
     type: 'multiselect',
-    title: 'Which premium skills do you have?',
-    subtitle: '2+ premium skills puts you in the top 20% of earners for your role.',
+    title: 'Which of these set you apart in your field?',
+    subtitle: 'Select all that apply — these are the differentiators that move compensation in most professional functions.',
     required: true,
     columns: 2,
     branch: ['mid'],
     options: [
-      { value: 'ai_ml',          label: 'AI / ML / LLMs',              icon: '🤖', score: 10 },
-      { value: 'cloud_arch',     label: 'Cloud architecture',          icon: '☁️', score: 9  },
-      { value: 'data_eng',       label: 'Data engineering at scale',   icon: '📊', score: 9  },
-      { value: 'product_growth', label: 'Product-led growth',          icon: '📈', score: 8  },
-      { value: 'enterprise_sales', label: 'Enterprise sales',          icon: '💼', score: 9  },
-      { value: 'fin_modelling',  label: 'Financial modelling',         icon: '📋', score: 8  },
-      { value: 'devops',         label: 'DevOps / Platform eng',       icon: '⚙️', score: 8  },
-      { value: 'strategy',       label: 'Strategy / consulting',       icon: '🎯', score: 8  },
-      { value: 'no_premium',     label: 'None of the above',           icon: '—',  score: 0  },
+      { value: 'rare_certification',   label: 'Hold a rare / hard-to-get certification in your field', icon: '🎓', score: 9 },
+      { value: 'cross_functional',     label: 'Strong cross-functional exposure (e.g. worked across teams/functions)', icon: '🔄', score: 7 },
+      { value: 'specialized_tools',    label: 'Deep expertise in specialized tools/systems for your function', icon: '🛠️', score: 8 },
+      { value: 'track_record',         label: 'Documented, quantified track record of results',       icon: '📈', score: 9 },
+      { value: 'scarce_combination',   label: 'Rare combination of skills few peers have',              icon: '💎', score: 9 },
+      { value: 'no_differentiation',   label: 'None of the above yet',                                  icon: '—',  score: 0 },
     ],
   },
 ]
@@ -321,7 +319,7 @@ export const MODULE_B_SENIOR: Question[] = [
     options: [
       { value: 'speaker',        label: 'Conference speaker',          icon: '🎤', score: 9 },
       { value: 'author',         label: 'Author / blogger',            icon: '✍️', score: 8 },
-      { value: 'linkedin_active',label: 'LinkedIn creator 10K+',       icon: '💼', score: 7 },
+      { value: 'public_presence', label: 'Active public professional presence (LinkedIn, publications, etc.)', icon: '💼', score: 7 },
       { value: 'advisory',       label: 'Advisory / board roles',      icon: '🤝', score: 9 },
       { value: 'media',          label: 'Media mentions',              icon: '📰', score: 8 },
       { value: 'patents',        label: 'Patents / key contributions', icon: '🔬', score: 7 },
@@ -434,7 +432,11 @@ import { MODULE_B_FINANCE_MID, MODULE_B_FINANCE_SENIOR } from './tracks/finance'
 import { MODULE_B_HR_MID, MODULE_B_HR_SENIOR } from './tracks/hr'
 import { MODULE_B_DESIGN_MID, MODULE_B_DESIGN_SENIOR } from './tracks/design'
 import { MODULE_B_CONSULTING_MID, MODULE_B_CONSULTING_SENIOR } from './tracks/consulting'
-
+import { MODULE_B_FOUNDER_MID, MODULE_B_FOUNDER_SENIOR } from './tracks/founder'
+import { MODULE_B_LEGAL_MID, MODULE_B_LEGAL_SENIOR } from './tracks/legal'
+import { MODULE_B_RESEARCH_MID, MODULE_B_RESEARCH_SENIOR } from './tracks/research'
+import { MODULE_B_CONTENT_MID, MODULE_B_CONTENT_SENIOR } from './tracks/content'
+import { MODULE_B_ADMIN_MID, MODULE_B_ADMIN_SENIOR } from './tracks/officeAdmin'
 // Additional track imports will be added here as each track is built
 
 
@@ -503,6 +505,36 @@ export function getModuleBQuestions(
   if (track === 'consulting_strategy') {
     if (seniority === 'mid')    return MODULE_B_CONSULTING_MID
     if (seniority === 'senior') return MODULE_B_CONSULTING_SENIOR
+  }
+
+  // Founder & Entrepreneur track
+  if (track === 'founder_entrepreneur') {
+    if (seniority === 'mid')    return MODULE_B_FOUNDER_MID
+    if (seniority === 'senior') return MODULE_B_FOUNDER_SENIOR
+  }
+
+  // Legal & Compliance track
+  if (track === 'legal_compliance') {
+    if (seniority === 'mid')    return MODULE_B_LEGAL_MID
+    if (seniority === 'senior') return MODULE_B_LEGAL_SENIOR
+  }
+
+  // Research & Academia track
+  if (track === 'research_academia') {
+    if (seniority === 'mid')    return MODULE_B_RESEARCH_MID
+    if (seniority === 'senior') return MODULE_B_RESEARCH_SENIOR
+  }
+
+  // Content & Independent Creative track
+  if (track === 'content_creative') {
+    if (seniority === 'mid')    return MODULE_B_CONTENT_MID
+    if (seniority === 'senior') return MODULE_B_CONTENT_SENIOR
+  }
+
+  // Administration & Office Management track
+  if (track === 'office_administration') {
+    if (seniority === 'mid')    return MODULE_B_ADMIN_MID
+    if (seniority === 'senior') return MODULE_B_ADMIN_SENIOR
   }
 
   // Default — corporate_white_collar questions (also the fallback for
