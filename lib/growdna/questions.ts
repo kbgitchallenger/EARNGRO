@@ -437,6 +437,7 @@ import { MODULE_B_LEGAL_MID, MODULE_B_LEGAL_SENIOR } from './tracks/legal'
 import { MODULE_B_RESEARCH_MID, MODULE_B_RESEARCH_SENIOR } from './tracks/research'
 import { MODULE_B_CONTENT_MID, MODULE_B_CONTENT_SENIOR } from './tracks/content'
 import { MODULE_B_ADMIN_MID, MODULE_B_ADMIN_SENIOR } from './tracks/officeAdmin'
+import { MODULE_B_TECH_MID, MODULE_B_TECH_SENIOR } from './tracks/technology'
 // Additional track imports will be added here as each track is built
 
 
@@ -535,6 +536,12 @@ export function getModuleBQuestions(
   if (track === 'office_administration') {
     if (seniority === 'mid')    return MODULE_B_ADMIN_MID
     if (seniority === 'senior') return MODULE_B_ADMIN_SENIOR
+  }
+
+  // Technology & Product track
+  if (track === 'technology_product') {
+    if (seniority === 'mid')    return MODULE_B_TECH_MID
+    if (seniority === 'senior') return MODULE_B_TECH_SENIOR
   }
 
   // Default — corporate_white_collar questions (also the fallback for

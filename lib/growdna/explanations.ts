@@ -134,6 +134,12 @@ export const ANSWER_EXPLANATIONS: Record<string, AnswerExplanation> = {
   'admin_support_scope.ea_senior_exec':        { dimension: 'skill_premium', text: 'Supporting C-suite or promoter-level leadership is the highest-paying scope within administrative roles.' },
   'admin_systems_ownership.none_systems_admin': { dimension: 'skill_premium', text: 'Mostly reactive task support — owning even one process end-to-end (like vendor or budget management) is the fastest way to strengthen this.' },
   'admin_leadership_scope.chief_of_staff':      { dimension: 'mobility', text: 'A Chief of Staff or Head of Administration role represents the senior leadership ceiling in administrative careers.' },
+
+  // ── Technology & Product — mapped to skill_premium and mobility ──
+  'tech_specialization.ai_ml_engineer':     { dimension: 'skill_premium', text: 'AI/ML/LLM engineering currently commands the highest premium across all technical specialisations.' },
+  'tech_scale_ownership.high_scale':         { dimension: 'skill_premium', text: 'Owning a high-scale system (millions of users or TB+ data) is a strong, market-recognised signal of technical capability.' },
+  'tech_leadership_track.cto_equivalent':    { dimension: 'mobility', text: 'A CTO or VP Engineering role represents the senior leadership ceiling in technology careers.' },
+  'tech_leadership_track.staff_principal':   { dimension: 'mobility', text: 'Staff/Principal Engineer is the individual-contributor leadership ceiling — equally senior to management tracks, often compensated comparably.' },
 }
 
 

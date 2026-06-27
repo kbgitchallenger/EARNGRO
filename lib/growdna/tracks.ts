@@ -15,7 +15,7 @@ export type CareerTrack =
   | 'research_academia'
   | 'content_creative'
   | 'office_administration'
-
+  | 'technology_product'
 
 export interface TrackInfo {
   id: CareerTrack
@@ -104,6 +104,11 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
     label: 'Administration & Office Management',
     description: 'Executive assistants, office managers, secretarial and admin operations',
   },
+  technology_product: {
+    id: 'technology_product',
+    label: 'Technology & Product',
+    description: 'Software engineering, data science, data engineering, DevOps/cloud, and product management',
+  },
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -113,11 +118,11 @@ export const CAREER_TRACKS: Record<CareerTrack, TrackInfo> = {
 // sits in (an engineer is an engineer at a bank or at a startup).
 // ════════════════════════════════════════════════════════════════
 export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
-  engineering:         'corporate_white_collar',
-  data_science:        'corporate_white_collar',
-  data_engineering:    'corporate_white_collar',
-  devops_cloud:        'corporate_white_collar',
-  product:             'corporate_white_collar',
+  engineering:         'technology_product',
+  data_science:        'technology_product',
+  data_engineering:    'technology_product',
+  devops_cloud:        'technology_product',
+  product:             'technology_product',
   marketing:         'marketing_brand',
   design:            'design_creative',
   finance:           'finance_accounting',
@@ -136,6 +141,7 @@ export const ROLE_TO_TRACK: Record<string, CareerTrack> = {
   civil_services:      'public_service',
   other_role:          'corporate_white_collar',
   admin_office:        'office_administration',
+  
 }
 
 // ════════════════════════════════════════════════════════════════
