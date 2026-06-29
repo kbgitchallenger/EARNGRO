@@ -12,10 +12,37 @@ import {
   checkPLConsistency,
   type CVFacts,
 } from '@/lib/growdna/cvConsistency'
+
+interface LimitReachedCardProps {
+  reason: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null
+  feature: string
+}
+
+function LimitReachedCard({ reason, feature }: LimitReachedCardProps) {
+  const title = reason === 'INSUFFICIENT_CREDITS' ? 'Insufficient credits' : 'Free limit reached'
+  const featureLabel = feature === 'growdna' ? 'GrowDNA' : feature
+
+  return (
+    <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, maxWidth: 620, margin: '0 auto' }}>
+      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{title}</div>
+      <p style={{ margin: '0 0 12px', color: 'var(--muted)' }}>
+        {reason === 'INSUFFICIENT_CREDITS'
+          ? `You don't have enough credits to retake your ${featureLabel} assessment right now.`
+          : `You've reached your free ${featureLabel} assessment limit.`}
+      </p>
+      <p style={{ margin: 0, color: 'var(--muted)' }}>
+        Please upgrade your plan or contact support to continue.
+      </p>
+    </div>
+  )
+}
+
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {
   userId: string
   cvFacts?: CVFacts
+  canRetake?: boolean
+  limitReason?: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null
   existingResult: {
     id: string
     career_archetype: string
@@ -199,15 +226,15 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
   const emoji = ARCHETYPE_EMOJI[result.career_archetype] ?? '🎯'
 
   // Normalise scores — API may return them nested or flat
- const raw = result as unknown as Record<string, number | Record<string, string[]>>
+  const raw = result as unknown as Record<string, number | Record<string, string[]>>
   const s   = result.scores ?? {}
-const sc = (k: string) => {
-  const v1 = (s as Record<string, unknown>)[k]
-  if (typeof v1 === 'number') return v1
-  const v2 = raw[k]
-  if (typeof v2 === 'number') return v2
-  return 0
-}
+  const sc = (k: string) => {
+    const v1 = (s as Record<string, unknown>)[k]
+    if (typeof v1 === 'number') return v1
+    const v2 = raw[k]
+    if (typeof v2 === 'number') return v2
+    return 0
+  }
 
   const dims = [
     { key: 'market_alignment', label: 'Market Alignment', val: sc('market_alignment'), color: 'var(--amber)' },
@@ -266,7 +293,8 @@ const sc = (k: string) => {
           </div>
         )}
       </div>
-{/* 5 Earning dimensions */}
+
+      {/* 5 Earning dimensions */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Your 5 earning dimensions</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>Based directly on your answers below</div>
@@ -359,7 +387,7 @@ const sc = (k: string) => {
 }
 
 // ── Main Component ────────────────────────────────────────────────
-export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Props) {
+export default function GrowDNAAssessment({ userId, existingResult, cvFacts, canRetake, limitReason }: Props) {
   const [answers, setAnswers]       = useState<Answers>({})
   const [currentIdx, setCurrentIdx] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -367,12 +395,14 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
   const [result, setResult]         = useState<AIResult | null>(null)
   const [showExisting, setShowExisting] = useState(!!existingResult)
   const [nudge, setNudge] = useState<string | null>(null)
+  const [showLimitCard, setShowLimitCard] = useState(false)
+  const [limitReasonOverride, setLimitReasonOverride] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
 
   const seniority = (answers.seniority as string) || 'mid'
   const role = answers.role as string | undefined
   const industry = answers.industry as string | undefined
   const questions: Question[] = [...MODULE_A, ...getModuleBQuestions(seniority, role, industry), ...MODULE_C]
-  
+
   const current = questions[currentIdx]
   const totalQ  = questions.length
   const isLast  = currentIdx === totalQ - 1
@@ -389,23 +419,23 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
   }
 
   function setMCQ(qid: string, val: string) {
-  setAnswers(prev => ({ ...prev, [qid]: val }))
-  setNudge(null)
+    setAnswers(prev => ({ ...prev, [qid]: val }))
+    setNudge(null)
 
-  if (cvFacts) {
-    let warning = null
-    if (qid === 'team_scale') warning = checkTeamScaleConsistency(val, cvFacts)
-    if (qid === 'seniority') warning = checkSeniorityConsistency(val, cvFacts)
-    if (qid === 'pl_exposure') warning = checkPLConsistency(val, cvFacts)
+    if (cvFacts) {
+      let warning = null
+      if (qid === 'team_scale') warning = checkTeamScaleConsistency(val, cvFacts)
+      if (qid === 'seniority') warning = checkSeniorityConsistency(val, cvFacts)
+      if (qid === 'pl_exposure') warning = checkPLConsistency(val, cvFacts)
 
-    if (warning) {
-      setNudge(warning.message)
-      return // don't auto-advance — let them see the nudge first
+      if (warning) {
+        setNudge(warning.message)
+        return // don't auto-advance — let them see the nudge first
+      }
     }
-  }
 
-  setTimeout(() => { if (!isLast) setCurrentIdx(i => i + 1) }, 280)
-}
+    setTimeout(() => { if (!isLast) setCurrentIdx(i => i + 1) }, 280)
+  }
 
   function toggleMulti(qid: string, val: string) {
     setAnswers(prev => {
@@ -421,6 +451,17 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
   function goNext() { if (isLast) { handleSubmit(); return }; setCurrentIdx(i => Math.min(i + 1, totalQ - 1)) }
   function goBack() { setCurrentIdx(i => Math.max(i - 1, 0)) }
 
+  function handleRetakeClick() {
+    if (canRetake === false) {
+      setShowLimitCard(true)
+      return
+    }
+    setResult(null)
+    setAnswers({})
+    setCurrentIdx(0)
+    setShowExisting(false)
+  }
+
   async function handleSubmit() {
     setSubmitting(true)
     setError('')
@@ -431,6 +472,15 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answers, scores }),
       })
+
+      if (res.status === 402) {
+        const body = await res.json().catch(() => ({}))
+        setSubmitting(false)
+        setLimitReasonOverride(body.error === 'INSUFFICIENT_CREDITS' ? 'INSUFFICIENT_CREDITS' : 'FREE_LIMIT_REACHED')
+        setShowLimitCard(true)
+        return
+      }
+
       if (!res.ok) throw new Error('Submission failed')
       const data: AIResult = await res.json()
       setResult(data)
@@ -440,11 +490,21 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
     }
   }
 
+  // ── Limit reached — show before anything else ─────────────────
+  if (showLimitCard) {
+    const reason = limitReasonOverride ?? limitReason ?? 'FREE_LIMIT_REACHED'
+    return (
+      <div style={{ padding: '24px 24px 0' }}>
+        <LimitReachedCard reason={reason} feature="growdna" />
+      </div>
+    )
+  }
+
   // ── Result screen (fresh submission) ─────────────────────────
   if (result) {
     return (
       <div style={{ padding: '24px 24px 0' }}>
-        <ResultPanel result={result} onRetake={() => { setResult(null); setAnswers({}); setCurrentIdx(0) }} />
+        <ResultPanel result={result} onRetake={handleRetakeClick} />
       </div>
     )
   }
@@ -452,45 +512,44 @@ export default function GrowDNAAssessment({ userId, existingResult,cvFacts }: Pr
   // ── Existing result screen → full ResultPanel ─────────────────
   if (showExisting && existingResult) {
     const ai = existingResult.raw_ai_response ?? {}
-const ds = existingResult.dimension_scores ?? {}
+    const ds = existingResult.dimension_scores ?? {}
 
-// Normalise close_actions — can be string[] or object[]
-const rawActions = existingResult.close_actions ?? []
-const normActions: { action: string; impact: string; timeline: string }[] = rawActions.map(a =>
-  typeof a === 'string'
-    ? { action: a, impact: '', timeline: '' }
-    : a as { action: string; impact: string; timeline: string }
-)
+    // Normalise close_actions — can be string[] or object[]
+    const rawActions = existingResult.close_actions ?? []
+    const normActions: { action: string; impact: string; timeline: string }[] = rawActions.map(a =>
+      typeof a === 'string'
+        ? { action: a, impact: '', timeline: '' }
+        : a as { action: string; impact: string; timeline: string }
+    )
 
-const mapped: AIResult = {
-  id:                   existingResult.id,
-  career_archetype:     existingResult.career_archetype ?? 'The Growth Professional',
-  archetype_desc:       ai.archetype_desc ?? '',
-  earning_gap_estimate: existingResult.earning_gap ?? 0,
-  target_salary:        existingResult.target_salary ?? 0,
-  months_to_close:      existingResult.months_to_close ?? 0,
-  top_strengths:        ai.top_strengths ?? [],
-  critical_gaps:        existingResult.gap_reasons ?? [],
-  immediate_actions:    ai.immediate_actions ?? normActions,
-  market_insight:       ai.market_insight ?? '',
-  salary_range_min:     existingResult.salary_range_min ?? 0,
-  salary_range_max:     existingResult.salary_range_max ?? 0,
-  peer_comparison:      ai.peer_comparison
-    ?? `Last assessed ${new Date(existingResult.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-  scores: {
-    market_alignment: ds.market_alignment ?? 0,
-    skill_premium:    ds.skill_premium    ?? 0,
-    visibility:       ds.visibility       ?? 0,
-    mobility:         ds.mobility         ?? 0,
-    negotiation:      ds.negotiation      ?? 0,
-    hrs:              existingResult.hrs_score ?? 0,
-    explanations:     ds.explanations,
-  },
-
-}
+    const mapped: AIResult = {
+      id:                   existingResult.id,
+      career_archetype:     existingResult.career_archetype ?? 'The Growth Professional',
+      archetype_desc:       ai.archetype_desc ?? '',
+      earning_gap_estimate: existingResult.earning_gap ?? 0,
+      target_salary:        existingResult.target_salary ?? 0,
+      months_to_close:      existingResult.months_to_close ?? 0,
+      top_strengths:        ai.top_strengths ?? [],
+      critical_gaps:        existingResult.gap_reasons ?? [],
+      immediate_actions:    ai.immediate_actions ?? normActions,
+      market_insight:       ai.market_insight ?? '',
+      salary_range_min:     existingResult.salary_range_min ?? 0,
+      salary_range_max:     existingResult.salary_range_max ?? 0,
+      peer_comparison:      ai.peer_comparison
+        ?? `Last assessed ${new Date(existingResult.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+      scores: {
+        market_alignment: ds.market_alignment ?? 0,
+        skill_premium:    ds.skill_premium    ?? 0,
+        visibility:       ds.visibility       ?? 0,
+        mobility:         ds.mobility         ?? 0,
+        negotiation:      ds.negotiation      ?? 0,
+        hrs:              existingResult.hrs_score ?? 0,
+        explanations:     ds.explanations,
+      },
+    }
     return (
       <div style={{ padding: '24px 24px 0' }}>
-        <ResultPanel result={mapped} onRetake={() => setShowExisting(false)} />
+        <ResultPanel result={mapped} onRetake={handleRetakeClick} />
       </div>
     )
   }
@@ -549,21 +608,21 @@ const mapped: AIResult = {
           <SalaryInput value={getAnswer('current_ctc') as number | undefined} onChange={setSalary} />
         )}
         {nudge && (
-  <div className="dna-nudge">
-    <span className="dna-nudge-icon">💡</span>
-    <span className="dna-nudge-text">{nudge}</span>
-    <button
-      type="button"
-      className="dna-nudge-dismiss"
-      onClick={() => {
-        setNudge(null)
-        if (!isLast) setCurrentIdx(i => i + 1)
-      }}
-    >
-      Confirm & continue →
-    </button>
-  </div>
-)}
+          <div className="dna-nudge">
+            <span className="dna-nudge-icon">💡</span>
+            <span className="dna-nudge-text">{nudge}</span>
+            <button
+              type="button"
+              className="dna-nudge-dismiss"
+              onClick={() => {
+                setNudge(null)
+                if (!isLast) setCurrentIdx(i => i + 1)
+              }}
+            >
+              Confirm & continue →
+            </button>
+          </div>
+        )}
         {error && <div className="dna-error">{error}</div>}
       </div>
 
