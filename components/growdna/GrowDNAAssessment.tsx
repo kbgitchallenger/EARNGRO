@@ -12,30 +12,7 @@ import {
   checkPLConsistency,
   type CVFacts,
 } from '@/lib/growdna/cvConsistency'
-
-interface LimitReachedCardProps {
-  reason: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null
-  feature: string
-}
-
-function LimitReachedCard({ reason, feature }: LimitReachedCardProps) {
-  const title = reason === 'INSUFFICIENT_CREDITS' ? 'Insufficient credits' : 'Free limit reached'
-  const featureLabel = feature === 'growdna' ? 'GrowDNA' : feature
-
-  return (
-    <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, maxWidth: 620, margin: '0 auto' }}>
-      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{title}</div>
-      <p style={{ margin: '0 0 12px', color: 'var(--muted)' }}>
-        {reason === 'INSUFFICIENT_CREDITS'
-          ? `You don't have enough credits to retake your ${featureLabel} assessment right now.`
-          : `You've reached your free ${featureLabel} assessment limit.`}
-      </p>
-      <p style={{ margin: 0, color: 'var(--muted)' }}>
-        Please upgrade your plan or contact support to continue.
-      </p>
-    </div>
-  )
-}
+import LimitReachedCard from '@/components/shared/LimitReachedCard'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {

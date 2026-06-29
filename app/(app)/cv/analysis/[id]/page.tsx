@@ -1,4 +1,3 @@
-//app/(app)/cv/analysis/[id]/page.tsx
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
@@ -7,6 +6,8 @@ import Link from 'next/link'
 import ATSScoreCard from '@/components/cv/ATSScoreCard'
 import AnalyzeClientButton from '@/components/cv/AnalyzeClientButton'
 import RefreshButton from '@/components/cv/RefreshButton'
+import LimitReachedCard from '@/components/shared/LimitReachedCard'
+import { hasUsedFeature, canAfford } from '@/services/credits.service'
 
 export default async function CVAnalysisPage({
   params,
@@ -17,6 +18,12 @@ export default async function CVAnalysisPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
 
   const { data: version } = await supabase
     .from('cv_versions')
@@ -49,6 +56,27 @@ export default async function CVAnalysisPage({
   const isParsing = !version.raw_text
   const hasParsed = !!version.raw_text
   const hasAnalysis = !!analysis
+
+  // ── Eligibility check — only matters if analysis already exists (re-run) ──
+  const plan = profile?.plan ?? 'free'
+  let canReanalyze = true
+  let limitReason: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null = null
+
+  if (hasAnalysis) {
+    if (plan === 'free') {
+      const alreadyUsed = await hasUsedFeature(user.id, 'cv_parse_analyze')
+      if (alreadyUsed) {
+        canReanalyze = false
+        limitReason = 'FREE_LIMIT_REACHED'
+      }
+    } else {
+      const affordable = await canAfford(user.id, 'ats_reanalyze')
+      if (!affordable) {
+        canReanalyze = false
+        limitReason = 'INSUFFICIENT_CREDITS'
+      }
+    }
+  }
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
@@ -97,7 +125,7 @@ export default async function CVAnalysisPage({
           </div>
         )}
 
-        {/* State 2 — Parsed, no analysis yet */}
+        {/* State 2 — Parsed, no analysis yet — always allowed, never gated */}
         {hasParsed && !hasAnalysis && (
           <>
             {parsed && <ProfileSummary parsed={parsed} marketScore={version.market_score} />}
@@ -114,7 +142,7 @@ export default async function CVAnalysisPage({
           </>
         )}
 
-        {/* State 3 — Analysis exists — show results */}
+        {/* State 3 — Analysis exists — show results, gate re-run if limit hit */}
         {hasAnalysis && (
           <>
             {parsed && <ProfileSummary parsed={parsed} marketScore={version.market_score} />}
@@ -122,7 +150,11 @@ export default async function CVAnalysisPage({
               <ATSScoreCard data={analysis} />
             </div>
             <div style={{ marginTop: 14, textAlign: 'center' }}>
-              <AnalyzeClientButton versionId={version.id} />
+              {canReanalyze ? (
+                <AnalyzeClientButton versionId={version.id} />
+              ) : (
+                <LimitReachedCard reason={limitReason ?? 'FREE_LIMIT_REACHED'} feature="cv_analysis" />
+              )}
             </div>
           </>
         )}
@@ -197,5 +229,3 @@ function ProfileSummary({
     </div>
   )
 }
-
-
