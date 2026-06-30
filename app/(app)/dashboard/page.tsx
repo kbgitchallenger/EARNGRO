@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import HRSBar from '@/components/dashboard/HRSBar'
+import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
+import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
 
 function fmt(n: number | null | undefined): string {
   if (!n) return '—'
@@ -35,14 +37,13 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: dna }, { data: cvData }] = await Promise.all([
+  const [{ data: profile }, { data: dnaAttempts }, { data: cvData }] = await Promise.all([
     supabase.from('profiles').select('full_name, plan').eq('id', user.id).single(),
     supabase.from('grow_dna')
-      .select('earning_gap, target_salary, hrs_score, months_to_close, role, city, career_archetype, current_salary, created_at')
+      .select('earning_gap, target_salary, hrs_score, months_to_close, role, city, career_archetype, current_salary, created_at, dimension_scores')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(2),
     supabase.from('cv_versions')
       .select('id, market_score, name')
       .eq('user_id', user.id)
@@ -54,8 +55,14 @@ export default async function DashboardPage() {
   // Reliable name fallback
   const rawName = profile?.full_name || user.email?.split('@')[0] || 'there'
   const name = rawName.split(' ')[0]
-  const hasGap = !!dna
   const plan = profile?.plan ?? 'free'
+
+  const dna = dnaAttempts?.[0]
+  const prevDna = dnaAttempts?.[1]
+  const hasGap = !!dna
+
+  const changeNarrative = dna && prevDna ? getChangeNarrative(dna, prevDna) : null
+  const hasRecentPositiveMove = !!changeNarrative?.isCelebration
 
   return (
     <div className="dashboard">
@@ -122,6 +129,11 @@ export default async function DashboardPage() {
       {/* ── HAS DNA — MAIN DASHBOARD ── */}
       {hasGap && (
         <>
+          {/* Welcome-back narrative — the first thing a returning user sees */}
+          {changeNarrative && (
+            <ChangeNarrativeCard narrative={changeNarrative} attemptId={dna.created_at} compact />
+          )}
+
           {/* Profile context strip */}
           {(dna.role || dna.city) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -171,8 +183,23 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* HRS Score — animated */}
-            <div className="dash-stat-card hrs-card">
+            {/* HRS Score — animated, with live pulse on recent positive movement */}
+            <div className="dash-stat-card hrs-card" style={{ position: 'relative' }}>
+              {hasRecentPositiveMove && (
+                <div style={{
+                  position: 'absolute', top: 14, right: 14,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: 'var(--teal)', flexShrink: 0,
+                    animation: 'hrsPulseDot 2s ease-in-out infinite',
+                  }} />
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Trending up
+                  </span>
+                </div>
+              )}
               <div className="stat-label">Hiring Readiness Score</div>
               <div className="stat-value hrs-value" style={{ color: hrsColor(dna.hrs_score ?? 0) }}>
                 {dna.hrs_score ?? '—'}
@@ -182,6 +209,14 @@ export default async function DashboardPage() {
               <div className="stat-sub" style={{ marginTop: 8 }}>
                 {hrsLabel(dna.hrs_score ?? 0)}
               </div>
+              {hasRecentPositiveMove && (
+                <style>{`
+                  @keyframes hrsPulseDot {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.4; transform: scale(1.4); }
+                  }
+                `}</style>
+              )}
             </div>
 
             {/* Timeline */}
@@ -231,8 +266,6 @@ export default async function DashboardPage() {
           <div className="dash-section-title" style={{ marginTop: 8 }}>Continue your GrowPath</div>
           <div className="dash-actions">
 
-            {/* Primary action */}
-            
             <Link href="/cv" className="action-card">
               <div className="action-ico">📄</div>
               <div className="action-body">

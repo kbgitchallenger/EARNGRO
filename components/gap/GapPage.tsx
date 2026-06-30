@@ -1,8 +1,10 @@
+//app/components/gap/GapPage.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { getChangeNarrative, type ChangeNarrative } from '@/lib/growdna/changeNarrative'
+import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
 
 // ── Types ────────────────────────────────────────────────────────
 interface DimensionScores {
@@ -110,7 +112,7 @@ function CelebrationCard({
   narrative,
   attemptId,
 }: {
-  narrative: ChangeNarrative
+ narrative: ChangeNarrative
   attemptId: string
 }) {
   const [showCelebration, setShowCelebration] = useState(false)
@@ -380,9 +382,9 @@ export default function GapPage({ attempts, userId }: Props) {
           </div>
         </div>
 
-        {changeNarrative && (
-          <CelebrationCard narrative={changeNarrative} attemptId={latest.id} />
-        )}
+      {changeNarrative && (
+        <ChangeNarrativeCard narrative={changeNarrative} attemptId={latest.id} />
+      )}
 
         {/* Key metrics — 2x2 grid on mobile, 4 cols on desktop */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
