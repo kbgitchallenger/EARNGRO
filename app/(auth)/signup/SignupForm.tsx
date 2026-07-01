@@ -1,19 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+
+function getStrength(pw: string) {
+  if (!pw) return { label: '', score: 0 }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (pw.length >= 12) score++
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  if (score <= 1) return { label: 'Weak', score: 1 }
+  if (score <= 3) return { label: 'Fair', score: 2 }
+  return { label: 'Strong', score: 3 }
+}
 
 export default function SignupForm() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  const strength = useMemo(() => getStrength(password), [password])
+  const strengthColor = ['var(--border)', 'var(--red)', '#E0A400', 'var(--teal)'][strength.score]
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -48,18 +65,8 @@ export default function SignupForm() {
   async function handleGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     })
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '11px 14px',
-    border: '1.5px solid var(--border)',
-    borderRadius: 'var(--r-md)', fontSize: 14,
-    outline: 'none', fontFamily: 'var(--sans)',
-    background: 'var(--paper)', color: 'var(--ink)'
   }
 
   const labelStyle: React.CSSProperties = {
@@ -71,7 +78,7 @@ export default function SignupForm() {
   if (success) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)', padding: 24 }}>
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 40, width: '100%', maxWidth: 420, textAlign: 'center', boxShadow: 'var(--sh-lg)' }}>
+        <div className="eg-card eg-fade-in" style={{ padding: 40, width: '100%', maxWidth: 420, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
           <h2 style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>
             Check your email
@@ -80,14 +87,39 @@ export default function SignupForm() {
             We sent a confirmation link to <strong style={{ color: 'var(--ink)' }}>{email}</strong>.<br />
             Click it to activate your account and start discovering your Earning Gap.
           </p>
+          <button
+            onClick={() => setSuccess(false)}
+            className="eg-link-btn"
+            style={{ marginTop: 20 }}
+          >
+            Wrong email? Go back
+          </button>
         </div>
+        <style jsx>{`
+          .eg-card {
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            box-shadow: var(--sh-lg);
+          }
+          .eg-fade-in { animation: fadeInUp 0.4s ease both; }
+          .eg-link-btn {
+            background: none; border: none; color: var(--teal);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: var(--sans); text-decoration: underline;
+          }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)', padding: 24 }}>
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 40, width: '100%', maxWidth: 420, boxShadow: 'var(--sh-lg)' }}>
+      <div className="eg-card eg-fade-in" style={{ padding: 40, width: '100%', maxWidth: 420 }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
@@ -105,7 +137,7 @@ export default function SignupForm() {
         </p>
 
         {/* Google */}
-        <button onClick={handleGoogle} style={{ width: '100%', padding: 12, background: 'var(--paper)', border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, color: 'var(--ink)', cursor: 'pointer', marginBottom: 20, fontFamily: 'var(--sans)' }}>
+        <button onClick={handleGoogle} className="eg-btn-google" style={{ marginBottom: 20 }}>
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -121,30 +153,70 @@ export default function SignupForm() {
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
-        <form onSubmit={handleSignup}>
+        <form onSubmit={handleSignup} noValidate>
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Full name</label>
-            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ravi Kumar" required style={inputStyle} />
+            <label style={labelStyle} htmlFor="fullName">Full name</label>
+            <input
+              id="fullName" type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+              placeholder="Ravi Kumar" required autoComplete="name" className="eg-input"
+            />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Email address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required style={inputStyle} />
+            <label style={labelStyle} htmlFor="email">Email address</label>
+            <input
+              id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@company.com" required autoComplete="email" className="eg-input"
+            />
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" required style={inputStyle} />
+          <div style={{ marginBottom: 8 }}>
+            <label style={labelStyle} htmlFor="password">Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="password" type={showPassword ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters"
+                required autoComplete="new-password" minLength={8} className="eg-input"
+                style={{ paddingRight: 44 }}
+              />
+              <button
+                type="button" onClick={() => setShowPassword(s => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="eg-toggle-visibility"
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
+
+          {password && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{
+                    height: 3, flex: 1, borderRadius: 2,
+                    background: i <= strength.score ? strengthColor : 'var(--border)',
+                    transition: 'background 0.2s ease'
+                  }} />
+                ))}
+              </div>
+              <span style={{ fontSize: 11, color: strengthColor, fontWeight: 600 }}>{strength.label}</span>
+            </div>
+          )}
+          {!password && <div style={{ marginBottom: 20 }} />}
 
           {error && (
-            <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
-              {error}
+            <div className="eg-error">
+              <span aria-hidden>⚠</span> {error}
             </div>
           )}
 
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: 13, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.2)' }}>
-            {loading ? 'Creating account…' : 'Create free account'}
+          <button type="submit" disabled={loading} className="eg-btn-primary">
+            {loading ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span className="eg-spinner" /> Creating account…
+              </span>
+            ) : 'Create free account'}
           </button>
         </form>
 
@@ -159,6 +231,84 @@ export default function SignupForm() {
           By signing up you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
+
+      <style jsx>{`
+        .eg-card {
+          background: var(--paper);
+          border: 1px solid var(--border);
+          border-radius: var(--r-xl);
+          box-shadow: var(--sh-lg);
+        }
+        .eg-fade-in { animation: fadeInUp 0.4s ease both; }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .eg-input {
+          width: 100%;
+          padding: 11px 14px;
+          border: 1.5px solid var(--border);
+          border-radius: var(--r-md);
+          font-size: 14px;
+          outline: none;
+          font-family: var(--sans);
+          background: var(--paper);
+          color: var(--ink);
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .eg-input:hover { border-color: var(--muted); }
+        .eg-input:focus {
+          border-color: var(--teal);
+          box-shadow: 0 0 0 3px rgba(14,122,90,0.12);
+        }
+        .eg-toggle-visibility {
+          position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+          background: none; border: none; cursor: pointer; font-size: 15px;
+          padding: 4px; line-height: 1; border-radius: 4px;
+        }
+        .eg-toggle-visibility:focus-visible {
+          outline: 2px solid var(--teal); outline-offset: 2px;
+        }
+        .eg-btn-google {
+          width: 100%; padding: 12px; background: var(--paper);
+          border: 1.5px solid var(--border); border-radius: var(--r-md);
+          display: flex; align-items: center; justify-content: center;
+          gap: 10px; font-size: 14px; font-weight: 500; color: var(--ink);
+          cursor: pointer; font-family: var(--sans);
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .eg-btn-google:hover { border-color: var(--muted); background: rgba(0,0,0,0.015); }
+        .eg-btn-google:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+        .eg-btn-primary {
+          width: 100%; padding: 13px; background: var(--teal); color: #fff;
+          border: none; border-radius: var(--r-md); font-size: 15px; font-weight: 600;
+          font-family: var(--sans); box-shadow: 0 4px 16px rgba(14,122,90,0.2);
+          cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+        .eg-btn-primary:hover:not(:disabled) {
+          box-shadow: 0 6px 20px rgba(14,122,90,0.3);
+          transform: translateY(-1px);
+        }
+        .eg-btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .eg-btn-primary:disabled { cursor: not-allowed; opacity: 0.7; }
+        .eg-btn-primary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+        .eg-error {
+          background: var(--red-l); border: 1px solid #F5CCCC; border-radius: var(--r-md);
+          padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 14px;
+          display: flex; align-items: center; gap: 8px;
+          animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          75% { transform: translateX(3px); }
+        }
+        .eg-spinner {
+          width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
+          border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }

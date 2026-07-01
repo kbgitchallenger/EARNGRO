@@ -1,3 +1,4 @@
+//app/(auth)/signup/page.tsx
 import { Suspense } from 'react'
 import SignupForm from './SignupForm'
 
