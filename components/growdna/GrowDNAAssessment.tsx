@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { consumeCalcPrefill, type CalcPrefill } from '@/lib/growdna/calcPrefill'
 import {
   MODULE_A, getModuleBQuestions, MODULE_C,
   type Question, type Option, calculateScores
@@ -374,7 +375,8 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const [nudge, setNudge] = useState<string | null>(null)
   const [showLimitCard, setShowLimitCard] = useState(false)
   const [limitReasonOverride, setLimitReasonOverride] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
-
+  const [prefillApplied, setPrefillApplied] = useState(false)
+  
   const seniority = (answers.seniority as string) || 'mid'
   const role = answers.role as string | undefined
   const industry = answers.industry as string | undefined
@@ -383,7 +385,39 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const current = questions[currentIdx]
   const totalQ  = questions.length
   const isLast  = currentIdx === totalQ - 1
+   
+  useEffect(() => {
+  // Only apply prefill for new users starting fresh (not existing results)
+  if (showExisting || existingResult) return
 
+  const prefill = consumeCalcPrefill()
+  if (!prefill) return
+
+  setAnswers(prev => ({
+    ...prev,
+    ...(prefill.industry ? { industry: prefill.industry } : {}),
+    ...(prefill.seniority ? { seniority: prefill.seniority } : {}),
+    ...(prefill.role ? { role: prefill.role } : {}),
+    ...(prefill.city ? { city: prefill.city } : {}),
+    ...(prefill.current_ctc ? { current_ctc: prefill.current_ctc } : {}),
+  }))
+
+  // Count how many core fields were filled
+  const filledCount = [
+    prefill.industry,
+    prefill.seniority,
+    prefill.role,
+    prefill.city,
+  ].filter(Boolean).length
+
+  // If 3+ fields exist, jump directly to salary question
+  if (filledCount >= 3) {
+    setCurrentIdx(4)
+  }
+
+  setPrefillApplied(true)
+}, []) // eslint-disable-line react-hooks/exhaustive-deps
+  
   function getAnswer(qid: string) { return answers[qid] }
 
   function isAnswered(q: Question): boolean {
@@ -538,6 +572,24 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     <div className="dna-assessment">
       <ProgressBar current={currentIdx + 1} total={totalQ} module={current?.module || 'A'} />
 
+      {prefillApplied && (
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 10,
+    background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)',
+    borderRadius: 'var(--r-md)', padding: '10px 16px', margin: '0 0 12px',
+    fontSize: 12, color: 'var(--teal-d)',
+  }}>
+    <span style={{ fontSize: 16, flexShrink: 0 }}>✨</span>
+    <span>We pre-filled what we know from your calculation — just confirm and continue.</span>
+    <button
+      type="button"
+      onClick={() => setPrefillApplied(false)}
+      style={{ background: 'none', border: 'none', color: 'var(--teal-d)', cursor: 'pointer', fontSize: 16, marginLeft: 'auto', flexShrink: 0, padding: 0 }}
+    >
+      ×
+    </button>
+  </div>
+)}
       <div className="dna-question-wrap">
         <div className="dna-q-header">
           <div className="dna-q-num">Question {currentIdx + 1}</div>

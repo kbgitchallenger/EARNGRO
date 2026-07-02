@@ -1,7 +1,8 @@
+//app/components/Calculator.tsx
 'use client'
 
 import { useState, useRef } from 'react'
-
+import { saveCalcPrefill } from '@/lib/growdna/calcPrefill'
 interface Result {
   target_salary: number; salary_range_min: number; salary_range_max: number
   gap_amount: number; gap_percentage: number; months_to_close: number
@@ -206,9 +207,21 @@ export default function Calculator() {
             error.includes("today's free limit") ? (
               <div style={{ background:'var(--teal-xl)', border:'1px solid var(--teal-mid)', borderRadius:'var(--r-md)', padding:'14px 16px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
                 <div style={{ fontSize:13, color:'var(--teal-d)', lineHeight:1.5 }}>{error}</div>
-                <a href="/signup" style={{ background:'var(--teal)', color:'#fff', fontSize:13, fontWeight:600, padding:'8px 18px', borderRadius:99, textDecoration:'none', whiteSpace:'nowrap' }}>
-                  Create free account →
-                </a>
+               <button
+  onClick={() => {
+    saveCalcPrefill({
+      industry: f.industry,
+      experience: f.experience,
+      role: f.role,
+      city: f.city,
+      salary: f.salary,
+    })
+    window.location.href = '/signup'
+  }}
+  style={{ background:'#fff', color:'var(--teal-d)', fontSize:13, fontWeight:700, padding:'11px 22px', borderRadius:99, border:'none', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.12)', whiteSpace:'nowrap', fontFamily:'var(--sans)' }}
+>
+  Get your full GrowDNA report — free →
+</button>
               </div>
             ) : (
               <div style={{ background:'var(--red-l)', border:'1px solid #F5CCCC', borderRadius:'var(--r-md)', padding:'10px 14px', fontSize:13, color:'var(--red)', marginBottom:14 }}>{error}</div>
