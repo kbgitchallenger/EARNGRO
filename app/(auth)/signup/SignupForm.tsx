@@ -43,22 +43,19 @@ async function handleSignup(e: React.FormEvent) {
     return
   }
 
-  // Check if email already exists in profiles table
-  const { data: existingProfile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
+  const check = await fetch('/api/auth/check-email', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email })
+})
 
-  if (profileError) {
-    console.error('Profile lookup error:', profileError)
-  }
+const { exists } = await check.json()
 
-  if (existingProfile) {
-    setError('This email is already registered. Please sign in.')
-    setLoading(false)
-    return
-  }
+if (exists) {
+  setError('This email is already registered. Please sign in.')
+  setLoading(false)
+  return
+}
 
   const { error } = await supabase.auth.signUp({
     email,
