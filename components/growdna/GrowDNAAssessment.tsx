@@ -376,7 +376,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const [showLimitCard, setShowLimitCard] = useState(false)
   const [limitReasonOverride, setLimitReasonOverride] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
   const [prefillApplied, setPrefillApplied] = useState(false)
-  
+
   const seniority = (answers.seniority as string) || 'mid'
   const role = answers.role as string | undefined
   const industry = answers.industry as string | undefined
@@ -385,39 +385,45 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const current = questions[currentIdx]
   const totalQ  = questions.length
   const isLast  = currentIdx === totalQ - 1
-   
+
+  // ── Consume calculator prefill whenever the user is on a fresh
+  // assessment (not viewing an existing result). Fires on mount for
+  // brand-new users, and again whenever showExisting flips to false
+  // (e.g. clicking "Retake assessment") — so returning users who ran
+  // the Calculator right before retaking also get their answers carried over.
   useEffect(() => {
-  // Only apply prefill for new users starting fresh (not existing results)
-  if (showExisting || existingResult) return
+    if (showExisting) return
 
-  const prefill = consumeCalcPrefill()
-  if (!prefill) return
+    const prefill = consumeCalcPrefill()
+    if (!prefill) return
 
-  setAnswers(prev => ({
-    ...prev,
-    ...(prefill.industry ? { industry: prefill.industry } : {}),
-    ...(prefill.seniority ? { seniority: prefill.seniority } : {}),
-    ...(prefill.role ? { role: prefill.role } : {}),
-    ...(prefill.city ? { city: prefill.city } : {}),
-    ...(prefill.current_ctc ? { current_ctc: prefill.current_ctc } : {}),
-  }))
+    const newFields: Answers = {
+      ...(prefill.industry    ? { industry: prefill.industry }       : {}),
+      ...(prefill.seniority   ? { seniority: prefill.seniority }     : {}),
+      ...(prefill.role        ? { role: prefill.role }               : {}),
+      ...(prefill.city        ? { city: prefill.city }               : {}),
+      ...(prefill.current_ctc ? { current_ctc: prefill.current_ctc } : {}),
+    }
 
-  // Count how many core fields were filled
-  const filledCount = [
-    prefill.industry,
-    prefill.seniority,
-    prefill.role,
-    prefill.city,
-  ].filter(Boolean).length
+    if (Object.keys(newFields).length === 0) return
 
-  // If 3+ fields exist, jump directly to salary question
-  if (filledCount >= 3) {
-    setCurrentIdx(4)
-  }
+    setAnswers(prev => ({ ...prev, ...newFields }))
 
-  setPrefillApplied(true)
-}, []) // eslint-disable-line react-hooks/exhaustive-deps
-  
+    // Jump to the first MODULE_A question NOT covered by the prefill,
+    // rather than assuming a fixed index — resilient to question reordering.
+    const firstUnanswered = MODULE_A.findIndex(
+      q => newFields[q.id as keyof Answers] === undefined
+    )
+
+    if (firstUnanswered === -1) {
+      setCurrentIdx(MODULE_A.length) // every MODULE_A question was pre-filled
+    } else if (firstUnanswered > 0) {
+      setCurrentIdx(firstUnanswered)
+    }
+
+    setPrefillApplied(true)
+  }, [showExisting])
+
   function getAnswer(qid: string) { return answers[qid] }
 
   function isAnswered(q: Question): boolean {
@@ -470,6 +476,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     setResult(null)
     setAnswers({})
     setCurrentIdx(0)
+    setPrefillApplied(false)
     setShowExisting(false)
   }
 
@@ -573,23 +580,24 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
       <ProgressBar current={currentIdx + 1} total={totalQ} module={current?.module || 'A'} />
 
       {prefillApplied && (
-  <div style={{
-    display: 'flex', alignItems: 'center', gap: 10,
-    background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)',
-    borderRadius: 'var(--r-md)', padding: '10px 16px', margin: '0 0 12px',
-    fontSize: 12, color: 'var(--teal-d)',
-  }}>
-    <span style={{ fontSize: 16, flexShrink: 0 }}>✨</span>
-    <span>We pre-filled what we know from your calculation — just confirm and continue.</span>
-    <button
-      type="button"
-      onClick={() => setPrefillApplied(false)}
-      style={{ background: 'none', border: 'none', color: 'var(--teal-d)', cursor: 'pointer', fontSize: 16, marginLeft: 'auto', flexShrink: 0, padding: 0 }}
-    >
-      ×
-    </button>
-  </div>
-)}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)',
+          borderRadius: 'var(--r-md)', padding: '10px 16px', margin: '0 0 12px',
+          fontSize: 12, color: 'var(--teal-d)',
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>✨</span>
+          <span>We pre-filled what we know from your calculation — just confirm and continue.</span>
+          <button
+            type="button"
+            onClick={() => setPrefillApplied(false)}
+            style={{ background: 'none', border: 'none', color: 'var(--teal-d)', cursor: 'pointer', fontSize: 16, marginLeft: 'auto', flexShrink: 0, padding: 0 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="dna-question-wrap">
         <div className="dna-q-header">
           <div className="dna-q-num">Question {currentIdx + 1}</div>
