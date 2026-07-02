@@ -26,9 +26,18 @@ const OPTS = {
   company:    ['Early-stage startup (under 50)','Growth-stage startup (50–500)','Mid-size Indian company','Large Indian conglomerate','Indian MNC / listed company','Global MNC','Government / PSU','Freelance / Self-employed'],
 }
 
+// ── Field subtitles — same voice as GrowDNA questions ────────────
+const FIELD_SUBTITLES: Record<string, string> = {
+  industry:   'The single biggest factor in your market rate — same role can pay 2× across industries',
+  experience: 'Career stage determines which benchmarks we compare you against',
+  role:       'Pick the closest match — affects your skill benchmarks and gap calculation',
+  city:       'Location adds or removes up to 35% from your number',
+  education:  'College brand affects earning ceiling, especially in early and mid career',
+  company:    'Employer brand is a top salary multiplier — same role pays differently by company type',
+}
+
 const STEPS = ['Pulling salary benchmarks for your role & city','Benchmarking against verified profiles in your industry','Identifying your skill gaps and market opportunities','Calculating your personalised Earning Gap']
 
-/* shared input style */
 const inp: React.CSSProperties = {
   width:'100%', padding:'11px 14px', fontFamily:'var(--sans)', fontSize:13,
   color:'var(--ink)', background:'var(--paper)', border:'1.5px solid var(--border)',
@@ -36,7 +45,10 @@ const inp: React.CSSProperties = {
 }
 const lbl: React.CSSProperties = {
   display:'block', fontSize:11, fontWeight:600, color:'var(--muted)',
-  textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7,
+  textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:3,
+}
+const sub: React.CSSProperties = {
+  display:'block', fontSize:11, color:'var(--teal-d)', marginBottom:7, lineHeight:1.4,
 }
 
 export default function Calculator() {
@@ -76,33 +88,33 @@ export default function Calculator() {
     requestAnimationFrame(tick)
   }
 
- async function run() {
-  if (!validate()) return
-  setState('loading'); setStep(0)
-  for (let i = 0; i < 4; i++) setTimeout(() => setStep(i), i * 950)
-  try {
-    const res = await fetch('/api/calculate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...f, salary: parseFloat(f.salary) }),
-    })
+  async function run() {
+    if (!validate()) return
+    setState('loading'); setStep(0)
+    for (let i = 0; i < 4; i++) setTimeout(() => setStep(i), i * 950)
+    try {
+      const res = await fetch('/api/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...f, salary: parseFloat(f.salary) }),
+      })
 
-    if (res.status === 429) {
-      const data = await res.json()
+      if (res.status === 429) {
+        const data = await res.json()
+        setState('form')
+        setError(data.message ?? "You've reached today's free limit — create an account for unlimited access.")
+        return
+      }
+
+      if (!res.ok) throw new Error('API ' + res.status)
+      const data: Result = await res.json()
+      setResult(data); setState('result')
+      setTimeout(() => { if (gapEl.current) countUp(gapEl.current, fmt(data.gap_amount)) }, 300)
+    } catch (e) {
       setState('form')
-      setError(data.message ?? "You've reached today's free limit — create an account for unlimited access.")
-      return
+      setError('Analysis failed. Please check your connection and try again.')
     }
-
-    if (!res.ok) throw new Error('API ' + res.status)
-    const data: Result = await res.json()
-    setResult(data); setState('result')
-    setTimeout(() => { if (gapEl.current) countUp(gapEl.current, fmt(data.gap_amount)) }, 300)
-  } catch (e) {
-    setState('form')
-    setError('Analysis failed. Please check your connection and try again.')
   }
-}
 
   function share() {
     if (!result) return
@@ -118,17 +130,22 @@ export default function Calculator() {
   return (
     <div style={{ background:'var(--paper)', border:'1px solid var(--teal-mid)', borderRadius:'var(--r-xl)', overflow:'hidden', boxShadow:'var(--sh-lg)' }}>
 
-      {/* ── HEAD ── */}
+      {/* ── HEAD — Change 1: framing as Step 1 of GrowPath ── */}
       <div style={{ padding:'28px 32px 22px', borderBottom:'1px solid var(--border)', background:'linear-gradient(180deg,var(--teal-xl),var(--paper))' }}>
+        <div style={{ fontSize:11, color:'var(--teal-d)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
+          Step 1 of your GrowPath · 2 minutes
+        </div>
         <div style={{ fontFamily:'var(--serif)', fontSize:24, fontWeight:600, color:'var(--ink)', marginBottom:5 }}>Earning Gap Calculator</div>
-        <div style={{ fontSize:13, color:'var(--muted)' }}>Fill your profile · get a market-backed personalised result</div>
-        <div style={{ display:'inline-flex', alignItems:'center', gap:7, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:11, fontWeight:600, padding:'5px 12px', borderRadius:99, marginTop:10 }}>
+        <div style={{ fontSize:13, color:'var(--muted)', marginBottom:10 }}>
+          Fill your profile · get a market-backed personalised result
+        </div>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:7, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:11, fontWeight:600, padding:'5px 12px', borderRadius:99 }}>
           <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           AI market intelligence · not hardcoded multipliers
         </div>
       </div>
 
-      {/* ── FORM ── */}
+      {/* ── FORM — Change 2: field subtitles matching GrowDNA voice ── */}
       {state === 'form' && (
         <div style={{ padding:'28px 32px' }}>
           {[
@@ -140,6 +157,9 @@ export default function Calculator() {
                 {row.map(([key,label]) => (
                   <div key={key}>
                     <label style={lbl}>{label}</label>
+                    {FIELD_SUBTITLES[key] && (
+                      <span style={sub}>{FIELD_SUBTITLES[key]}</span>
+                    )}
                     <select style={inp} value={f[key as keyof typeof f]} onChange={e => set(key, e.target.value)}>
                       <option value="">Select {label.toLowerCase()}</option>
                       {OPTS[key as keyof typeof OPTS].map(o => <option key={o}>{o}</option>)}
@@ -152,6 +172,7 @@ export default function Calculator() {
 
           <div style={{ marginBottom:16 }}>
             <label style={lbl}>Current annual salary / CTC</label>
+            <span style={sub}>Include base salary only — no variable or ESOPs. This is the gap calculation baseline.</span>
             <div style={{ position:'relative' }}>
               <span style={{ position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--muted)', pointerEvents:'none', fontWeight:500 }}>₹</span>
               <input type="number" style={{ ...inp, paddingLeft:26 }} placeholder="e.g. 800000 for ₹8 Lakhs" value={f.salary} onChange={e => set('salary',e.target.value)} onKeyDown={e => e.key==='Enter' && run()} />
@@ -163,6 +184,9 @@ export default function Calculator() {
               {[['education','Highest education'],['company','Employer type']].map(([key,label]) => (
                 <div key={key}>
                   <label style={lbl}>{label}</label>
+                  {FIELD_SUBTITLES[key] && (
+                    <span style={sub}>{FIELD_SUBTITLES[key]}</span>
+                  )}
                   <select style={inp} value={f[key as keyof typeof f]} onChange={e => set(key,e.target.value)}>
                     <option value="">Select {label.toLowerCase()}</option>
                     {OPTS[key as keyof typeof OPTS].map(o => <option key={o}>{o}</option>)}
@@ -173,22 +197,24 @@ export default function Calculator() {
           </div>
 
           <div style={{ marginBottom:20 }}>
-            <label style={lbl}>Key skills (helps AI personalise your result)</label>
+            <label style={lbl}>Key skills</label>
+            <span style={sub}>2+ premium skills puts you in the top 20% of earners for your role — include your strongest ones</span>
             <input type="text" style={inp} placeholder="e.g. Python, AWS, Salesforce, financial modelling" value={f.skills} onChange={e => set('skills',e.target.value)} />
           </div>
 
           {error && (
-  error.includes('today\'s free limit') ? (
-    <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '14px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-      <div style={{ fontSize: 13, color: 'var(--teal-d)', lineHeight: 1.5 }}>{error}</div>
-      <a href="/signup" style={{ background: 'var(--teal)', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-        Create free account →
-      </a>
-    </div>
-  ) : (
-    <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
-  )
-)}
+            error.includes("today's free limit") ? (
+              <div style={{ background:'var(--teal-xl)', border:'1px solid var(--teal-mid)', borderRadius:'var(--r-md)', padding:'14px 16px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+                <div style={{ fontSize:13, color:'var(--teal-d)', lineHeight:1.5 }}>{error}</div>
+                <a href="/signup" style={{ background:'var(--teal)', color:'#fff', fontSize:13, fontWeight:600, padding:'8px 18px', borderRadius:99, textDecoration:'none', whiteSpace:'nowrap' }}>
+                  Create free account →
+                </a>
+              </div>
+            ) : (
+              <div style={{ background:'var(--red-l)', border:'1px solid #F5CCCC', borderRadius:'var(--r-md)', padding:'10px 14px', fontSize:13, color:'var(--red)', marginBottom:14 }}>{error}</div>
+            )
+          )}
+
           <button onClick={run} style={{ width:'100%', padding:14, background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, border:'none', borderRadius:'var(--r-md)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 4px 16px rgba(14,122,90,0.22)' }}>
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Analyse my Earning Gap
@@ -196,7 +222,7 @@ export default function Calculator() {
         </div>
       )}
 
-      {/* ── LOADING ── */}
+      {/* ── LOADING ── unchanged ── */}
       {state === 'loading' && (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'44px 24px', textAlign:'center' }}>
           <div style={{ width:44, height:44, border:'3px solid var(--teal-l)', borderTop:'3px solid var(--teal)', borderRadius:'50%', animation:'spin 0.85s linear infinite', marginBottom:18 }} />
@@ -213,11 +239,11 @@ export default function Calculator() {
         </div>
       )}
 
-      {/* ── RESULT ── */}
+      {/* ── RESULT ── Change 3: upgraded GrowDNA bridge CTA ── */}
       {state === 'result' && result && (
         <div style={{ padding:'24px 32px 28px', animation:'up 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
 
-          {/* gap hero — teal gradient */}
+          {/* gap hero */}
           <div style={{ background:'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius:'var(--r-lg)', padding:28, textAlign:'center', marginBottom:16, position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', top:-50, right:-50, width:150, height:150, background:'rgba(255,255,255,0.06)', borderRadius:'50%' }} />
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, position:'relative', zIndex:1 }}>Your annual earning gap</div>
@@ -299,26 +325,43 @@ export default function Calculator() {
             </div>
           ))}
 
-          {/* CTA buttons */}
-          {/* Save nudge — conversion moment */}
-          <div style={{ background: 'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius: 'var(--r-lg)', padding: '20px 20px', marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
-                  💾 Save your result + get your full roadmap
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
-                  Free account · No credit card · Takes 30 seconds
-                </div>
+          {/* ── GrowDNA bridge — the key coherence fix ── */}
+          <div style={{ background:'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius:'var(--r-lg)', padding:'22px 20px', marginBottom:10, position:'relative', overflow:'hidden' }}>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, background:'rgba(255,255,255,0.05)', borderRadius:'50%' }} />
+            <div style={{ position:'relative', zIndex:1 }}>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
+                This was a preview
               </div>
-              <a href="/signup" style={{ background: '#fff', color: 'var(--teal-d)', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', flexShrink: 0 }}>
-                Create free account →
-              </a>
+              <div style={{ fontSize:15, fontWeight:700, color:'#fff', marginBottom:8, lineHeight:1.4 }}>
+                Your full GrowDNA report goes 5× deeper
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.75)', lineHeight:1.65, marginBottom:16 }}>
+                The calculator uses 7 inputs. GrowDNA uses your negotiation history, employer brand, premium skills, and career velocity — then gives you your career archetype, a 5-dimension breakdown, and a month-by-month roadmap to close {fmt(result.gap_amount)}.
+              </div>
+              {/* What you unlock */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:18 }}>
+                {[
+                  { ico:'🧬', t:'Career archetype' },
+                  { ico:'📊', t:'5 earning dimensions' },
+                  { ico:'🗺️', t:'GrowPath roadmap' },
+                  { ico:'🎯', t:'AI interview practice' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'rgba(255,255,255,0.85)' }}>
+                    <span>{item.ico}</span>
+                    <span>{item.t}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                <a href="/signup" style={{ background:'#fff', color:'var(--teal-d)', fontSize:13, fontWeight:700, padding:'11px 22px', borderRadius:99, textDecoration:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.12)', whiteSpace:'nowrap' }}>
+                  Get your full GrowDNA report — free →
+                </a>
+                <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)' }}>No credit card · 4 minutes</span>
+              </div>
             </div>
           </div>
 
-          {/* CTA buttons */}
+          {/* secondary actions */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <button onClick={share} style={{ width:'100%', padding:12, background:'var(--paper)', color:'var(--teal-d)', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, border:'1.5px solid var(--teal-mid)', borderRadius:'var(--r-md)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
