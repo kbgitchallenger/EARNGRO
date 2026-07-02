@@ -32,35 +32,52 @@ export default function SignupForm() {
   const strength = useMemo(() => getStrength(password), [password])
   const strengthColor = ['var(--border)', 'var(--red)', '#E0A400', 'var(--teal)'][strength.score]
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+async function handleSignup(e: React.FormEvent) {
+  e.preventDefault()
+  setLoading(true)
+  setError('')
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      setLoading(false)
-      return
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    setSuccess(true)
+  if (password.length < 8) {
+    setError('Password must be at least 8 characters.')
     setLoading(false)
+    return
   }
+
+  // Check if email already exists in profiles table
+  const { data: existingProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('Profile lookup error:', profileError)
+  }
+
+  if (existingProfile) {
+    setError('This email is already registered. Please sign in.')
+    setLoading(false)
+    return
+  }
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: `${window.location.origin}/auth/callback`
+    }
+  })
+
+  if (error) {
+    setError(error.message)
+    setLoading(false)
+    return
+  }
+
+  setSuccess(true)
+  setLoading(false)
+}
 
   async function handleGoogle() {
     await supabase.auth.signInWithOAuth({

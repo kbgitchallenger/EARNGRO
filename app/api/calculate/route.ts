@@ -1,3 +1,4 @@
+//app/api/calculate/route.ts
 export const dynamic = 'force-dynamic'
 
 import Anthropic from '@anthropic-ai/sdk'
