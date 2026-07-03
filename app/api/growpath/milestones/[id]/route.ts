@@ -9,9 +9,10 @@ const BodySchema = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -24,7 +25,7 @@ export async function PATCH(
     const { data: milestone } = await supabase
       .from('growpath_milestones')
       .select('id, phase_id, growpath_phases(plan_id, growpath_plans(user_id))')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle()
 
     const ownerId = (milestone as any)?.growpath_phases?.growpath_plans?.user_id
@@ -39,7 +40,7 @@ export async function PATCH(
     const { error } = await supabase
       .from('growpath_milestones')
       .update(update)
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       console.error('Milestone update failed:', error)
