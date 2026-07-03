@@ -24,11 +24,12 @@ export async function POST(request: Request) {
     const supabase = await createClient()
 
     const { error: rateLimitError } = await supabase
-      .from('calculator_rate_limits')
-      .insert({
-        ip_address: ip,
-        used_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD, explicit so day boundary isn't left to Postgres's server timezone
-      })
+  .from('calculator_rate_limits')
+  .insert({
+    ip_address: ip,
+    used_date: new Date().toISOString().slice(0, 10),   // YYYY-MM-DD — kept for logging
+    used_month: new Date().toISOString().slice(0, 7),   // YYYY-MM — this is what the constraint checks
+  })
 
     if (rateLimitError) {
       if (rateLimitError.code === '23505') {
