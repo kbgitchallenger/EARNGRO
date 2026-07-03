@@ -366,7 +366,19 @@ export default function Calculator() {
                 ))}
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                <a href="/signup" style={{ background:'#fff', color:'var(--teal-d)', fontSize:13, fontWeight:700, padding:'11px 22px', borderRadius:99, textDecoration:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.12)', whiteSpace:'nowrap' }}>
+                
+               <a href="/signup"
+                  onClick={() => {
+                    saveCalcPrefill({
+                      industry: f.industry,
+                      experience: f.experience,
+                      role: f.role,
+                      city: f.city,
+                      salary: f.salary,
+                    })
+                  }}
+                  style={{ background:'#fff', color:'var(--teal-d)', fontSize:13, fontWeight:700, padding:'11px 22px', borderRadius:99, textDecoration:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.12)', whiteSpace:'nowrap' }}
+                >
                   Get your full GrowDNA report — free →
                 </a>
                 <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)' }}>No credit card · 4 minutes</span>
