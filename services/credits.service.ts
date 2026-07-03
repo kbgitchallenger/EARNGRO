@@ -1,3 +1,4 @@
+//app/services/credits.service.ts
 import { createClient } from '@/lib/supabase/server'
 
 export interface CreditCheckResult {
@@ -119,6 +120,10 @@ export async function hasUsedFeature(userId: string, feature: string): Promise<b
 }
 
 // ── Anonymous rate limiting (for /api/calculate, no login) ────────
+// NOTE: app/api/calculate/route.ts currently has its own inline copy of this
+// logic rather than calling this function. Kept in sync here as a safety net
+// in case anything else calls it, or in case the route is later refactored
+// to use this shared version instead of its inline duplicate.
 
 export function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -136,21 +141,31 @@ export interface RateLimitResult {
 export async function checkAndRecordRateLimit(request: Request): Promise<RateLimitResult> {
   const ip = getClientIP(request)
   const supabase = await createClient()
+  const now = new Date()
 
   const { error } = await supabase
     .from('calculator_rate_limits')
-    .insert({ ip_address: ip })
+    .insert({
+      ip_address: ip,
+      used_date: now.toISOString().slice(0, 10),
+      used_month: now.toISOString().slice(0, 7),
+    })
 
   if (error) {
     if (error.code === '23505') {
-      // Unique constraint violation = already used today
+      // Unique constraint violation on (ip_address, used_month) — already used this month
       return {
         allowed: false,
-        message: "You've reached today's free limit — create an account for unlimited access.",
+        message: "You've reached this month's free limit — create an account for unlimited access.",
       }
     }
-    // Any other DB error — log but don't block the user (fail open)
-    console.error('Rate limit check failed:', error)
+    // Fail closed on unexpected errors — same reasoning as calculate/route.ts:
+    // better to occasionally over-block than silently disable the limit.
+    console.error('Rate limit check failed unexpectedly:', error)
+    return {
+      allowed: false,
+      message: 'Please try again in a moment.',
+    }
   }
 
   return { allowed: true }

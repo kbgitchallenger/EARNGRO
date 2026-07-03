@@ -38,7 +38,8 @@ export class ResumeService {
     versionId: string,
     jobId: string,
     fileUrl: string,
-    mimeType: string
+    mimeType: string,
+    userId?: string
   ): Promise<ParseResult> {
     await resumeRepository.updateParseJob(jobId, {
       status: 'parsing',
@@ -48,7 +49,7 @@ export class ResumeService {
     let result: ParseResult
 
     try {
-      result = await parserService.parse(fileUrl, mimeType)
+      result = await parserService.parse(fileUrl, mimeType, userId)
     } catch (err) {
       await resumeRepository.updateParseJob(jobId, {
         status: 'failed',
@@ -84,7 +85,8 @@ export class ResumeService {
 
   async calculateMarketScore(
     parsed: ParsedResume,
-    city: string
+    city: string,
+    userId?: string
   ): Promise<number> {
     try {
       const primaryRole = parsed.experience?.[0]?.role ?? parsed.name ?? 'Professional'
@@ -136,7 +138,7 @@ export class ResumeService {
           city
         ),
         MarketPositioningSchema,
-        { maxTokens: 800 }
+        { maxTokens: 800, feature: 'market_positioning', userId }
       )
       return positioning.market_score
     } catch {

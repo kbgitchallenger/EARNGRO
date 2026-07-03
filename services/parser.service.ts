@@ -8,7 +8,7 @@ import type { ParseResult } from '@/types/resume.types'
 
 export class ParserService {
 
-  async parse(fileUrl: string, mimeType: string): Promise<ParseResult> {
+  async parse(fileUrl: string, mimeType: string, userId?: string): Promise<ParseResult> {
     const t0 = Date.now()
     const buffer = await this.fetchBuffer(fileUrl)
     console.log(`⏱ Fetch buffer: ${Date.now() - t0}ms, size: ${buffer.length} bytes`)
@@ -53,7 +53,7 @@ export class ParserService {
     }
 
     const t3 = Date.now()
-    const parsedData = await this.normalize(rawText)
+    const parsedData = await this.normalize(rawText, userId)
     console.log(`⏱ AI normalize: ${Date.now() - t3}ms`)
     console.log(`⏱ TOTAL pipeline: ${Date.now() - t0}ms`)
 
@@ -73,11 +73,11 @@ export class ParserService {
     return buffer
   }
 
-  private async normalize(rawText: string): Promise<ParsedResume> {
+  private async normalize(rawText: string, userId?: string): Promise<ParsedResume> {
     return callAIJSON(
       RESUME_NORMALIZE_PROMPT(rawText.slice(0, 6000)),
       ParsedResumeSchema,
-      { maxTokens: 2000 }
+      { maxTokens: 2000, feature: 'cv_parse_analyze', userId }
     )
   }
 }

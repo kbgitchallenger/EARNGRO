@@ -1,6 +1,7 @@
 // app/api/growdna/route.ts
 import { createClient } from '@/lib/supabase/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { callAIJSON } from '@/lib/ai/client'
+import { z } from 'zod'
 import { deductCredits, hasUsedFeature } from '@/services/credits.service'
 import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 
@@ -14,6 +15,26 @@ const ARCHETYPES: Record<string, { name: string; desc: string }> = {
   fresher_low:            { name: 'The Late Bloomer',        desc: 'Starting lean but skills can be built fast. First 18 months are everything.' },
   default:                { name: 'The Growth Professional', desc: 'Solid foundation with clear gaps to address for significant income growth.' },
 }
+
+// ── Schema for the AI response — used by callAIJSON for validation ──
+const GrowDNAResultSchema = z.object({
+  target_salary: z.number(),
+  salary_range_min: z.number(),
+  salary_range_max: z.number(),
+  earning_gap_estimate: z.number(),
+  months_to_close: z.number(),
+  peer_comparison: z.string(),
+  market_insight: z.string(),
+  top_strengths: z.array(z.string()),
+  critical_gaps: z.array(z.string()),
+  immediate_actions: z.array(
+    z.object({
+      action: z.string(),
+      impact: z.string(),
+      timeline: z.string(),
+    })
+  ),
+})
 
 function detectArchetype(answers: Record<string, unknown>, scores: Record<string, number>): string {
   const seniority = answers.seniority as string
@@ -148,20 +169,17 @@ Rules:
 - critical_gaps: name specific missing skills, certifications, or companies to target
 - immediate_actions: each action must have a concrete timeline (e.g. "30 days", "6 weeks") and measurable impact (e.g. "₹2–3L hike")`
 
-    const client = new Anthropic()
-
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+    // Migrated off a standalone Anthropic client onto the shared, now-instrumented
+    // callAIJSON — this is what gets GrowDNA into ai_usage_log alongside every
+    // other feature. Model kept exactly as it was ('claude-sonnet-4-6', which
+    // differs from the 'claude-sonnet-4-5' default used elsewhere — preserved
+    // deliberately via options.model rather than left to the default).
+    const aiResult = await callAIJSON(prompt, GrowDNAResultSchema, {
+      maxTokens: 1024,
+      model: 'claude-sonnet-4-6',
+      feature: 'growdna',
+      userId: user.id,
     })
-
-    const textBlock = message.content.find((b) => b.type === 'text')
-    if (!textBlock || textBlock.type !== 'text') {
-      throw new Error('No AI response')
-    }
-
-    const aiResult = JSON.parse(textBlock.text.replace(/```json|```/g, '').trim())
 
     // ── Save to Supabase ────────────────────────────────────────
     const { data: saved, error: saveError } = await supabase

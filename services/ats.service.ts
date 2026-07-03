@@ -23,6 +23,20 @@ import { resumeRepository } from '@/repositories/resume.repository'
 
 import type { CVAnalysis } from '@/types/resume.types'
 
+// Hard caps on unbounded inputs — resumeText and jobDescription previously
+// had no ceiling, unlike parserService.normalize() which already slices to
+// 6000 chars. A long resume + a fully pasted job posting could push input
+// tokens well past what cv_parse_analyze / ats_reanalyze assume they cost.
+const MAX_RESUME_CHARS = 8000
+const MAX_JD_CHARS = 3000
+
+function capText(text: string | null | undefined, max: number): string | undefined {
+  if (!text) return text ?? undefined
+  if (text.length <= max) return text
+  console.warn(`ATS input capped: ${text.length} chars truncated to ${max}`)
+  return text.slice(0, max)
+}
+
 export class ATSService {
 
   // ── Full ATS score ────────────────────────────────────────────
@@ -37,6 +51,9 @@ export class ATSService {
     companyName: string | null = null
   ): Promise<CVAnalysis> {
 
+    const cappedResume = capText(resumeText, MAX_RESUME_CHARS)!
+    const cappedJD = capText(jobDescription, MAX_JD_CHARS)
+
     // Create analysis record in pending state
     const analysis = await analysisRepository.create({
       cv_version_id: cvVersionId,
@@ -49,9 +66,9 @@ export class ATSService {
 
     try {
       const result = await callAIJSON(
-        ATS_SCORE_PROMPT(resumeText, jobDescription, jobTitle),
+        ATS_SCORE_PROMPT(cappedResume, cappedJD ?? null, jobTitle),
         ATSResultSchema,
-        { maxTokens: 2000 }
+        { maxTokens: 2000, feature: 'cv_parse_analyze', userId }
       )
 
       // Save full results
@@ -95,11 +112,15 @@ export class ATSService {
     jobDescription?: string
   ): Promise<ATSResult & { analysisId: string }> {
 
-    // Run AI analysis
+    const cappedResume = capText(rawText, MAX_RESUME_CHARS)!
+    const cappedJD = capText(jobDescription, MAX_JD_CHARS)
+
+    // Run AI analysis — tagged 'ats_reanalyze' since this is the re-run path,
+    // distinct from the initial cv_parse_analyze during upload.
     const result = await callAIJSON(
-      ATS_SCORE_PROMPT(rawText, jobDescription),
+      ATS_SCORE_PROMPT(cappedResume, cappedJD),
       ATSResultSchema,
-      { maxTokens: 2000 }
+      { maxTokens: 2000, feature: 'ats_reanalyze', userId }
     )
 
     // Calculate composite score
@@ -141,18 +162,19 @@ export class ATSService {
   // ── Quick score ───────────────────────────────────────────────
   // Fast background score on upload — no JD needed
 
-  async quickScore(resumeText: string): Promise<QuickScore> {
+  async quickScore(resumeText: string, userId?: string): Promise<QuickScore> {
+    const cappedResume = capText(resumeText, MAX_RESUME_CHARS)!
     return callAIJSON(
-      QUICK_SCORE_PROMPT(resumeText),
+      QUICK_SCORE_PROMPT(cappedResume),
       QuickScoreSchema,
-      { maxTokens: 400 }
+      { maxTokens: 400, feature: 'quick_score', userId }
     )
   }
 
   // ── Keyword extraction ────────────────────────────────────────
   // Pre-process JD to show keyword gaps before full scoring
 
-  async extractJDKeywords(jobDescription: string): Promise<{
+  async extractJDKeywords(jobDescription: string, userId?: string): Promise<{
     must_have: string[]
     good_to_have: string[]
     role_keywords: string[]
@@ -170,10 +192,12 @@ export class ATSService {
       soft_skills: z.array(z.string()),
     })
 
+    const cappedJD = capText(jobDescription, MAX_JD_CHARS)!
+
     return callAIJSON(
-      EXTRACT_JD_KEYWORDS_PROMPT(jobDescription),
+      EXTRACT_JD_KEYWORDS_PROMPT(cappedJD),
       schema,
-      { maxTokens: 600 }
+      { maxTokens: 600, feature: 'extract_jd_keywords', userId }
     )
   }
 
@@ -182,7 +206,8 @@ export class ATSService {
 
   async compareVersions(
     v1Id: string,
-    v2Id: string
+    v2Id: string,
+    userId?: string
   ): Promise<VersionComparison> {
 
     const [v1, v2] = await Promise.all([
@@ -205,13 +230,13 @@ export class ATSService {
 
     return callAIJSON(
       COMPARE_VERSIONS_PROMPT(
-        v1.raw_text,
-        v2.raw_text,
+        capText(v1.raw_text, MAX_RESUME_CHARS)!,
+        capText(v2.raw_text, MAX_RESUME_CHARS)!,
         v1Analysis?.ats_score ?? 0,
         v2Analysis?.ats_score ?? 0
       ),
       VersionComparisonSchema,
-      { maxTokens: 800 }
+      { maxTokens: 800, feature: 'compare_versions', userId }
     )
   }
 

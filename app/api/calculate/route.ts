@@ -1,12 +1,23 @@
-//app/api/calculate/route.ts
 export const dynamic = 'force-dynamic'
 
-import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { callAIJSON } from '@/lib/ai/client'
+import { z } from 'zod'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const CalculateResultSchema = z.object({
+  target_salary: z.number(),
+  salary_range_min: z.number(),
+  salary_range_max: z.number(),
+  gap_amount: z.number(),
+  gap_percentage: z.number(),
+  months_to_close: z.number(),
+  hiring_readiness_score: z.number(),
+  gap_percentile: z.string(),
+  market_context: z.string(),
+  data_source_note: z.string(),
+  gap_reasons: z.array(z.string()),
+  close_actions: z.array(z.string()),
 })
 
 function getClientIP(request: Request): string {
@@ -19,33 +30,29 @@ function getClientIP(request: Request): string {
 
 export async function POST(request: Request) {
   try {
-    // ── Rate limit check — 1 free calculation per IP per day ──
+    // ── Rate limit check — 1 free calculation per IP per month ──
     const ip = getClientIP(request)
     const supabase = await createClient()
 
+    const now = new Date()
     const { error: rateLimitError } = await supabase
-  .from('calculator_rate_limits')
-  .insert({
-    ip_address: ip,
-    used_date: new Date().toISOString().slice(0, 10),   // YYYY-MM-DD — kept for logging
-    used_month: new Date().toISOString().slice(0, 7),   // YYYY-MM — this is what the constraint checks
-  })
+      .from('calculator_rate_limits')
+      .insert({
+        ip_address: ip,
+        used_date: now.toISOString().slice(0, 10),
+        used_month: now.toISOString().slice(0, 7),
+      })
 
     if (rateLimitError) {
       if (rateLimitError.code === '23505') {
-        // Unique constraint violation on (ip_address, used_date) — already used today
         return NextResponse.json(
           {
             error: 'RATE_LIMIT',
-            message: "You've reached today's free limit — create an account for unlimited access.",
+            message: "You've reached this month's free limit — create an account for unlimited access.",
           },
           { status: 429 }
         )
       }
-      // Any other DB error (RLS block, missing column, connection issue, etc.) —
-      // fail closed rather than silently letting the user through. Better to
-      // occasionally over-block during a real outage than to have the limit
-      // silently disabled without anyone noticing, which is what happened before.
       console.error('Rate limit check failed unexpectedly:', rateLimitError)
       return NextResponse.json(
         { error: 'Please try again in a moment.' },
@@ -103,19 +110,13 @@ Return exactly this JSON:
 
 Rules: Be realistic. Tier 2 cities 20-35% below metro. Name actual certifications and companies. Skills must influence the result.`
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+    // No userId — this route runs pre-signup, IP-limited only.
+    // Tagged 'calculator' so it now shows up in ai_usage_log like every other feature.
+    const result = await callAIJSON(prompt, CalculateResultSchema, {
+      maxTokens: 1024,
+      feature: 'calculator',
     })
 
-    const raw = message.content
-      .map((b) => (b.type === 'text' ? b.text : ''))
-      .join('')
-      .replace(/```json|```/g, '')
-      .trim()
-
-    const result = JSON.parse(raw)
     return NextResponse.json(result)
 
   } catch (error) {
