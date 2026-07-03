@@ -1,3 +1,4 @@
+//app/page.tsx
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import JourneyCard from '@/components/JourneyCard'

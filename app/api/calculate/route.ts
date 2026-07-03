@@ -25,11 +25,14 @@ export async function POST(request: Request) {
 
     const { error: rateLimitError } = await supabase
       .from('calculator_rate_limits')
-      .insert({ ip_address: ip })
+      .insert({
+        ip_address: ip,
+        used_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD, explicit so day boundary isn't left to Postgres's server timezone
+      })
 
     if (rateLimitError) {
       if (rateLimitError.code === '23505') {
-        // Unique constraint violation — already used today
+        // Unique constraint violation on (ip_address, used_date) — already used today
         return NextResponse.json(
           {
             error: 'RATE_LIMIT',
@@ -38,8 +41,15 @@ export async function POST(request: Request) {
           { status: 429 }
         )
       }
-      // Any other DB error — log but don't block the user
-      console.error('Rate limit check failed:', rateLimitError)
+      // Any other DB error (RLS block, missing column, connection issue, etc.) —
+      // fail closed rather than silently letting the user through. Better to
+      // occasionally over-block during a real outage than to have the limit
+      // silently disabled without anyone noticing, which is what happened before.
+      console.error('Rate limit check failed unexpectedly:', rateLimitError)
+      return NextResponse.json(
+        { error: 'Please try again in a moment.' },
+        { status: 503 }
+      )
     }
 
     // ── Existing logic — unchanged ──
