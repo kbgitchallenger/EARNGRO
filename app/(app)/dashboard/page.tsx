@@ -1,3 +1,4 @@
+//app/(app)/dashboard/page.tsx
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -32,12 +33,24 @@ function hrsColor(score: number): string {
   return 'var(--red)'
 }
 
+function chsColor(score: number): string {
+  if (score >= 70) return 'var(--teal)'
+  if (score >= 40) return 'var(--amber)'
+  return 'var(--red)'
+}
+
+function chsLabel(score: number): string {
+  if (score >= 70) return 'Strong momentum'
+  if (score >= 40) return 'Building momentum'
+  return 'Just getting started'
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: dnaAttempts }, { data: cvData }] = await Promise.all([
+  const [{ data: profile }, { data: dnaAttempts }, { data: cvData }, { data: chs }] = await Promise.all([
     supabase.from('profiles').select('full_name, plan').eq('id', user.id).single(),
     supabase.from('grow_dna')
       .select('earning_gap, target_salary, hrs_score, months_to_close, role, city, career_archetype, current_salary, created_at, dimension_scores')
@@ -48,6 +61,14 @@ export default async function DashboardPage() {
       .select('id, market_score, name')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Career Health Score — new, separate from HRS. Most recent computed value,
+    // may be null if the user has no active GrowPath plan yet.
+    supabase.from('career_health_scores')
+      .select('score, computed_at')
+      .eq('user_id', user.id)
+      .order('computed_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
   ])
@@ -238,6 +259,27 @@ export default async function DashboardPage() {
                 {dna.months_to_close ? `${Math.round((3 / dna.months_to_close) * 100)}% into your journey` : 'Start your GrowPath'}
               </div>
             </div>
+
+            {/* Career Health Score — NEW, additive card. Separate scale (/100) and
+                separate section (--purple accent) deliberately distinct from HRS,
+                so nobody reads it as a re-measurement of hiring readiness. Only
+                renders once a score exists; before any GrowPath activity there's
+                nothing here to show, so the card is simply omitted rather than
+                showing a misleading 0. */}
+            {chs && (
+              <div className="dash-stat-card" style={{ borderTop: `3px solid ${chsColor(chs.score)}`, background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 18 }}>
+                <div className="stat-label">Career Health Score</div>
+                <div className="stat-value" style={{ color: chsColor(chs.score) }}>
+                  {chs.score}
+                  <span className="stat-denom">/100</span>
+                </div>
+                <div className="stat-sub" style={{ marginTop: 4 }}>{chsLabel(chs.score)}</div>
+                <div style={{ margin: '12px 0', height: 1, background: 'var(--border-l)' }} />
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  From GrowPath progress · updates as you complete milestones
+                </div>
+              </div>
+            )}
 
           </div>
 
