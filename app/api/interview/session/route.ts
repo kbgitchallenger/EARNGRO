@@ -119,7 +119,10 @@ export async function POST(request: Request) {
     })
 
   } catch (err) {
-    console.error('Interview session create error:', err)
+    console.error('Interview session create error:', err instanceof Error ? err.stack : err)
+    try {
+      console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+    } catch {}
     return NextResponse.json({ error: 'Failed to start session' }, { status: 500 })
   }
 }

@@ -139,7 +139,10 @@ export async function POST(
     })
 
   } catch (err) {
-    console.error('Interview turn error:', err)
+    console.error('Interview turn error:', err instanceof Error ? err.stack : err)
+    try {
+      console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+    } catch {}
     return NextResponse.json({ error: 'Turn failed' }, { status: 500 })
   }
 }
