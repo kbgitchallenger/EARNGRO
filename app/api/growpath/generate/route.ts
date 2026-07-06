@@ -1,37 +1,59 @@
 //app/api/growpath/generate/route.ts
+// Deterministic GrowPath generator — structures existing grow_dna data
+// (immediate_actions, dimension_scores.explanations) into phases and
+// milestones. No AI call: GrowDNA already generated specific, measurable
+// actions with timelines; this route sequences them rather than
+// re-inventing new content, avoiding cost, latency, and the risk of a
+// second AI pass contradicting what GrowDNA already told the user.
+
 import { createClient } from '@/lib/supabase/server'
-import { callAIJSON } from '@/lib/ai/client'
-import { deductCredits } from '@/services/credits.service'
-import { z } from 'zod'
 
-const MilestoneSchema = z.object({
-  type: z.enum(['skill', 'visibility', 'application', 'negotiation']),
-  title: z.string(),
-  description: z.string(),
-  why_it_matters: z.string(),
-  how_to_improve: z.array(z.string()),
-  linked_dimension: z.enum(['market_alignment', 'skill_premium', 'visibility', 'mobility', 'negotiation']),
-  target_month: z.number(),
-})
+const TYPE_KEYWORDS: Record<string, string[]> = {
+  negotiation: ['negotiat', 'salary', 'offer', 'compensation', 'raise'],
+  visibility:  ['linkedin', 'network', 'publish', 'speak', 'brand', 'presence', 'content', 'connection', 'visib'],
+  application: ['apply', 'companies', 'interview', 'job', 'role', 'target', 'switch'],
+}
 
-const PhaseSchema = z.object({
-  title: z.string(),
-  start_month: z.number(),
-  end_month: z.number(),
-  milestones: z.array(MilestoneSchema),
-})
+function classifyType(actionText: string): 'skill' | 'visibility' | 'application' | 'negotiation' {
+  const lower = actionText.toLowerCase()
+  for (const [type, keywords] of Object.entries(TYPE_KEYWORDS)) {
+    if (keywords.some(k => lower.includes(k))) return type as any
+  }
+  return 'skill'
+}
 
-const TargetCompanySchema = z.object({
-  company_name: z.string(),
-  rationale: z.string(),
-  est_salary_min: z.number(),
-  est_salary_max: z.number(),
-})
+const TYPE_TO_DIMENSION: Record<string, string> = {
+  skill: 'skill_premium',
+  visibility: 'visibility',
+  application: 'mobility',
+  negotiation: 'negotiation',
+}
 
-const GrowPathSchema = z.object({
-  phases: z.array(PhaseSchema),
-  target_companies: z.array(TargetCompanySchema),
-})
+// Parses free-text timelines like "30 days", "6 weeks", "3 months" into a
+// month number. Falls back to null if unparseable — caller distributes
+// evenly across the plan when this happens, rather than guessing a number.
+function parseTimelineToMonth(timeline: string): number | null {
+  const m = timeline.toLowerCase().match(/(\d+)\s*(day|week|month)/)
+  if (!m) return null
+  const n = parseInt(m[1], 10)
+  const unit = m[2]
+  if (unit === 'day') return Math.max(1, Math.round(n / 30))
+  if (unit === 'week') return Math.max(1, Math.round((n * 7) / 30))
+  return n
+}
+
+function buildPhases(monthsToClose: number) {
+  const total = monthsToClose && monthsToClose > 0 ? monthsToClose : 12
+  const names = ['Foundation', 'Momentum', 'Breakthrough', 'Sustain']
+  const count = total <= 6 ? 2 : total <= 18 ? 3 : 4
+  const phases = []
+  for (let i = 0; i < count; i++) {
+    const start = Math.round((i / count) * total)
+    const end = i === count - 1 ? total : Math.round(((i + 1) / count) * total)
+    phases.push({ title: names[i], start_month: start, end_month: end, milestones: [] as any[] })
+  }
+  return phases
+}
 
 export async function POST(req: Request) {
   try {
@@ -64,172 +86,68 @@ export async function POST(req: Request) {
       return Response.json({ error: 'NO_ASSESSMENT', message: 'Complete a GrowDNA assessment first.' }, { status: 400 })
     }
 
-    const credit = await deductCredits(user.id, 'growpath_generate')
-    if (!credit.allowed) {
-      return Response.json(
-        { error: 'INSUFFICIENT_CREDITS', message: 'Not enough credits to generate a GrowPath.', balance: credit.balance, required: credit.cost },
-        { status: 402 }
-      )
+    const immediateActions: { action: string; impact: string; timeline: string }[] =
+      dna.raw_ai_response?.immediate_actions ?? dna.close_actions ?? []
+
+    if (immediateActions.length === 0) {
+      return Response.json({ error: 'NO_ACTIONS', message: 'Your GrowDNA result has no actions to build a plan from.' }, { status: 400 })
     }
 
-    const immediateActions = dna.raw_ai_response?.immediate_actions ?? []
-    const dims = dna.dimension_scores ?? {}
+    const explanations = dna.dimension_scores?.explanations ?? {}
+    const monthsTotal = dna.months_to_close ?? 12
+    const phases = buildPhases(monthsTotal)
 
-    const prompt = `You are a career strategist building a phased, month-by-month growth plan for a professional based on their assessment data.
+    // Distribute actions across phases by parsed or inferred target month
+    immediateActions.forEach((a, i) => {
+      const type = classifyType(a.action)
+      const dimension = TYPE_TO_DIMENSION[type]
+      const parsedMonth = parseTimelineToMonth(a.timeline)
+      const targetMonth = parsedMonth ?? Math.max(1, Math.round(((i + 1) / immediateActions.length) * monthsTotal))
+      const clampedMonth = Math.min(targetMonth, monthsTotal)
 
-CRITICAL RULES:
-- Do NOT invent facts not present in the profile below.
-- Every milestone's linked_dimension must be exactly one of: market_alignment, skill_premium, visibility, mobility, negotiation.
-- Phases must be sequential and non-overlapping, covering month 0 to ${dna.months_to_close ?? 12}.
-- Build 3 phases unless the timeline is long enough to warrant more (roughly one phase per 6-10 months).
-- Each phase should have 2-4 milestones.
-- Return ONLY raw JSON, no markdown, no backticks.
+      const phase = phases.find(p => clampedMonth > p.start_month && clampedMonth <= p.end_month) ?? phases[phases.length - 1]
 
-PROFILE:
-Role: ${dna.role}
-Industry: ${dna.industry}
-City: ${dna.city}
-Seniority: ${dna.experience}
-Current CTC: ₹${Number(dna.current_salary).toLocaleString('en-IN')}
-Target salary: ₹${Number(dna.target_salary).toLocaleString('en-IN')}
-Earning gap: ₹${Number(dna.earning_gap).toLocaleString('en-IN')}
-Months to close: ${dna.months_to_close}
-Career archetype: ${dna.career_archetype}
+      const dimensionNotes: string[] = explanations[dimension] ?? []
 
-DIMENSION SCORES (0-100):
-Market Alignment: ${dims.market_alignment}
-Skill Premium: ${dims.skill_premium}
-Visibility: ${dims.visibility}
-Mobility: ${dims.mobility}
-Negotiation: ${dims.negotiation}
-
-EXISTING RECOMMENDED ACTIONS (build phases around these, don't ignore them):
-${immediateActions.map((a: any, i: number) => `${i + 1}. ${a.action} — ${a.impact} (${a.timeline})`).join('\n')}
-
-Return exactly this JSON:
-{
-  "phases": [
-    {
-      "title": <string, e.g. "Foundation">,
-      "start_month": <number>,
-      "end_month": <number>,
-      "milestones": [
-        {
-          "type": "skill" | "visibility" | "application" | "negotiation",
-          "title": <string>,
-          "description": <string>,
-          "why_it_matters": <string, one sentence>,
-          "how_to_improve": [<string>, <string>, <string>],
-          "linked_dimension": "market_alignment" | "skill_premium" | "visibility" | "mobility" | "negotiation",
-          "target_month": <number>
-        }
-      ]
-    }
-  ],
-  "target_companies": [
-    {
-      "company_name": <string, real company name for this role+city+industry>,
-      "rationale": <string, one sentence>,
-      "est_salary_min": <number>,
-      "est_salary_max": <number>
-    }
-  ]
-}`
-
-    const aiResult = await callAIJSON(prompt, GrowPathSchema, {
-      maxTokens: 3000,
-      feature: 'growpath_generate',
-      userId: user.id,
+      phase.milestones.push({
+        type,
+        title: a.action,
+        description: a.impact,
+        why_it_matters: dimensionNotes[0] ?? `Impact: ${a.impact}`,
+        how_to_improve: [a.action],
+        linked_dimension: dimension,
+        target_month: clampedMonth,
+      })
     })
 
-    // Supersede any existing active plan before inserting the new one —
-    // required by the partial unique index on (user_id) where status = 'active'.
-    await supabase
-      .from('growpath_plans')
-      .update({ status: 'superseded' })
-      .eq('user_id', user.id)
-      .eq('status', 'active')
+    // Drop any empty phases (can happen if all actions land in one window)
+    const nonEmptyPhases = phases.filter(p => p.milestones.length > 0)
 
-    const { data: plan, error: planError } = await supabase
-      .from('growpath_plans')
-      .insert({
-        user_id: user.id,
-        grow_dna_id: dna.id,
-        months_total: dna.months_to_close ?? 12,
-        status: 'active',
-      })
-      .select('id')
-      .single()
+    const { data: planId, error: rpcError } = await supabase.rpc('save_growpath_plan', {
+      p_user_id: user.id,
+      p_grow_dna_id: dna.id,
+      p_months_total: monthsTotal,
+      p_phases: nonEmptyPhases,
+      p_target_companies: [], // no AI call for this yet — see note below
+    })
 
-    if (planError || !plan) {
-      console.error('GrowPath plan insert failed:', planError)
+    if (rpcError || !planId) {
+      console.error('GrowPath atomic save failed:', rpcError)
       return Response.json({ error: 'Failed to save plan' }, { status: 500 })
     }
 
-    for (let i = 0; i < aiResult.phases.length; i++) {
-      const phase = aiResult.phases[i]
-      const { data: savedPhase, error: phaseError } = await supabase
-        .from('growpath_phases')
-        .insert({
-          plan_id: plan.id,
-          phase_index: i,
-          title: phase.title,
-          start_month: phase.start_month,
-          end_month: phase.end_month,
-        })
-        .select('id')
-        .single()
-
-      if (phaseError || !savedPhase) {
-        console.error('GrowPath phase insert failed:', phaseError)
-        continue
-      }
-
-      const milestoneRows = phase.milestones.map(m => ({
-        phase_id: savedPhase.id,
-        type: m.type,
-        title: m.title,
-        description: m.description,
-        why_it_matters: m.why_it_matters,
-        how_to_improve: m.how_to_improve,
-        linked_dimension: m.linked_dimension,
-        target_month: m.target_month,
-      }))
-
-      const { error: milestoneError } = await supabase
-        .from('growpath_milestones')
-        .insert(milestoneRows)
-
-      if (milestoneError) {
-        console.error('GrowPath milestone insert failed:', milestoneError)
-      }
-    }
-
-    if (aiResult.target_companies.length > 0) {
-      const companyRows = aiResult.target_companies.map(c => ({
-        plan_id: plan.id,
-        company_name: c.company_name,
-        rationale: c.rationale,
-        est_salary_min: c.est_salary_min,
-        est_salary_max: c.est_salary_max,
-      }))
-
-      const { error: companyError } = await supabase
-        .from('growpath_target_companies')
-        .insert(companyRows)
-
-      if (companyError) {
-        console.error('GrowPath target company insert failed:', companyError)
-      }
-    }
-
-    return Response.json({
-      plan_id: plan.id,
-      credits_remaining: credit.balance,
-    })
+    return Response.json({ plan_id: planId })
 
   } catch (err) {
     console.error('GrowPath generate error:', err)
     return Response.json({ error: 'GrowPath generation failed' }, { status: 500 })
   }
 }
+
+// Target companies intentionally omitted from this deterministic pass — this
+// is the one piece that genuinely needs external market knowledge (real
+// companies hiring for this role/city/salary band) that grow_dna doesn't
+// contain. Options once the deterministic core is validated:
+//   1. A small, separate AI call scoped only to company suggestions
+//   2. A static curated list keyed by industry+city, zero AI cost
+//   3. Leave the section out of the UI entirely for now

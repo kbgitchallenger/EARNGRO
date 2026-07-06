@@ -41,11 +41,43 @@ export default async function GrowPathPage() {
 
   const { data: dna } = await supabase
     .from('grow_dna')
-    .select('current_salary, target_salary, earning_gap, months_to_close')
+    .select('current_salary, target_salary, earning_gap, months_to_close, dimension_scores, gap_reasons, raw_ai_response')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+
+  // Career Health Score — most recent computed value, separate from HRS
+  const { data: chs } = await supabase
+    .from('career_health_scores')
+    .select('score, from_milestones_pct, from_practiced_skills, computed_at')
+    .eq('user_id', user.id)
+    .order('computed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // Latest CV analysis — feeds Top Skill Gaps + Market Positioning.
+  // Joined through cv_versions since analyses are scoped to a version, not
+  // directly to the user.
+  const { data: latestVersion } = await supabase
+    .from('cv_versions')
+    .select('id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  let cvAnalysis: any = null
+  if (latestVersion) {
+    const { data } = await supabase
+      .from('cv_analyses')
+      .select('ats_score, recruiter_score, market_alignment, keyword_gaps, critical_issues, improvements')
+      .eq('cv_version_id', latestVersion.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    cvAnalysis = data
+  }
 
   return (
     <GrowPathView
@@ -54,6 +86,8 @@ export default async function GrowPathPage() {
       phases={phases}
       companies={companies}
       dna={dna}
+      careerHealth={chs}
+      cvAnalysis={cvAnalysis}
       isFreePlan={(profile?.plan ?? 'free') === 'free'}
     />
   )
