@@ -1,65 +1,165 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const [open, setOpen] = useState(false)
 
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      // FIX: was '0 48px' — 48px side padding on a 375px phone leaves no room
-      padding: '0 clamp(16px, 4vw, 48px)',
-      height: 60,
-      background: scrolled ? 'rgba(253,252,248,0.97)' : 'rgba(253,252,248,0.92)',
-      backdropFilter: 'blur(16px)',
-      borderBottom: `1px solid ${scrolled ? 'var(--border)' : 'transparent'}`,
-      boxShadow: scrolled ? '0 1px 12px rgba(0,0,0,0.06)' : 'none',
-      transition: 'all 0.2s ease',
-    }}>
-      {/* Logo */}
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
-        <div style={{
-          width: 32, height: 32,
-          background: 'linear-gradient(135deg, var(--teal), #1AA574)',
-          borderRadius: 'var(--r-sm)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 700, color: '#fff',
-          boxShadow: '0 2px 8px rgba(14,122,90,0.25)',
-        }}>EG</div>
-        <span style={{ fontFamily: 'var(--sans)', fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
-          Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
-        </span>
-      </Link>
-
-      {/* Desktop links — FIX: was nav-hide-mobile (hid at 640px only).
-          Now uses nav-links-desktop which hides at 780px via updated globals.css */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="nav-links-desktop">
-        <Link href="/#how-it-works" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400, whiteSpace: 'nowrap' }}>How it works</Link>
-        <Link href="/#calculator"   style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 400, whiteSpace: 'nowrap' }}>Free calculator</Link>
-        <Link href="/login"         style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>Log in</Link>
-      </div>
-
-      {/* CTA */}
-      <Link href="/signup" style={{
-        background: 'var(--teal)', color: '#fff',
-        fontSize: 13, fontWeight: 600,
-        // FIX: tighter padding on mobile so it doesn't crowd the logo
-        padding: 'clamp(7px, 1.5vw, 9px) clamp(14px, 3vw, 20px)',
-        borderRadius: 99, textDecoration: 'none',
-        boxShadow: '0 2px 8px rgba(14,122,90,0.2)',
-        whiteSpace: 'nowrap', flexShrink: 0,
+    <>
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(253,252,248,0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--border-l)',
+        boxShadow: '0 1px 0 rgba(26,26,20,0.04)',
       }}>
-        Get started free
-      </Link>
-    </nav>
+        <div style={{
+          maxWidth: 1100, margin: '0 auto',
+          padding: '0 24px', height: 60,
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: 16,
+        }}>
+
+          {/* Logo */}
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
+            <div style={{
+              width: 30, height: 30, background: 'var(--teal)',
+              borderRadius: 7, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 11, fontWeight: 800,
+              color: '#fff', letterSpacing: '-0.5px',
+              boxShadow: '0 2px 8px rgba(14,122,90,0.3)',
+            }}>EG</div>
+            <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
+              Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
+            </span>
+          </Link>
+
+          {/* Desktop nav links */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="nav-desktop">
+            {[
+              { label: 'How it works', href: '#how-it-works' },
+              { label: 'Pricing', href: '/pricing' },
+            ].map(item => (
+              <Link key={item.href} href={item.href} style={{
+                fontSize: 13, fontWeight: 500, color: 'var(--muted)',
+                textDecoration: 'none', padding: '7px 14px', borderRadius: 99,
+                transition: 'color 0.15s, background 0.15s',
+              }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--ink)'; (e.target as HTMLElement).style.background = 'var(--paper-3)'; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent'; }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop CTAs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="nav-desktop">
+            <Link href="/login" style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--muted)',
+              textDecoration: 'none', padding: '8px 16px',
+              borderRadius: 99, transition: 'color 0.15s',
+            }}>
+              Log in
+            </Link>
+            <Link href="/signup" style={{
+              fontSize: 13, fontWeight: 700, color: '#fff',
+              background: 'var(--teal)', textDecoration: 'none',
+              padding: '9px 20px', borderRadius: 99,
+              boxShadow: '0 2px 8px rgba(14,122,90,0.25)',
+              transition: 'background 0.15s, transform 0.15s',
+              display: 'inline-block',
+            }}>
+              Get started free
+            </Link>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setOpen(o => !o)}
+            className="nav-mobile"
+            style={{
+              background: 'transparent', border: '1.5px solid var(--border)',
+              borderRadius: 8, padding: '7px 9px', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', gap: 4,
+              transition: 'border-color 0.15s',
+            }}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+          >
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                display: 'block', width: 18, height: 2,
+                background: 'var(--ink)', borderRadius: 99,
+                transition: 'transform 0.25s, opacity 0.25s',
+                transform: open
+                  ? i === 0 ? 'translateY(6px) rotate(45deg)'
+                  : i === 2 ? 'translateY(-6px) rotate(-45deg)'
+                  : 'scaleX(0)'
+                  : 'none',
+                opacity: open && i === 1 ? 0 : 1,
+              }} />
+            ))}
+          </button>
+
+        </div>
+      </nav>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div style={{
+          position: 'fixed', inset: '60px 0 0 0', zIndex: 99,
+          background: 'rgba(253,252,248,0.98)',
+          backdropFilter: 'blur(16px)',
+          borderTop: '1px solid var(--border-l)',
+          display: 'flex', flexDirection: 'column',
+          padding: '24px 24px 40px',
+          animation: 'slideDown 0.25s cubic-bezier(0.16,1,0.3,1) both',
+        }}>
+          {[
+            { label: 'How it works', href: '#how-it-works' },
+            { label: 'Pricing', href: '/pricing' },
+            { label: 'Log in', href: '/login' },
+          ].map(item => (
+            <Link key={item.href} href={item.href}
+              onClick={() => setOpen(false)}
+              style={{
+                fontSize: 18, fontWeight: 600, color: 'var(--ink)',
+                textDecoration: 'none', padding: '16px 0',
+                borderBottom: '1px solid var(--border-l)',
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          <Link href="/signup" onClick={() => setOpen(false)} style={{
+            marginTop: 24, display: 'block', textAlign: 'center',
+            background: 'var(--teal)', color: '#fff',
+            fontSize: 16, fontWeight: 700, padding: '15px',
+            borderRadius: 99, textDecoration: 'none',
+            boxShadow: '0 4px 16px rgba(14,122,90,0.25)',
+          }}>
+            Get started free →
+          </Link>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 680px) {
+          .nav-desktop { display: none !important; }
+          .nav-mobile  { display: flex !important; }
+        }
+        @media (min-width: 681px) {
+          .nav-mobile  { display: none !important; }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </>
   )
 }

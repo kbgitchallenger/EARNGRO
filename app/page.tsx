@@ -1,8 +1,7 @@
-//app/page.tsx
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import JourneyCard from '@/components/JourneyCard'
-import Calculator from '@/components/Calculator'
+import CalculatorPreview from '@/components/CalculatorPreview'
 import ScrollReveal from '@/components/ScrollReveal'
 
 const TICKER = [
@@ -39,6 +38,7 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section
         style={{
+         
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
@@ -48,17 +48,16 @@ export default function HomePage() {
           position: 'relative',
           zIndex: 1,
           textAlign: 'center',
-          overflow: 'hidden',   // contains the 900px glow blob
+          overflow: 'hidden',
         }}
       >
-        {/* FIX 1 ─ glow blob uses fixed px width; clamp it so it can't scroll horizontally */}
         <div
           style={{
             position: 'absolute',
             top: '-10%',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: 'min(900px, 200vw)',   // ← was: width: 900 (caused overflow on tiny screens)
+            width: 'min(900px, 200vw)',
             height: 600,
             background:
               'radial-gradient(ellipse at center,rgba(14,122,90,0.07) 0%,rgba(232,146,42,0.04) 45%,transparent 70%)',
@@ -79,7 +78,6 @@ export default function HomePage() {
             textAlign: 'center',
           }}
         >
-          {/* eyebrow tag */}
           <div
             className="fade d1"
             style={{
@@ -112,7 +110,6 @@ export default function HomePage() {
             AI-powered career intelligence platform
           </div>
 
-          {/* H1 */}
           <h1
             className="fade d2"
             style={{
@@ -137,7 +134,6 @@ export default function HomePage() {
             </em>
           </h1>
 
-          {/* sub */}
           <p
             className="fade d3"
             style={{
@@ -156,10 +152,8 @@ export default function HomePage() {
             <strong style={{ color: 'var(--teal)', fontWeight: 600 }}>market value.</strong>
           </p>
 
-          {/* journey card */}
           <div className="fade d4"><JourneyCard /></div>
 
-          {/* CTAs */}
           <div
             className="fade d5"
             style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, flexWrap:'wrap', marginBottom:52 }}
@@ -178,8 +172,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PROOF STRIP ──
-          FIX 2 ─ use className="proof" so CSS handles padding (no inline padding:40px on mobile) */}
+      {/* ── PROOF STRIP ── */}
       <div className="proof" style={{ position:'relative', zIndex:1 }}>
         {[
           ['₹6.8L','average gap found'],
@@ -194,8 +187,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* ── TICKER ──
-          FIX 3 ─ animation name was 'tick' but keyframe is 'ticker' (or add @keyframes tick alias in CSS) */}
+      {/* ── TICKER ── */}
       <div
         style={{ background:'var(--teal-xl)', overflow:'hidden', borderTop:'1px solid var(--teal-mid)', borderBottom:'1px solid var(--teal-mid)', padding:'10px 0', position:'relative', zIndex:1 }}
       >
@@ -236,7 +228,6 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* connector row */}
         <div className="reveal r3" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:24, flexWrap:'wrap' }}>
           {['Daily interview practice','Living CV builder','Salary negotiation coach','Freelance income launcher'].map((s,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -253,24 +244,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CALCULATOR ── */}
+      {/* ── CALCULATOR PREVIEW ── static, non-interactive, routes to signup ── */}
       <div id="calculator" style={{ background:'var(--paper-2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1, overflow:'hidden' }}>
-        {/* FIX 4 ─ same blob fix: clamp width so it doesn't escape the overflow:hidden */}
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
         <div style={{ maxWidth:700, margin:'0 auto', padding:'88px 24px', position:'relative', zIndex:1 }}>
           <div className="reveal r1" style={{ textAlign:'center', marginBottom:40 }}>
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
               <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
-              Free earning gap calculator
+              Earning gap calculator
             </div>
             <h2 style={{ fontFamily:'var(--serif)', fontSize:'clamp(30px,4vw,50px)', fontWeight:600, lineHeight:1.1, color:'var(--ink)', marginBottom:14 }}>
               What is your gap<br/><em style={{ fontStyle:'italic', color:'var(--teal)' }}>worth to you?</em>
             </h2>
             <p style={{ fontSize:16, fontWeight:300, color:'var(--muted)', lineHeight:1.75 }}>
-              90 seconds. AI market intelligence — not formulas. No account needed.
+              AI market intelligence, personalised to your profile. Free account · 2 minutes.
             </p>
           </div>
-          <div className="reveal r2"><Calculator /></div>
+          <div className="reveal r2"><CalculatorPreview /></div>
         </div>
       </div>
 
@@ -307,7 +297,6 @@ export default function HomePage() {
 
       {/* ── WAITLIST → SIGNUP ── */}
       <section id="waitlist" style={{ padding:'100px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
-        {/* FIX 5 ─ same blob fix */}
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
         <div className="reveal r1" style={{ maxWidth:540, margin:'0 auto', position:'relative', zIndex:1 }}>
           <div style={{ display:'inline-block', background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:10, fontWeight:700, padding:'5px 16px', borderRadius:99, marginBottom:22, letterSpacing:'0.08em', textTransform:'uppercase' }}>
