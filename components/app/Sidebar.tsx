@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from "next/image";
 
 interface SidebarProps {
   plan: string
@@ -45,17 +46,7 @@ const NAV = [
     ),
   },
  
-  {
-    href: '/interview',
-    label: 'AI Interview',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-      </svg>
-    ),
-  },
- 
-  {
+   {
     href: '/growpath',
     label: 'GrowPath',
     icon: (
@@ -65,6 +56,17 @@ const NAV = [
     ),
     locked: false,
   },
+
+  {
+    href: '/interview',
+    label: 'AI Interview',
+    icon: (
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+      </svg>
+    ),
+  },
+  
     {
     href: '/pricing',
     label: 'Pricing',
@@ -83,10 +85,26 @@ export default function Sidebar({ plan }: SidebarProps) {
   return (
     <aside className="sidebar">
       {/* Logo */}
-      <div className="sidebar-logo">
-        <div className="logo-mark">EG</div>
-        <span className="logo-name">Earn<em>Gro</em></span>
-      </div>
+      import Image from "next/image";
+
+<div className="sidebar-logo">
+  <Image
+    src="/public/logo.png"
+    alt="EarnGro"
+    width={40}
+    height={40}
+    priority
+  />
+
+  <div className="sidebar-brand">
+    <div className="brand-name">
+      Earn<span>Gro</span>
+    </div>
+    <div className="brand-tagline">
+      Career Intelligence
+    </div>
+  </div>
+</div>
 
       {/* Plan badge */}
       <div className="sidebar-plan">
