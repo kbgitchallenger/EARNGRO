@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import Image from "next/image";   
 
 function getStrength(pw: string) {
   if (!pw) return { label: '', score: 0 }
@@ -137,10 +138,39 @@ if (exists) {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg,var(--teal),#1AA574)', borderRadius: 'var(--r-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, boxShadow: '0 2px 8px rgba(14,122,90,0.25)' }}>EG</div>
-          <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
-            Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
-          </span>
+         <Link
+  href="/"
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    textDecoration: 'none',
+  }}
+>
+  <Image
+    src="/earngro.png"
+    alt="EarnGro"
+    width={42}
+    height={42}
+    priority
+    style={{
+      objectFit: 'contain',
+      display: 'block',
+    }}
+  />
+
+  <span
+    style={{
+      fontSize: 17,
+      fontWeight: 700,
+      color: 'var(--ink)',
+      letterSpacing: '-0.3px',
+      lineHeight: 1,
+    }}
+  >
+    Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
+  </span>
+</Link>
         </div>
 
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: 26, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
