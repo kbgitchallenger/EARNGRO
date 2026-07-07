@@ -1,14 +1,33 @@
 {
-  "name": "EarnGro — Grow What You Earn",
+  "name": "EarnGro",
   "short_name": "EarnGro",
-  "description": "Discover your Earning Gap and close it with AI",
+  "description": "AI-powered Career Wealth Intelligence Platform for India and Southeast Asia",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FDFCF8",
   "theme_color": "#0E7A5A",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "business", "education"],
+  "lang": "en-IN",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "EarnGro Dashboard — Career Wealth Intelligence"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "EarnGro Mobile — GrowDNA Assessment"
+    }
   ]
 }

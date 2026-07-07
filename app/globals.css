@@ -574,6 +574,7 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
 .d5 { animation-delay: 0.44s; }
 
 /* ── RESPONSIVE ── */
+
 @media (max-width: 780px) {
   /* Overflow guard */
   html, body { overflow-x: hidden; }
@@ -1484,4 +1485,21 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
   .option-icon { font-size: 16px; }
   .option-label { font-size: 12px; }
   .tapscale-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ── TOPBAR RESPONSIVE ──────────────────────────────────────────── */
+@media (min-width: 769px) {
+  /* On desktop, sidebar shows logo — hide it in topbar */
+  .topbar-logo-mobile { display: none !important; }
+  /* Show upgrade badge and name block on desktop */
+  .topbar-upgrade-badge { display: inline-flex !important; }
+}
+
+@media (max-width: 768px) {
+  /* On mobile, topbar shows logo */
+  .topbar-logo-mobile { display: flex !important; }
+  /* Hide long name on narrow screens */
+  .topbar-name-block { display: none; }
+  /* Add bottom padding to account for fixed mobile nav */
+  .app-content { padding-bottom: 80px !important; }
 }

@@ -24,18 +24,18 @@ export default function Navbar() {
         }}>
 
           {/* Logo */}
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{
-              width: 30, height: 30, background: 'var(--teal)',
-              borderRadius: 7, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 11, fontWeight: 800,
-              color: '#fff', letterSpacing: '-0.5px',
-              boxShadow: '0 2px 8px rgba(14,122,90,0.3)',
-            }}>EG</div>
-            <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
-              Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
-            </span>
-          </Link>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }} title="EarnGro — earngro.app">
+  <div style={{
+    width: 30, height: 30, background: 'var(--teal)',
+    borderRadius: 7, display: 'flex', alignItems: 'center',
+    justifyContent: 'center', fontSize: 11, fontWeight: 800,
+    color: '#fff', letterSpacing: '-0.5px',
+    boxShadow: '0 2px 8px rgba(14,122,90,0.3)',
+  }}>EG</div>
+  <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
+    Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
+  </span>
+</Link>
 
           {/* Desktop nav links */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="nav-desktop">

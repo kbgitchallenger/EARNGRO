@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /growdna
+Disallow: /gap
+Disallow: /cv
+Disallow: /interview
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: https://earngro.app/sitemap.xml
