@@ -87,23 +87,20 @@ export default function Sidebar({ plan }: SidebarProps) {
       {/* Logo */}
       import Image from "next/image";
 
+import Image from "next/image";
+
 <div className="sidebar-logo">
   <Image
-    src="/public/logo.png"
+    src="/logo.png"
     alt="EarnGro"
     width={40}
     height={40}
     priority
   />
 
-  <div className="sidebar-brand">
-    <div className="brand-name">
-      Earn<span>Gro</span>
-    </div>
-    <div className="brand-tagline">
-      Career Intelligence
-    </div>
-  </div>
+  <span className="logo-name">
+    Earn<em>Gro</em>
+  </span>
 </div>
 
       {/* Plan badge */}
