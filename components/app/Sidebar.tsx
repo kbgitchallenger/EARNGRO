@@ -85,16 +85,12 @@ export default function Sidebar({ plan }: SidebarProps) {
   return (
     <aside className="sidebar">
       {/* Logo */}
-      import Image from "next/image";
-
-import Image from "next/image";
-
-<div className="sidebar-logo">
+  <div className="sidebar-logo">
   <Image
     src="/logo.png"
     alt="EarnGro"
-    width={40}
-    height={40}
+    width={38}
+    height={38}
     priority
   />
 
