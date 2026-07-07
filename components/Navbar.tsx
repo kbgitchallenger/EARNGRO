@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from "next/image";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -24,15 +25,39 @@ export default function Navbar() {
         }}>
 
           {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }} title="EarnGro — earngro.app">
-  <div style={{
-    width: 30, height: 30, background: 'var(--teal)',
-    borderRadius: 7, display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontSize: 11, fontWeight: 800,
-    color: '#fff', letterSpacing: '-0.5px',
-    boxShadow: '0 2px 8px rgba(14,122,90,0.3)',
-  }}>EG</div>
-  <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
+          {/* Logo */}
+<Link
+  href="/"
+  title="EarnGro — earngro.app"
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    textDecoration: 'none',
+    flexShrink: 0,
+  }}
+>
+  <Image
+    src="/earngro.png"
+    alt="EarnGro"
+    width={38}
+    height={38}
+    priority
+    style={{
+      objectFit: 'contain',
+      display: 'block',
+    }}
+  />
+
+  <span
+    style={{
+      fontSize: 17,
+      fontWeight: 700,
+      color: 'var(--ink)',
+      letterSpacing: '-0.3px',
+      lineHeight: 1,
+    }}
+  >
     Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
   </span>
 </Link>
