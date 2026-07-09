@@ -65,7 +65,16 @@ export async function POST(
       return NextResponse.json({ error: 'No answers found' }, { status: 400 })
     }
 
+    // session.persona was validated at session-creation time, so this should
+    // always resolve — but guarding here anyway rather than trusting that
+    // invariant blindly. A stale/removed persona (e.g. personas.ts changed
+    // after this session was created) would otherwise crash the whole report
+    // generation instead of failing with a clear, specific error.
     const persona = getPersona(session.persona)
+    if (!persona) {
+      console.error(`Session ${sessionId} has unrecognised persona id: ${session.persona}`)
+      return NextResponse.json({ error: 'Session has an invalid persona and cannot generate a report' }, { status: 500 })
+    }
 
     // Generate report
     const report = await callAIJSON(

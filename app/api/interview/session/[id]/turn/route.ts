@@ -75,7 +75,14 @@ export async function POST(
 
     if (!currentTurn) return NextResponse.json({ error: 'Turn not found' }, { status: 404 })
 
+    // See complete/route.ts for why this is guarded even though session.persona
+    // was validated at creation time.
     const persona = getPersona(session.persona)
+    if (!persona) {
+      console.error(`Session ${sessionId} has unrecognised persona id: ${session.persona}`)
+      return NextResponse.json({ error: 'Session has an invalid persona and cannot continue' }, { status: 500 })
+    }
+
     const questionsSoFar = (turns ?? []).map(t => t.question).filter(Boolean)
 
     // Determine max turns from session or default
