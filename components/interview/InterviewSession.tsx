@@ -225,20 +225,36 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   }
 
   async function completeSession() {
-    setCompleting(true)
-    try {
-      const res = await fetch(`/api/interview/session/${session.id}/complete`, {
-        method: 'POST',
-      })
-      if (res.ok) {
-        router.push(`/interview/${session.id}`)
-        router.refresh()
-      }
-    } catch {
-      setError('Failed to generate report. Please refresh and try again.')
+  console.log('STEP A - completeSession() called')
+
+  setCompleting(true)
+
+  try {
+    const res = await fetch(`/api/interview/session/${session.id}/complete`, {
+      method: 'POST',
+    })
+
+    console.log('STEP B - Response Status:', res.status)
+
+    const body = await res.json().catch(() => null)
+
+    console.log('STEP C - Response Body:', body)
+
+    if (res.ok) {
+      console.log('STEP D - Redirecting...')
+      router.push(`/interview/${session.id}`)
+      router.refresh()
+    } else {
+      console.error('STEP E - Report generation failed')
+      setError(body?.error ?? 'Report generation failed')
       setCompleting(false)
     }
+  } catch (err) {
+    console.error('STEP F - Fetch Failed', err)
+    setError('Failed to generate report.')
+    setCompleting(false)
   }
+}
 
   if (completing) {
     return (
