@@ -58,19 +58,22 @@ async function logUsage(params: {
   outputTokens: number
 }) {
   try {
-    const supabase = await createClient()
-    await supabase.from('ai_usage_log').insert({
-      feature: params.feature ?? 'unknown',
-      user_id: params.userId ?? null,
-      model: params.model,
-      input_tokens: params.inputTokens,
-      output_tokens: params.outputTokens,
-      created_at: new Date().toISOString(),
-    })
-  } catch (err) {
-    // Never let logging failure break the actual AI call
-    console.error('AI usage logging failed:', err)
-  }
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  await supabase.from('ai_usage_log').insert({
+    feature: params.feature ?? 'unknown',
+    user_id: params.userId ?? null,
+    model: params.model,
+    input_tokens: params.inputTokens,
+    output_tokens: params.outputTokens,
+    created_at: new Date().toISOString(),
+  })
+} catch (err) {
+  console.warn('AI usage logging failed (non-fatal):', err)
+}
 }
 
 export async function callAIJSON<T extends ZodSchema>(
