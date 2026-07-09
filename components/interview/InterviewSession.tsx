@@ -61,6 +61,7 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   const [canType, setCanType] = useState(false)
   const [turnScores, setTurnScores] = useState<Record<number, number>>({}) // turnIndex -> avg score, for timeline
   const [elapsedSec, setElapsedSec] = useState(0)
+  const [insufficientCredits, setInsufficientCredits] = useState<{ required: number; balance: number } | null>(null)
   const totalTurns = 5
 
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -151,6 +152,7 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     setSubmitting(true)
     setCanType(false)
     setError('')
+    setInsufficientCredits(null)
 
     const currentTurnIndex = answeredCount
     addMessage({ type: 'user_answer', text: trimmed, turnIndex: currentTurnIndex })
@@ -163,7 +165,18 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
       })
 
       if (res.status === 402) {
-        router.push('/settings/billing')
+        const body = await res.json().catch(() => ({}))
+        // Don't redirect away silently — the user's answer was already shown
+        // in the chat optimistically but was never scored or saved server-side
+        // (deductCredits fails before the turn is processed). Remove that
+        // unsent bubble, restore the text so nothing is lost, and surface the
+        // block in-context so the user knows exactly what happened and how
+        // to get back to this exact point after topping up.
+        setMessages(prev => prev.filter(m => !(m.type === 'user_answer' && m.turnIndex === currentTurnIndex)))
+        setAnswer(trimmed)
+        setInsufficientCredits({ required: body.required ?? 0, balance: body.balance ?? 0 })
+        setSubmitting(false)
+        setCanType(true)
         return
       }
       if (!res.ok) throw new Error('Submission failed')
@@ -423,6 +436,27 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
 
       {/* ── INPUT AREA ── */}
       <div style={{ borderTop: '1px solid var(--border)', padding: '14px 20px 20px', background: 'var(--paper)', flexShrink: 0 }}>
+        {insufficientCredits && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--amber-l)', border: '1px solid var(--amber-mid)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 10, flexWrap: 'wrap' }}>
+            <span aria-hidden style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>
+                Not enough credits to continue
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                This question needs {insufficientCredits.required} credits — you have {insufficientCredits.balance}. Your answer below is saved, ready to send once you top up.
+              </div>
+            </div>
+            <a
+              href="/settings/billing"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', background: 'var(--teal)', padding: '8px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              Add credits →
+            </a>
+          </div>
+        )}
         {error && (
           <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8, padding: '6px 12px', background: 'var(--red-l)', borderRadius: 'var(--r-md)' }}>
             {error}
