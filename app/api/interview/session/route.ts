@@ -76,25 +76,31 @@ export async function POST(request: Request) {
     )
 
     // Create session
-    const { data: session, error } = await supabase
-      .from('interview_sessions')
-      .insert({
-        user_id:         user.id,
-        mode:            input.mode,
-        role:            input.role,
-        industry:        input.industry,
-        experience_band: input.experienceBand,
-        company_target:  input.targetCompany ?? null,
-        persona:         input.personaId,
-        target_dimension: input.weakestDimension,
-        status:          'in_progress',
-      })
-      .select('id')
-      .single()
+const { data: session, error } = await supabase
+  .from('interview_sessions')
+  .insert({
+    user_id:          user.id,
+    mode:             input.mode,
+    role:             input.role,
+    industry:         input.industry,
+    experience_band:  input.experienceBand,
+    company_target:   input.targetCompany ?? null,
+    persona:          input.personaId,
+    target_dimension: input.weakestDimension,
+    status:           'in_progress',
+  })
+  .select('id')
+  .single()
 
-    if (error || !session) {
-      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
-    }
+if (error) {
+  console.error('interview_sessions insert error:', JSON.stringify(error))
+  return NextResponse.json({ error: 'Failed to create session', detail: error.message }, { status: 500 })
+}
+
+if (!session?.id) {
+  console.error('interview_sessions insert returned no id — possible RLS SELECT block')
+  return NextResponse.json({ error: 'Session created but id not returned' }, { status: 500 })
+}
 
     // Save first turn (question only, no answer yet)
     await supabase.from('interview_turns').insert({
