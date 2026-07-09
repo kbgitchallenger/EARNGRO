@@ -1,10 +1,12 @@
 //app/(app)/dashboard/page.tsx
+export const revalidate = 30 // cache dashboard for 30 seconds
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import HRSBar from '@/components/dashboard/HRSBar'
 import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
 import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
+
 
 function fmt(n: number | null | undefined): string {
   if (!n) return '—'
