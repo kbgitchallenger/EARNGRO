@@ -50,6 +50,10 @@ export const INTERVIEWER_PERSONAS: InterviewerPersona[] = [
   },
 ]
 
-export function getPersona(id: string): InterviewerPersona {
-  return INTERVIEWER_PERSONAS.find(p => p.id === id) ?? INTERVIEWER_PERSONAS[0]
+// Returns null on a miss rather than silently substituting a different
+// persona than the one requested — callers must handle the null case
+// explicitly (e.g. return a 400), since silently swapping personas would
+// be a confusing, hard-to-notice bug for the user.
+export function getPersona(id: string): InterviewerPersona | null {
+  return INTERVIEWER_PERSONAS.find(p => p.id === id) ?? null
 }

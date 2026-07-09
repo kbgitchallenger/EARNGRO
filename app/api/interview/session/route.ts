@@ -1,3 +1,4 @@
+//app/api/interview/session/route.ts
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
@@ -32,7 +33,16 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const input = BodySchema.parse(body)
+
+    // Validate persona in code — personas.ts is the single source of truth
+    // now that the DB check constraint has been dropped. A bad/stale
+    // personaId fails loudly here instead of either hitting a DB constraint
+    // error (the bug this replaces) or silently falling back to a different
+    // persona than the one the user actually picked.
     const persona = getPersona(input.personaId)
+    if (!persona) {
+      return NextResponse.json({ error: 'Invalid persona selected' }, { status: 400 })
+    }
 
     // Fetch CV highlights for personalization
     const { data: latestCV } = await supabase
@@ -76,31 +86,31 @@ export async function POST(request: Request) {
     )
 
     // Create session
-const { data: session, error } = await supabase
-  .from('interview_sessions')
-  .insert({
-    user_id:          user.id,
-    mode:             input.mode,
-    role:             input.role,
-    industry:         input.industry,
-    experience_band:  input.experienceBand,
-    company_target:   input.targetCompany ?? null,
-    persona:          input.personaId,
-    target_dimension: input.weakestDimension,
-    status:           'in_progress',
-  })
-  .select('id')
-  .single()
+    const { data: session, error } = await supabase
+      .from('interview_sessions')
+      .insert({
+        user_id:          user.id,
+        mode:             input.mode,
+        role:             input.role,
+        industry:         input.industry,
+        experience_band:  input.experienceBand,
+        company_target:   input.targetCompany ?? null,
+        persona:          input.personaId,
+        target_dimension: input.weakestDimension,
+        status:           'in_progress',
+      })
+      .select('id')
+      .single()
 
-if (error) {
-  console.error('interview_sessions insert error:', JSON.stringify(error))
-  return NextResponse.json({ error: 'Failed to create session', detail: error.message }, { status: 500 })
-}
+    if (error) {
+      console.error('interview_sessions insert error:', JSON.stringify(error))
+      return NextResponse.json({ error: 'Failed to create session', detail: error.message }, { status: 500 })
+    }
 
-if (!session?.id) {
-  console.error('interview_sessions insert returned no id — possible RLS SELECT block')
-  return NextResponse.json({ error: 'Session created but id not returned' }, { status: 500 })
-}
+    if (!session?.id) {
+      console.error('interview_sessions insert returned no id — possible RLS SELECT block')
+      return NextResponse.json({ error: 'Session created but id not returned' }, { status: 500 })
+    }
 
     // Save first turn (question only, no answer yet)
     await supabase.from('interview_turns').insert({
@@ -126,6 +136,9 @@ if (!session?.id) {
 
   } catch (err) {
     console.error('Interview session create error:', err instanceof Error ? err.stack : err)
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid request', details: err.flatten() }, { status: 400 })
+    }
     try {
       console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
     } catch {}
