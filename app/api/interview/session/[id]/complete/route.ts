@@ -9,6 +9,8 @@ import { getPersona } from '@/lib/interview/personas'
 import { buildReportPrompt } from '@/lib/interview/prompts'
 import { deductCredits } from '@/services/credits.service'
 
+
+
 const ReportSchema = z.object({
   overall_score:     z.number().min(0).max(100),
   dimension_scores: z.object({
@@ -146,6 +148,10 @@ export async function POST(
 
   } catch (err) {
     console.error('Interview complete error:', err)
+
+if (err instanceof Error) {
+  console.error(err.stack)
+}
     return NextResponse.json({ error: 'Report generation failed' }, { status: 500 })
   }
 }
