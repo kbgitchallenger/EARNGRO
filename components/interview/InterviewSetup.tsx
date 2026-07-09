@@ -267,15 +267,21 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
             )}
           </button>
 
-          {/* Recent sessions */}
+          {/* Recent sessions — clicking ANY session (in-progress or completed)
+              now routes to the same /interview/[id] page, which already
+              branches server-side between resuming the live session and
+              showing the report. Previously this only handled 'completed'
+              and pointed at a /report sub-route that doesn't exist, so
+              in-progress sessions were completely unreachable and completed
+              ones hit a dead link. */}
           {recentSessions.length > 0 && (
             <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>Recent sessions</div>
               {recentSessions.map(s => (
                 <div
                   key={s.id}
-                  onClick={() => s.status === 'completed' && router.push(`/interview/${s.id}/report`)}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-l)', cursor: s.status === 'completed' ? 'pointer' : 'default' }}
+                  onClick={() => router.push(`/interview/${s.id}`)}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-l)', cursor: 'pointer' }}
                 >
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', textTransform: 'capitalize' }}>{s.mode} · {s.role}</div>
@@ -288,7 +294,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
                       {s.overall_score}/100
                     </div>
                   ) : (
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>In progress</div>
+                    <div style={{ fontSize: 11, color: 'var(--teal-d)', fontWeight: 600 }}>Resume →</div>
                   )}
                 </div>
               ))}

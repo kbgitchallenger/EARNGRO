@@ -3,26 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import InterviewSession from '@/components/interview/InterviewSession'
-
-function InterviewReport({
-  session,
-  turns,
-}: {
-  session: any
-  turns: any[]
-}) {
-  return (
-    <div className="space-y-4 p-6">
-      <h1 className="text-xl font-semibold">Interview Report</h1>
-      <p className="text-sm text-muted-foreground">
-        Report view is currently unavailable.
-      </p>
-      <pre className="overflow-x-auto rounded-md bg-muted p-4 text-xs">
-        {JSON.stringify({ session, turns }, null, 2)}
-      </pre>
-    </div>
-  )
-}
+import InterviewReport from '@/components/interview/InterviewReport'
 
 export default async function InterviewSessionPage({
   params,

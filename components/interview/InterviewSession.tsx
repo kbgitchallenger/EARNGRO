@@ -40,6 +40,12 @@ const SCORE_COLOR = (s: number) =>
 const SCORE_LABEL = (s: number) =>
   s >= 80 ? 'Strong' : s >= 60 ? 'Good' : s >= 40 ? 'Developing' : 'Needs work'
 
+function fmtTime(sec: number) {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 export default function InterviewSession({ session, turns: initialTurns }: Props) {
   const router = useRouter()
   const persona = INTERVIEWER_PERSONAS.find(p => p.id === session.persona) ?? INTERVIEWER_PERSONAS[0]
@@ -53,51 +59,67 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   const [error, setError] = useState('')
   const [answeredCount, setAnsweredCount] = useState(0)
   const [canType, setCanType] = useState(false)
+  const [turnScores, setTurnScores] = useState<Record<number, number>>({}) // turnIndex -> avg score, for timeline
+  const [elapsedSec, setElapsedSec] = useState(0)
   const totalTurns = 5
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesRef = useRef<MessageType[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Keep ref in sync
   messagesRef.current = messages
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Focus input when typing is allowed
   useEffect(() => {
     if (canType && !submitting) inputRef.current?.focus()
   }, [canType, submitting])
+
+  // Timer — counts up while the current question is awaiting an answer.
+  // Soft/visual only: never auto-submits or penalises, just gives the user
+  // a sense of real-interview pacing pressure.
+  useEffect(() => {
+    if (canType && !submitting && !sessionEnding) {
+      setElapsedSec(0)
+      timerRef.current = setInterval(() => setElapsedSec(s => s + 1), 1000)
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [canType, submitting, sessionEnding])
 
   // Build initial messages from existing turns on load
   useEffect(() => {
     if (initialTurns.length === 0) return
 
     const built: MessageType[] = []
+    const scores: Record<number, number> = {}
     for (const t of initialTurns) {
       built.push({ type: 'interviewer_question', text: t.question, turnIndex: t.turn_index })
       if (t.user_answer) {
         built.push({ type: 'user_answer', text: t.user_answer, turnIndex: t.turn_index })
         if (t.sub_scores && t.feedback) {
           built.push({ type: 'interviewer_feedback', scores: t.sub_scores, feedback: t.feedback, turnIndex: t.turn_index })
+          scores[t.turn_index] = Math.round((t.sub_scores.structure + t.sub_scores.specificity + t.sub_scores.confidence + t.sub_scores.relevance) / 4)
         }
       }
     }
     setMessages(built)
+    setTurnScores(scores)
     setAnsweredCount(initialTurns.filter(t => t.user_answer).length)
 
-    // Only allow typing if the last turn has no answer yet
     const lastTurn = initialTurns[initialTurns.length - 1]
     if (!lastTurn.user_answer) setCanType(true)
   }, [])
 
-  // Show first question on fresh session (no initial turns with answers)
   useEffect(() => {
     if (initialTurns.length === 1 && !initialTurns[0].user_answer) {
-      // Fresh session — animate the first question appearing
       showTypingThen(initialTurns[0].question, 0)
     }
   }, [])
@@ -130,7 +152,6 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     setCanType(false)
     setError('')
 
-    // Show user message immediately
     const currentTurnIndex = answeredCount
     addMessage({ type: 'user_answer', text: trimmed, turnIndex: currentTurnIndex })
 
@@ -151,7 +172,11 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
       const newAnsweredCount = currentTurnIndex + 1
       setAnsweredCount(newAnsweredCount)
 
-      // Show typing indicator then feedback
+      if (data.scores) {
+        const avg = Math.round((data.scores.structure + data.scores.specificity + data.scores.confidence + data.scores.relevance) / 4)
+        setTurnScores(prev => ({ ...prev, [currentTurnIndex]: avg }))
+      }
+
       setTimeout(() => {
         addMessage({ type: 'interviewer_typing' })
         setTimeout(() => {
@@ -170,7 +195,6 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
               setTimeout(() => completeSession(), 2000)
             }, 1000)
           } else if (data.nextQuestion) {
-            // Show next question after feedback settles
             setTimeout(() => {
               showTypingThen(data.nextQuestion, newAnsweredCount, 200)
             }, 1200)
@@ -203,7 +227,6 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     }
   }
 
-  // Generating report screen
   if (completing) {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
@@ -229,6 +252,8 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     )
   }
 
+  const timerColor = elapsedSec < 60 ? 'var(--muted)' : elapsedSec < 120 ? 'var(--amber)' : 'var(--red)'
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)', maxWidth: 740, margin: '0 auto' }}>
 
@@ -244,13 +269,46 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
             {session.mode.charAt(0).toUpperCase() + session.mode.slice(1)} interview · {session.role}
           </div>
         </div>
-        {/* Progress pills */}
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          {Array.from({ length: totalTurns }, (_, i) => (
-            <div key={i} style={{ width: 28, height: 4, borderRadius: 99, background: i < answeredCount ? persona.color : 'var(--border)', transition: 'background 0.4s' }} />
-          ))}
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', flexShrink: 0 }}>
+
+        {/* Timer — visible only while a question is awaiting an answer */}
+        {canType && !submitting && !sessionEnding && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+            <span aria-hidden style={{ fontSize: 13 }}>⏱</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: timerColor }}>{fmtTime(elapsedSec)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── QUESTION TIMELINE ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {Array.from({ length: totalTurns }, (_, i) => {
+          const isDone = i < answeredCount
+          const isCurrent = i === answeredCount && !sessionEnding
+          const score = turnScores[i]
+          const stepColor = isDone && score != null ? SCORE_COLOR(score) : isCurrent ? persona.color : 'var(--border)'
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < totalTurns - 1 ? 1 : undefined }}>
+              <div
+                title={isDone && score != null ? `Q${i + 1}: ${score}/100` : isCurrent ? `Q${i + 1}: in progress` : `Q${i + 1}`}
+                style={{
+                  width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700,
+                  background: isDone ? stepColor : isCurrent ? `${persona.color}18` : 'var(--paper-2)',
+                  border: `2px solid ${stepColor}`,
+                  color: isDone ? '#fff' : isCurrent ? persona.color : 'var(--muted)',
+                  animation: isCurrent ? 'pulseRing 1.8s ease-in-out infinite' : 'none',
+                }}
+              >
+                {isDone ? (score != null ? '✓' : i + 1) : i + 1}
+              </div>
+              {i < totalTurns - 1 && (
+                <div style={{ flex: 1, height: 2, background: i < answeredCount - (isCurrent ? 0 : 0) ? (i < answeredCount ? stepColor : 'var(--border)') : 'var(--border)', margin: '0 2px' }} />
+              )}
+            </div>
+          )
+        })}
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8, flexShrink: 0, whiteSpace: 'nowrap' }}>
           {answeredCount}/{totalTurns}
         </div>
       </div>
@@ -258,7 +316,6 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
       {/* ── MESSAGES ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Opening context bubble */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ fontSize: 11, color: 'var(--muted)', background: 'var(--paper-2)', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 14px' }}>
             {persona.name} · {session.mode} interview · {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -320,11 +377,9 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
                   {persona.emoji}
                 </div>
                 <div style={{ maxWidth: '82%', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* Feedback text */}
                   <div style={{ background: `${persona.color}10`, border: `1px solid ${persona.color}30`, borderRadius: '18px 18px 18px 4px', padding: '12px 16px', fontSize: 13, color: 'var(--ink)', lineHeight: 1.6, fontStyle: 'italic' }}>
                     💬 {msg.feedback}
                   </div>
-                  {/* Score chips */}
                   {scores && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {[
@@ -434,6 +489,10 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
         @keyframes bounce {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
           40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulseRing {
+          0%, 100% { box-shadow: 0 0 0 0 ${persona.color}30; }
+          50% { box-shadow: 0 0 0 5px ${persona.color}00; }
         }
       `}</style>
     </div>
