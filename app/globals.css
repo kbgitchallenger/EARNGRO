@@ -906,6 +906,87 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
 .hrs-card::before { background: linear-gradient(90deg, var(--teal), #1AA574); }
 .timeline-card::before { background: linear-gradient(90deg, #6366f1, var(--teal)); }
 
+
+/* Dashboard KPI Grid */
+
+.dash-stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    align-items:stretch;
+}
+
+.dashboard-kpi{
+    min-width:0;
+}
+
+@media (max-width:1024px){
+
+    .dash-stats-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+}
+
+@media (max-width:640px){
+
+    .dash-stats-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:10px;
+    }
+
+}
+
+@media (max-width:480px){
+
+    .dash-stats-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media (max-width:1024px){
+
+  .dash-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+}
+
+@media (max-width:640px){
+
+  .dash-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .dashboard-kpi{
+    padding:14px;
+  }
+
+  .dashboard-kpi .stat-label{
+    font-size:10px;
+  }
+
+  .dashboard-kpi .stat-value{
+    font-size:28px;
+  }
+
+  .dashboard-kpi .stat-sub{
+    font-size:12px;
+    line-height:1.35;
+  }
+
+}
+
+@media (max-width:480px){
+
+  .dash-stats-grid{
+    grid-template-columns:1fr;
+  }
+
+}
+
 .stat-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 .stat-value { font-family: var(--serif); font-size: 28px; font-weight: 600; color: var(--ink); line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
 .stat-denom { font-size: 14px; font-weight: 400; color: var(--muted); }
@@ -969,6 +1050,11 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
   .app-content { padding: 16px; }
   .dash-stats { grid-template-columns: 1fr; }
   .dash-header { flex-direction: column; }
+  .dash-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;}
+
+  .dashboard-kpi{min-width:0;}
 }
 
 

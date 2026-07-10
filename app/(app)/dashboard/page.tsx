@@ -261,18 +261,10 @@ export default async function DashboardPage() {
           </Link>
 
           {/* ── STAT CARDS — 4-column on desktop, 2×2 on tablet, 1-col on mobile ── */}
-          <div
-  className="dash-stats-grid"
-  style={{
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0,1fr))',
-    gap: 12,
-    alignItems: 'stretch',
-  }}
->
+          <div className="dash-stats-grid">
 
             {/* 1. Earning Gap */}
-            <div className="dash-stat-card gap-card">
+            <div className="dash-stat-card dashboard-kpi">
               <div className="stat-label">Annual Gap</div>
               <div className="stat-value gap-value">{fmt(dna.earning_gap)}</div>
               <div className="stat-sub">per year</div>
@@ -287,7 +279,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* 2. HRS Score */}
-            <div className="dash-stat-card hrs-card" style={{ position: 'relative' }}>
+            <div className="dash-stat-card dashboard-kpi" style={{ position: 'relative' }}>
               {hasRecentPositiveMove && (
                 <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', animation: 'hrsPulseDot 2s ease-in-out infinite', display: 'inline-block' }} />
@@ -373,85 +365,6 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Responsive grid CSS */}
-          <style>{`
-.dash-stats-grid{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;
-}
-
-.dash-stat-card{
-  min-width:0;
-  overflow:hidden;
-}
-
-.stat-value{
-  font-size:clamp(26px,4vw,38px);
-  line-height:1;
-  white-space:nowrap;
-}
-
-.stat-denom{
-  font-size:.45em;
-}
-
-@media (max-width:900px){
-  .dash-stats-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-}
-
-@media (max-width:640px){
-
-  .dash-stats-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
-  }
-
-  .dash-stat-card{
-    padding:14px;
-  }
-
-  .stat-label{
-    font-size:10px;
-    line-height:1.2;
-  }
-
-  .stat-value{
-    font-size:30px;
-  }
-
-  .stat-sub{
-    font-size:12px;
-    line-height:1.35;
-  }
-
-  .stat-footer{
-    margin-top:8px;
-  }
-
-  .stat-link{
-    font-size:12px;
-  }
-
-}
-
-@media (max-width:420px){
-
-  .dash-stats-grid{
-    grid-template-columns:1fr;
-  }
-
-  .dashboard-kpi{
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    min-height:180px;
-}
-
-}
-`}</style>
 
           {/* CV score strip */}
           {cvData?.market_score && (
