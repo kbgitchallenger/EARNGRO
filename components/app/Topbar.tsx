@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
 
 interface TopbarProps {
   name: string
@@ -48,22 +49,19 @@ export default function Topbar({ name, email, plan }: TopbarProps) {
           textDecoration: 'none',
         }}
       >
-        <div style={{
-          width: 28, height: 28,
-          background: 'var(--teal)',
-          borderRadius: 7,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, fontWeight: 800, color: '#fff',
-          letterSpacing: '-0.5px',
-          boxShadow: '0 2px 6px rgba(14,122,90,0.28)',
-          flexShrink: 0,
-        }}>EG</div>
-        <span style={{
-          fontSize: 16, fontWeight: 700,
-          color: 'var(--ink)', letterSpacing: '-0.3px',
-        }}>
-          Earn<em style={{ fontStyle: 'normal', color: 'var(--teal)' }}>Gro</em>
-        </span>
+        <Image
+  src="/logo.png"
+  alt="EarnGro"
+  width={140}
+  height={36}
+  priority
+  style={{
+    width: 'auto',
+    height: 30,
+    display: 'block',
+    flexShrink: 0,
+  }}
+/>
       </Link>
 
       {/* Right — user info + sign out */}
