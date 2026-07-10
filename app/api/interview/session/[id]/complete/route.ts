@@ -1,3 +1,5 @@
+//app/api/interview/session/[id]/complete/route.ts
+
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
@@ -8,8 +10,6 @@ import { z } from 'zod'
 import { getPersona } from '@/lib/interview/personas'
 import { buildReportPrompt } from '@/lib/interview/prompts'
 import { deductCredits } from '@/services/credits.service'
-
-
 
 const ReportSchema = z.object({
   overall_score:     z.number().min(0).max(100),
@@ -38,15 +38,10 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    // Credit check
-    const credit = await deductCredits(user.id, 'interview_report', { sessionId })
-    if (!credit.allowed) {
-      return NextResponse.json(
-        { error: 'INSUFFICIENT_CREDITS', balance: credit.balance, required: credit.cost },
-        { status: 402 }
-      )
-    }
-
+    // ── Validate everything BEFORE charging credits ──
+    // Previously deductCredits ran first, so "Session not found" or
+    // "No answers found" still charged 60 credits for a request that was
+    // never going to succeed.
     const { data: session } = await supabase
       .from('interview_sessions')
       .select('*')
@@ -67,15 +62,19 @@ export async function POST(
       return NextResponse.json({ error: 'No answers found' }, { status: 400 })
     }
 
-    // session.persona was validated at session-creation time, so this should
-    // always resolve — but guarding here anyway rather than trusting that
-    // invariant blindly. A stale/removed persona (e.g. personas.ts changed
-    // after this session was created) would otherwise crash the whole report
-    // generation instead of failing with a clear, specific error.
     const persona = getPersona(session.persona)
     if (!persona) {
       console.error(`Session ${sessionId} has unrecognised persona id: ${session.persona}`)
       return NextResponse.json({ error: 'Session has an invalid persona and cannot generate a report' }, { status: 500 })
+    }
+
+    // ── Now that the request is confirmed valid, deduct the credit ──
+    const credit = await deductCredits(user.id, 'interview_report', { sessionId })
+    if (!credit.allowed) {
+      return NextResponse.json(
+        { error: 'INSUFFICIENT_CREDITS', balance: credit.balance, required: credit.cost },
+        { status: 402 }
+      )
     }
 
     // Generate report
@@ -148,10 +147,6 @@ export async function POST(
 
   } catch (err) {
     console.error('Interview complete error:', err)
-
-if (err instanceof Error) {
-  console.error(err.stack)
-}
     return NextResponse.json({ error: 'Report generation failed' }, { status: 500 })
   }
 }

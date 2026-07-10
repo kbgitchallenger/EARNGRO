@@ -1,3 +1,4 @@
+//
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -62,6 +63,8 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   const [turnScores, setTurnScores] = useState<Record<number, number>>({}) // turnIndex -> avg score, for timeline
   const [elapsedSec, setElapsedSec] = useState(0)
   const [insufficientCredits, setInsufficientCredits] = useState<{ required: number; balance: number } | null>(null)
+  const [readyToComplete, setReadyToComplete] = useState(false)
+  const [reportBlocked, setReportBlocked] = useState<{ required: number; balance: number } | null>(null)
   const totalTurns = 5
 
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -116,7 +119,17 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     setAnsweredCount(initialTurns.filter(t => t.user_answer).length)
 
     const lastTurn = initialTurns[initialTurns.length - 1]
-    if (!lastTurn.user_answer) setCanType(true)
+    const allAnswered = initialTurns.every(t => t.user_answer)
+
+    // Session already fully answered but never reached 'completed' status —
+    // the previous completion attempt failed (e.g. ran out of credits) with
+    // no recovery path, leaving the input disabled forever with no way back
+    // in. Detect this on load and offer an explicit retry instead.
+    if (allAnswered && session.status !== 'completed') {
+      setReadyToComplete(true)
+    } else if (!lastTurn.user_answer) {
+      setCanType(true)
+    }
   }, [])
 
   useEffect(() => {
@@ -225,36 +238,36 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   }
 
   async function completeSession() {
-  console.log('STEP A - completeSession() called')
+    setCompleting(true)
+    setReportBlocked(null)
+    try {
+      const res = await fetch(`/api/interview/session/${session.id}/complete`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        router.push(`/interview/${session.id}`)
+        router.refresh()
+        return
+      }
 
-  setCompleting(true)
-
-  try {
-    const res = await fetch(`/api/interview/session/${session.id}/complete`, {
-      method: 'POST',
-    })
-
-    console.log('STEP B - Response Status:', res.status)
-
-    const body = await res.json().catch(() => null)
-
-    console.log('STEP C - Response Body:', body)
-
-    if (res.ok) {
-      console.log('STEP D - Redirecting...')
-      router.push(`/interview/${session.id}`)
-      router.refresh()
-    } else {
-      console.error('STEP E - Report generation failed')
-      setError(body?.error ?? 'Report generation failed')
+      // Previously: a non-ok response (most commonly 402 — out of credits
+      // for the report generation itself) fell through silently, leaving
+      // `completing` stuck true forever with no error, no retry, and no way
+      // back in. Now: parse the actual reason and surface a real retry path.
+      const body = await res.json().catch(() => ({}))
+      if (res.status === 402) {
+        setReportBlocked({ required: body.required ?? 0, balance: body.balance ?? 0 })
+      } else {
+        setError(body.error ?? 'Failed to generate report. Please try again.')
+      }
       setCompleting(false)
+      setReadyToComplete(true)
+    } catch {
+      setError('Failed to generate report. Please try again.')
+      setCompleting(false)
+      setReadyToComplete(true)
     }
-  } catch (err) {
-    console.error('STEP F - Fetch Failed', err)
-    setError('Failed to generate report.')
-    setCompleting(false)
   }
-}
 
   if (completing) {
     return (
@@ -282,6 +295,62 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   }
 
   const timerColor = elapsedSec < 60 ? 'var(--muted)' : elapsedSec < 120 ? 'var(--amber)' : 'var(--red)'
+
+  // All questions answered, but the session never actually reached
+  // 'completed' — either this is the first attempt just finishing, or a
+  // previous attempt failed (out of credits, network error, etc.) and the
+  // person is back here via the now-fixed Recent Sessions link. Either way,
+  // this is the recovery screen instead of a permanently dead chat.
+  if (readyToComplete) {
+    return (
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 52, marginBottom: 20 }}>✅</div>
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+          All questions answered
+        </div>
+        <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.6 }}>
+          Ready to generate your report with {persona.name}.
+        </div>
+
+        {reportBlocked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--amber-l)', border: '1px solid var(--amber-mid)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 20, textAlign: 'left' }}>
+            <span aria-hidden style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>Not enough credits for your report</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                This needs {reportBlocked.required} credits — you have {reportBlocked.balance}. Your answers are saved; add credits and try again.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && !reportBlocked && (
+          <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 16, padding: '8px 14px', background: 'var(--red-l)', borderRadius: 'var(--r-md)', textAlign: 'left' }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {reportBlocked && (
+            <a
+              href="/settings/billing"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-d)', background: 'var(--teal-l)', border: '1px solid var(--teal-mid)', padding: '11px 20px', borderRadius: 99, textDecoration: 'none' }}
+            >
+              Add credits →
+            </a>
+          )}
+          <button
+            onClick={completeSession}
+            style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--teal)', border: 'none', padding: '11px 24px', borderRadius: 99, cursor: 'pointer', boxShadow: '0 4px 16px rgba(14,122,90,0.22)' }}
+          >
+            {reportBlocked ? 'Try again →' : 'Generate my report →'}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)', maxWidth: 740, margin: '0 auto' }}>

@@ -1,3 +1,5 @@
+//app/api/interview/session/turn/route.ts
+
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
@@ -38,19 +40,13 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    // Credit check
-    const credit = await deductCredits(user.id, 'interview_turn', { sessionId })
-    if (!credit.allowed) {
-      return NextResponse.json(
-        { error: 'INSUFFICIENT_CREDITS', balance: credit.balance, required: credit.cost },
-        { status: 402 }
-      )
-    }
-
     const body = await request.json()
     const { answer } = BodySchema.parse(body)
 
-    // Fetch session
+    // ── Validate the request is legitimate BEFORE charging any credits ──
+    // Previously deductCredits ran first, so a request for a session that
+    // doesn't exist, isn't yours, or is already completed still burned
+    // credits before any of these checks ran.
     const { data: session } = await supabase
       .from('interview_sessions')
       .select('*')
@@ -63,7 +59,6 @@ export async function POST(
       return NextResponse.json({ error: 'Session already completed' }, { status: 400 })
     }
 
-    // Fetch all turns so far
     const { data: turns } = await supabase
       .from('interview_turns')
       .select('*')
@@ -75,17 +70,22 @@ export async function POST(
 
     if (!currentTurn) return NextResponse.json({ error: 'Turn not found' }, { status: 404 })
 
-    // See complete/route.ts for why this is guarded even though session.persona
-    // was validated at creation time.
     const persona = getPersona(session.persona)
     if (!persona) {
       console.error(`Session ${sessionId} has unrecognised persona id: ${session.persona}`)
       return NextResponse.json({ error: 'Session has an invalid persona and cannot continue' }, { status: 500 })
     }
 
-    const questionsSoFar = (turns ?? []).map(t => t.question).filter(Boolean)
+    // ── Now that the request is confirmed valid, deduct the credit ──
+    const credit = await deductCredits(user.id, 'interview_turn', { sessionId })
+    if (!credit.allowed) {
+      return NextResponse.json(
+        { error: 'INSUFFICIENT_CREDITS', balance: credit.balance, required: credit.cost },
+        { status: 402 }
+      )
+    }
 
-    // Determine max turns from session or default
+    const questionsSoFar = (turns ?? []).map(t => t.question).filter(Boolean)
     const maxTurns = 5
 
     // Score answer + get next question
