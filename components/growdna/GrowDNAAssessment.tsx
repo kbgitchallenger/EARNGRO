@@ -223,7 +223,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
   ]
   const hrs = sc('hrs')
   const explanations = result.scores?.explanations ?? {}
-  // Null-safe field access
   const strengths     = result.top_strengths      ?? []
   const gaps          = result.critical_gaps       ?? []
   const actions       = result.immediate_actions   ?? []
@@ -235,45 +234,45 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
   const archetypeDesc = result.archetype_desc       ?? ''
 
   return (
-    <div style={{ maxWidth: 620, margin: '0 auto', padding: '0 0 60px' }}>
+    <div className="dna-result-wrap">
 
       {/* Archetype hero */}
-      <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: 32, textAlign: 'center', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-        <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji}</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your career archetype</div>
-        <div style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(22px,4vw,32px)', fontWeight: 600, color: '#fff', marginBottom: 12 }}>{result.career_archetype}</div>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.65, maxWidth: 420, margin: '0 auto 20px' }}>{archetypeDesc}</p>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, fontWeight: 500, padding: '6px 16px', borderRadius: 99 }}>
-          Hiring Readiness Score:&nbsp;<strong style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{hrs}</strong>&nbsp;/ 1000
+      <div className="dna-hero">
+        <div className="dna-hero-blob" />
+        <div className="dna-hero-emoji">{emoji}</div>
+        <div className="dna-hero-eyebrow">Your career archetype</div>
+        <div className="dna-hero-title">{result.career_archetype}</div>
+        <p className="dna-hero-desc">{archetypeDesc}</p>
+        <div className="dna-hero-hrs">
+          Hiring Readiness Score:&nbsp;<strong>{hrs}</strong>&nbsp;/ 1000
         </div>
       </div>
 
       {/* Earning Gap */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 14 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Annual Gap</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 700, color: 'var(--red)' }}>{fmt(earningGap)}</div>
+      <div className="dna-card">
+        <div className="dna-stats-grid">
+          <div className="dna-stat">
+            <div className="dna-stat-label">Annual Gap</div>
+            <div className="dna-stat-val" style={{ color: 'var(--red)' }}>{fmt(earningGap)}</div>
           </div>
-          <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', padding: '0 12px' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Market Value</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 700, color: 'var(--teal)' }}>{fmt(targetSalary)}</div>
+          <div className="dna-stat dna-stat-mid">
+            <div className="dna-stat-label">Market Value</div>
+            <div className="dna-stat-val" style={{ color: 'var(--teal)' }}>{fmt(targetSalary)}</div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Months to close</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 700, color: 'var(--ink)' }}>{monthsToClose}</div>
+          <div className="dna-stat">
+            <div className="dna-stat-label">Months to close</div>
+            <div className="dna-stat-val" style={{ color: 'var(--ink)' }}>{monthsToClose}</div>
           </div>
         </div>
         {peerComp && (
-          <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 12, color: 'var(--teal-d)' }}>
+          <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 12, color: 'var(--teal-d)', marginTop: 16 }}>
             {peerComp}
           </div>
         )}
       </div>
 
       {/* 5 Earning dimensions */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 14 }}>
+      <div className="dna-card">
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Your 5 earning dimensions</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>Based directly on your answers below</div>
         {dims.map(d => {
@@ -300,7 +299,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       {/* Strengths & Gaps */}
       {(strengths.length > 0 || gaps.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div className="dna-sg-grid">
           {strengths.length > 0 && (
             <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 12 }}>✅ Top strengths</div>
@@ -326,7 +325,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       {/* Immediate actions */}
       {actions.length > 0 && (
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 14 }}>
+        <div className="dna-card">
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Your {actions.length} immediate actions</div>
           {actions.map((a, i) => (
             <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < actions.length - 1 ? 14 : 0, marginBottom: i < actions.length - 1 ? 14 : 0, borderBottom: i < actions.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
@@ -351,7 +350,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       {/* CTAs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button onClick={() => router.push('/growpath')}
+        <button onClick={() => router.push('/dashboard')}
           style={{ width: '100%', padding: 14, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.2)' }}>
           View my full GrowPath dashboard →
         </button>
@@ -360,6 +359,103 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
           Retake assessment
         </button>
       </div>
+
+      <style>{`
+        .dna-result-wrap {
+          max-width: 620px;
+          margin: 0 auto;
+          padding: 0 0 60px;
+        }
+        .dna-card {
+          background: var(--paper);
+          border: 1px solid var(--border);
+          border-radius: var(--r-lg);
+          padding: 24px;
+          margin-bottom: 14px;
+        }
+        .dna-hero {
+          background: linear-gradient(135deg,var(--teal-d),var(--teal));
+          border-radius: var(--r-xl);
+          padding: 32px;
+          text-align: center;
+          margin-bottom: 20px;
+          position: relative;
+          overflow: hidden;
+        }
+        .dna-hero-blob {
+          position: absolute; top: -40px; right: -40px; width: 120px; height: 120px;
+          background: rgba(255,255,255,0.05); border-radius: 50%;
+        }
+        .dna-hero-emoji { font-size: 52px; margin-bottom: 12px; position: relative; }
+        .dna-hero-eyebrow {
+          font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase;
+          letter-spacing: 0.1em; margin-bottom: 8px; position: relative;
+        }
+        .dna-hero-title {
+          font-family: var(--serif); font-size: clamp(22px,6vw,32px); font-weight: 600;
+          color: #fff; margin-bottom: 12px; position: relative; line-height: 1.25;
+        }
+        .dna-hero-desc {
+          font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.65;
+          max-width: 420px; margin: 0 auto 20px; position: relative;
+        }
+        .dna-hero-hrs {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+          color: #fff; font-size: 12px; font-weight: 500; padding: 6px 16px;
+          border-radius: 99px; position: relative;
+        }
+        .dna-hero-hrs strong { font-family: var(--serif); font-size: 16px; }
+
+        /* Bug fix: fixed 3-col grid + fixed 24px font caused overlapping
+           numbers on narrow phones ("28.0L" colliding with "14"). Now scales
+           down and stacks to a single column below 420px. */
+        .dna-stats-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 12px;
+        }
+        .dna-stat { text-align: center; }
+        .dna-stat-mid {
+          border-left: 1px solid var(--border);
+          border-right: 1px solid var(--border);
+          padding: 0 12px;
+        }
+        .dna-stat-label {
+          font-size: 10px; color: var(--muted); text-transform: uppercase;
+          letter-spacing: 0.06em; margin-bottom: 4px;
+        }
+        .dna-stat-val {
+          font-family: var(--serif); font-weight: 700;
+          font-size: clamp(18px, 6vw, 24px);
+          white-space: nowrap;
+        }
+
+        /* Bug fix: fixed 2-col Strengths/Gaps grid had no mobile override,
+           forcing long sentences into unreadably narrow columns. */
+        .dna-sg-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        @media (max-width: 480px) {
+          .dna-hero { padding: 24px 20px; }
+          .dna-card { padding: 18px; }
+          .dna-stats-grid { grid-template-columns: 1fr; gap: 14px; }
+          .dna-stat-mid {
+            border-left: none; border-right: none; padding: 0;
+            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            padding: 10px 0;
+          }
+          .dna-stat-val { font-size: 22px; }
+        }
+
+        @media (max-width: 640px) {
+          .dna-sg-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -521,8 +617,13 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   // ── Result screen (fresh submission) ─────────────────────────
   if (result) {
     return (
-      <div style={{ padding: '24px 24px 0' }}>
+      <div className="dna-result-page-pad" style={{ padding: '24px 24px 0' }}>
         <ResultPanel result={result} onRetake={handleRetakeClick} />
+        <style>{`
+          @media (max-width: 640px) {
+            .dna-result-page-pad { padding-bottom: 80px !important; }
+          }
+        `}</style>
       </div>
     )
   }
@@ -566,8 +667,13 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
       },
     }
     return (
-      <div style={{ padding: '24px 24px 0' }}>
+      <div className="dna-result-page-pad" style={{ padding: '24px 24px 0' }}>
         <ResultPanel result={mapped} onRetake={handleRetakeClick} />
+        <style>{`
+          @media (max-width: 640px) {
+            .dna-result-page-pad { padding-bottom: 80px !important; }
+          }
+        `}</style>
       </div>
     )
   }
