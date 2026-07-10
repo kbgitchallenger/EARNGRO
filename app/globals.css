@@ -1210,6 +1210,71 @@ footer { background: var(--ink); padding: 24px 48px; display: flex; align-items:
   letter-spacing: 0.03em;
 }
 
+.dna-hero-hrs{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+
+    margin-top:20px;
+    padding:16px 22px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.18);
+}
+
+.dna-hero-label{
+    color:rgba(255,255,255,.92);
+    font-size:18px;
+    font-weight:500;
+    line-height:1.35;
+}
+
+.dna-hero-score{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    white-space:nowrap;
+    flex-shrink:0;
+}
+
+.dna-score{
+    color:#fff;
+    font-family:var(--serif);
+    font-size:52px;
+    font-weight:700;
+    line-height:1;
+}
+
+.dna-total{
+    color:rgba(255,255,255,.9);
+    font-size:20px;
+    font-weight:600;
+}
+
+@media (max-width:640px){
+
+    .dna-hero-hrs{
+        padding:14px 18px;
+        gap:12px;
+    }
+
+    .dna-hero-label{
+        font-size:16px;
+    }
+
+    .dna-score{
+        font-size:42px;
+    }
+
+    .dna-total{
+        font-size:18px;
+    }
+
+}
+
 /* ── Option Grid ── */
 .option-grid {
   display: grid;

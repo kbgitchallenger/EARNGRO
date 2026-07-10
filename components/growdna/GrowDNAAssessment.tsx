@@ -244,8 +244,16 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         <div className="dna-hero-title">{result.career_archetype}</div>
         <p className="dna-hero-desc">{archetypeDesc}</p>
         <div className="dna-hero-hrs">
-          Hiring Readiness Score:&nbsp;<strong>{hrs}</strong>&nbsp;/ 1000
-        </div>
+        
+        <span className="dna-hero-label">
+        Hiring Readiness<br />Score
+        </span>
+
+        <div className="dna-hero-score">
+        <span className="dna-score">{hrs}</span>
+        <span className="dna-total">/1000</span>
+  </div>
+</div>
       </div>
 
       {/* Earning Gap */}
