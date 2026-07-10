@@ -75,7 +75,7 @@ function getNextMove(params: {
   if (params.cvScore !== null && params.cvScore < 60) {
     return { icon: '📄', title: 'Improve your CV score', desc: `CV scoring ${params.cvScore}/100 — apply the AI suggestions to reach 70+`, href: '/cv', urgent: false }
   }
-  return { icon: '🗺️', title: 'Check your GrowPath milestones', desc: 'You\'re on track — see what\'s next on your roadmap', href: '/gap', urgent: false }
+  return { icon: '🗺️', title: 'Check your GrowPath milestones', desc: 'You\'re on track — see what\'s next on your roadmap', href: '/growpath', urgent: false }
 }
 
 export default async function DashboardPage() {
