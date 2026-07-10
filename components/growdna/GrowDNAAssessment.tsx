@@ -351,7 +351,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       {/* CTAs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button onClick={() => router.push('/dashboard')}
+        <button onClick={() => router.push('/growpath')}
           style={{ width: '100%', padding: 14, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.2)' }}>
           View my full GrowPath dashboard →
         </button>
