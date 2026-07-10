@@ -261,11 +261,15 @@ export default async function DashboardPage() {
           </Link>
 
           {/* ── STAT CARDS — 4-column on desktop, 2×2 on tablet, 1-col on mobile ── */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 12,
-          }} className="dash-stats-grid">
+          <div
+  className="dash-stats-grid"
+  style={{
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0,1fr))',
+    gap: 12,
+    alignItems: 'stretch',
+  }}
+>
 
             {/* 1. Earning Gap */}
             <div className="dash-stat-card gap-card">
@@ -310,7 +314,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* 3. Interview Score — NEW in command center */}
-            <div className="dash-stat-card" style={{ borderTop: `3px solid ${latestInterview?.overall_score ? interviewColor(latestInterview.overall_score) : 'var(--border)'}` }}>
+            <div className="dash-stat-card dashboard-kpi" style={{ borderTop: `3px solid ${latestInterview?.overall_score ? interviewColor(latestInterview.overall_score) : 'var(--border)'}` }}>
               <div className="stat-label">Last Interview</div>
               {latestInterview?.overall_score ? (
                 <>
@@ -338,7 +342,7 @@ export default async function DashboardPage() {
 
             {/* 4. Gap closes / Career Health */}
             {chs ? (
-              <div className="dash-stat-card" style={{ borderTop: `3px solid ${chsColor(chs.score)}` }}>
+              <div className="dash-stat-card dashboard-kpi" style={{ borderTop: `3px solid ${chsColor(chs.score)}` }}>
                 <div className="stat-label">Career Health</div>
                 <div className="stat-value" style={{ color: chsColor(chs.score) }}>
                   {chs.score}
@@ -349,7 +353,7 @@ export default async function DashboardPage() {
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>From GrowPath milestones</div>
               </div>
             ) : (
-              <div className="dash-stat-card timeline-card">
+              <div className="dash-stat-card dashboard-kpi">
                 <div className="stat-label">Gap Closes In</div>
                 <div className="stat-value">
                   {dna.months_to_close ?? '—'}
@@ -371,21 +375,83 @@ export default async function DashboardPage() {
 
           {/* Responsive grid CSS */}
           <style>{`
-            .dash-stats-grid {
-              grid-template-columns: repeat(4, 1fr);
-            }
-            @media (max-width: 900px) {
-              .dash-stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-              }
-            }
-            @media (max-width: 500px) {
-              .dash-stats-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-              }
-            }
-          `}</style>
+.dash-stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+
+.dash-stat-card{
+  min-width:0;
+  overflow:hidden;
+}
+
+.stat-value{
+  font-size:clamp(26px,4vw,38px);
+  line-height:1;
+  white-space:nowrap;
+}
+
+.stat-denom{
+  font-size:.45em;
+}
+
+@media (max-width:900px){
+  .dash-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:640px){
+
+  .dash-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .dash-stat-card{
+    padding:14px;
+  }
+
+  .stat-label{
+    font-size:10px;
+    line-height:1.2;
+  }
+
+  .stat-value{
+    font-size:30px;
+  }
+
+  .stat-sub{
+    font-size:12px;
+    line-height:1.35;
+  }
+
+  .stat-footer{
+    margin-top:8px;
+  }
+
+  .stat-link{
+    font-size:12px;
+  }
+
+}
+
+@media (max-width:420px){
+
+  .dash-stats-grid{
+    grid-template-columns:1fr;
+  }
+
+  .dashboard-kpi{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    min-height:180px;
+}
+
+}
+`}</style>
 
           {/* CV score strip */}
           {cvData?.market_score && (
