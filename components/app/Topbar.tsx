@@ -50,7 +50,7 @@ export default function Topbar({ name, email, plan }: TopbarProps) {
         }}
       >
         <Image
-  src="/logo.png"
+  src="/earngro.png"
   alt="EarnGro"
   width={140}
   height={36}
