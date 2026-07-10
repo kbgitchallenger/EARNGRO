@@ -54,6 +54,11 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
   const [targetCompany, setTargetCompany] = useState('')
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
+  const [insufficientCredits, setInsufficientCredits] = useState<{ required: number; balance: number } | null>(null)
+
+  // Derived read only — same value already computed inline elsewhere for the
+  // button label. Reused here for the mobile persona detail card. Not new logic.
+  const selectedPersona = INTERVIEWER_PERSONAS.find(p => p.id === personaId) ?? INTERVIEWER_PERSONAS[0]
 
   async function startSession() {
     if (!role || !industry || !experienceBand) {
@@ -62,6 +67,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
     }
     setStarting(true)
     setError('')
+    setInsufficientCredits(null)
     try {
       const res = await fetch('/api/interview/session', {
         method: 'POST',
@@ -77,6 +83,12 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
           maxTurns: 5,
         }),
       })
+      if (res.status === 402) {
+        const body = await res.json().catch(() => ({}))
+        setInsufficientCredits({ required: body.required ?? 0, balance: body.balance ?? 0 })
+        setStarting(false)
+        return
+      }
       if (!res.ok) throw new Error('Failed to start')
       const data = await res.json()
       router.push(`/interview/${data.sessionId}`)
@@ -87,7 +99,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
   }
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 60px' }}>
+    <div className="is-scroll" style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 60px' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -114,7 +126,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(0,1fr)', gap: 16, alignItems: 'start' }}>
+      <div className="is-grid">
 
         {/* Left — setup form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -203,11 +215,16 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
         </div>
 
-        {/* Right — persona + recent sessions + CTA */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Right — persona + recent sessions + CTA.
+            On mobile this becomes display:contents (see is-right-col CSS),
+            so these children flow directly into the single-column grid,
+            stacking below the left column in source order — no JS/logic
+            change, purely a CSS layout switch. */}
+        <div className="is-right-col">
 
-          {/* Interviewer persona */}
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          {/* Interviewer persona — desktop: full list, unchanged.
+              Mobile: hidden via CSS, replaced by the compact scroll row below. */}
+          <div className="is-persona-desktop" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Choose your interviewer</div>
             <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14 }}>Different styles build real adaptability</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -239,41 +256,92 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
             </div>
           </div>
 
-          {/* Start CTA */}
-          {error && (
-            <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)' }}>
-              {error}
+          {/* Interviewer persona — mobile only: compact horizontal scroll
+              row (emoji + name), tap to select, detail card below shows the
+              full phrase for whichever persona is currently selected. Same
+              personaId state and setPersonaId handler as the desktop list —
+              no new logic, purely an alternate presentation. */}
+          <div className="is-persona-mobile" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '16px 0 16px 20px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, paddingRight: 20 }}>Choose your interviewer</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, paddingRight: 20 }}>Different styles build real adaptability</div>
+            <div className="is-persona-scroll-row">
+              {INTERVIEWER_PERSONAS.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPersonaId(p.id)}
+                  className="is-persona-chip"
+                  style={{
+                    background: personaId === p.id ? `${p.color}14` : 'var(--paper-2)',
+                    border: `1.5px solid ${personaId === p.id ? p.color : 'var(--border)'}`,
+                  }}
+                >
+                  <span style={{ fontSize: 26, lineHeight: 1 }}>{p.emoji}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: personaId === p.id ? p.color : 'var(--ink)', textAlign: 'center', lineHeight: 1.3 }}>
+                    {p.name.split(' ')[0]}
+                  </span>
+                </button>
+              ))}
             </div>
-          )}
+            <div style={{ paddingRight: 20, marginTop: 12 }}>
+              <div style={{ background: `${selectedPersona.color}10`, border: `1px solid ${selectedPersona.color}30`, borderRadius: 'var(--r-md)', padding: '12px 14px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: selectedPersona.color, marginBottom: 2 }}>{selectedPersona.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{selectedPersona.title}</div>
+                <div style={{ fontSize: 11, color: selectedPersona.color, fontStyle: 'italic', lineHeight: 1.4 }}>
+                  "{selectedPersona.signaturePhrase}"
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={startSession}
-            disabled={starting}
-            style={{
-              width: '100%', padding: 16, background: starting ? 'var(--teal-mid)' : 'var(--teal)',
-              color: '#fff', border: 'none', borderRadius: 'var(--r-lg)',
-              fontSize: 15, fontWeight: 700, cursor: starting ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.22)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {starting ? (
-              <>
-                <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Preparing your interview…
-              </>
-            ) : (
-              <>🎤 Start interview with {INTERVIEWER_PERSONAS.find(p => p.id === personaId)?.name.split(' ')[0]}</>
+          {/* Start CTA — desktop: inline, static, in normal flow (unchanged).
+              Mobile: fixed above the bottom tab bar, blurred background,
+              full-width button. Same button/handler/state either way —
+              is-cta-wrap only changes position via CSS media query. */}
+          <div className="is-cta-wrap">
+            {insufficientCredits && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--amber-l)', border: '1px solid var(--amber-mid)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 10 }}>
+                <span aria-hidden style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>Not enough credits to start</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    Starting this interview needs {insufficientCredits.required} credits — you have {insufficientCredits.balance}.
+                  </div>
+                </div>
+                <a href="/settings/billing" style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', background: 'var(--teal)', padding: '8px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  Add credits →
+                </a>
+              </div>
             )}
-          </button>
+            {error && (
+              <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>
+                {error}
+              </div>
+            )}
 
-          {/* Recent sessions — clicking ANY session (in-progress or completed)
-              now routes to the same /interview/[id] page, which already
-              branches server-side between resuming the live session and
-              showing the report. Previously this only handled 'completed'
-              and pointed at a /report sub-route that doesn't exist, so
-              in-progress sessions were completely unreachable and completed
-              ones hit a dead link. */}
+            <button
+              onClick={startSession}
+              disabled={starting}
+              style={{
+                width: '100%', padding: 16, background: starting ? 'var(--teal-mid)' : 'var(--teal)',
+                color: '#fff', border: 'none', borderRadius: 'var(--r-lg)',
+                fontSize: 15, fontWeight: 700, cursor: starting ? 'not-allowed' : 'pointer',
+                fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.22)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {starting ? (
+                <>
+                  <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  Preparing your interview…
+                </>
+              ) : (
+                <>🎤 Start interview with {selectedPersona.name.split(' ')[0]}</>
+              )}
+            </button>
+          </div>
+
+          {/* Recent sessions */}
           {recentSessions.length > 0 && (
             <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>Recent sessions</div>
@@ -303,6 +371,48 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
         </div>
       </div>
+
+      <style>{`
+        .is-grid {
+          display: grid;
+          grid-template-columns: minmax(0,1.3fr) minmax(0,1fr);
+          gap: 16px;
+          align-items: start;
+        }
+        .is-persona-mobile { display: none; }
+
+        @media (max-width: 640px) {
+          .is-scroll { padding-bottom: 120px; }
+          .is-grid { grid-template-columns: 1fr; }
+          .is-right-col { display: contents; }
+          .is-persona-desktop { display: none; }
+          .is-persona-mobile { display: block; }
+          .is-cta-wrap {
+            position: fixed;
+            left: 0; right: 0; bottom: 60px;
+            background: rgba(250,247,240,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            z-index: 40;
+          }
+        }
+
+        .is-persona-scroll-row {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          padding-right: 20px;
+          scrollbar-width: none;
+        }
+        .is-persona-scroll-row::-webkit-scrollbar { display: none; }
+        .is-persona-chip {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 6px; min-width: 90px; width: 90px; height: 90px; flex-shrink: 0;
+          border-radius: var(--r-md); cursor: pointer; transition: all 0.15s;
+        }
+      `}</style>
     </div>
   )
 }
