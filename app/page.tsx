@@ -1,10 +1,16 @@
-
-
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import JourneyCard from '@/components/JourneyCard'
 import CalculatorPreview from '@/components/CalculatorPreview'
 import ScrollReveal from '@/components/ScrollReveal'
+import FeatureSpotlight from '@/components/marketing/FeatureSpotlight'
+import GrowDNAMockup from '@/components/marketing/mockups/GrowDNAMockup'
+import CVAnalysisMockup from '@/components/marketing/mockups/CVAnalysisMockup'
+import CVBuilderMockup from '@/components/marketing/mockups/CVBuilderMockup'
+import InterviewMockup from '@/components/marketing/mockups/InterviewMockup'
+import GrowPathMockup from '@/components/marketing/mockups/GrowPathMockup'
+import PricingTeaser from '@/components/marketing/PricingTeaser'
+import FAQSection from '@/components/marketing/FAQSection'
 
 const TICKER = [
   { amt:'₹6.2L',  name:'Priya S.',  role:'Marketing Manager · Mumbai',      time:'2h ago' },
@@ -18,11 +24,84 @@ const TICKER = [
 ]
 
 const HOW = [
-  { n:'01', ico:'🧬', t:'GrowDNA profile',    d:'Deep assessment that validates your real skills, finds hidden earning assets, and benchmarks you against verified peers in your city.' },
-  { n:'02', ico:'📊', t:'Earning Gap revealed',d:'Your exact gap in rupees per year — calculated by AI against live market intelligence, not generic salary tables.', hi:true },
-  { n:'03', ico:'🗺️', t:'GrowPath built',      d:'Month-by-month financial plan for your career. Exact skill targets, salary milestones, timelines, and specific companies to target.' },
-  { n:'04', ico:'🎯', t:'Daily GrowReady',     d:'AI interview practice, living CV, skill sprints, salary negotiation coaching — every feature connects to closing your gap.' },
-  { n:'05', ico:'💰', t:'GrowMore income',     d:'Beyond salary — freelance launcher, promotion accelerator, side income tools tracked in one total earning growth dashboard.' },
+  {
+    n:'01', t:'GrowDNA profile',
+    d:'Deep assessment that validates your real skills, finds hidden earning assets, and benchmarks you against verified peers in your city.',
+    visual: (
+      <div className="hiw-mini">
+        <div className="hiw-mini-label">Career Archetype</div>
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>The Growth Professional</div>
+        <div className="hiw-mini-label" style={{ marginBottom: 4 }}>Hiring Readiness</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+          <span style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 700, color: 'var(--amber)' }}>490</span>
+          <span style={{ fontSize: 11, color: 'var(--muted)' }}>/1000</span>
+        </div>
+        <div className="hiw-mini-track"><div style={{ width: '49%', height: '100%', background: 'var(--amber)', borderRadius: 99 }} /></div>
+      </div>
+    ),
+  },
+  {
+    n:'02', t:'Earning Gap revealed', hi:true,
+    d:'Your exact gap in rupees per year — calculated by AI against live market intelligence, not generic salary tables.',
+    visual: (
+      <div className="hiw-mini hiw-mini-dark">
+        <div className="hiw-mini-label" style={{ color: 'rgba(255,255,255,0.6)' }}>Annual Earning Gap</div>
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 30, fontWeight: 700, color: '#fff', lineHeight: 1.1, margin: '4px 0 8px' }}>₹5.0L</div>
+        <div style={{ display: 'flex', gap: 8, fontSize: 10.5, color: 'rgba(255,255,255,0.7)' }}>
+          <span>Current ₹18.0L</span><span>→</span><span style={{ color: '#fff', fontWeight: 600 }}>Target ₹23.0L</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    n:'03', t:'GrowPath built',
+    d:'Month-by-month financial plan for your career. Exact skill targets, salary milestones, timelines, and specific companies to target.',
+    visual: (
+      <div className="hiw-mini">
+        <div className="hiw-mini-label">Your Roadmap</div>
+        {[['Foundation', 'Month 1–3', 'var(--teal)'], ['Momentum', 'Month 4–8', '#6D28D9'], ['Breakthrough', 'Month 9+', 'var(--amber)']].map(([p, m, c], i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: i === 0 ? 4 : 6 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: c as string, flexShrink: 0 }} />
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink)' }}>{p}</span>
+            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto' }}>{m}</span>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    n:'04', t:'Daily GrowReady',
+    d:'AI interview practice, living CV, skill sprints, salary negotiation coaching — every feature connects to closing your gap.',
+    visual: (
+      <div className="hiw-mini" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <svg width="52" height="52" viewBox="0 0 52 52" style={{ flexShrink: 0 }}>
+          <circle cx="26" cy="26" r="21" fill="none" stroke="var(--border)" strokeWidth="5" />
+          <circle cx="26" cy="26" r="21" fill="none" stroke="var(--teal)" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray={2*Math.PI*21} strokeDashoffset={2*Math.PI*21*(1-0.78)} transform="rotate(-90 26 26)" />
+          <text x="26" y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--teal)" fontFamily="var(--serif)">78</text>
+        </svg>
+        <div>
+          <div className="hiw-mini-label" style={{ marginBottom: 2 }}>Interview Score</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink)', fontWeight: 600 }}>Confidence: Good</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)' }}>3rd session this week</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    n:'05', t:'GrowMore income',
+    d:'Beyond salary — freelance launcher, promotion accelerator, side income tools tracked in one total earning growth dashboard.',
+    visual: (
+      <div className="hiw-mini">
+        <div className="hiw-mini-label" style={{ marginBottom: 8 }}>AI Recommendations</div>
+        {['Publish 2 LinkedIn posts this month', 'Earn PLC certification', 'Apply to 3 target companies'].map((r, i) => (
+          <div key={i} style={{ display: 'flex', gap: 6, fontSize: 11, color: 'var(--ink)', marginBottom: 5, alignItems: 'flex-start' }}>
+            <span style={{ color: 'var(--teal)', flexShrink: 0, marginTop: 1 }}>✓</span>{r}
+          </div>
+        ))}
+      </div>
+    ),
+  },
 ]
 
 const TESTS = [
@@ -40,7 +119,6 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section
         style={{
-         
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
@@ -165,7 +243,7 @@ export default function HomePage() {
               style={{ background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, padding:'14px 30px', borderRadius:99, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(14,122,90,0.22)', transition:'all 0.22s' }}
             >
               <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Calculate my Earning Gap — free
+              See my Earning Gap — 2 min, no card
             </a>
             <a href="#how-it-works" style={{ fontSize:14, color:'var(--muted)', textDecoration:'none', display:'flex', alignItems:'center', gap:5 }}>
               See how it works →
@@ -189,11 +267,18 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* ── TICKER ── */}
+      {/* ── TICKER ──
+          Accessibility fix: continuously-moving content must be pausable
+          (WCAG 2.2.2) — previously ran forever with no way to stop it.
+          Pauses on hover/focus, and respects prefers-reduced-motion by
+          not animating at all for users who've asked for that. */}
       <div
+        className="ticker-wrap"
+        tabIndex={0}
+        aria-label="Recent earning gap results — scrolling, pauses on hover or focus"
         style={{ background:'var(--teal-xl)', overflow:'hidden', borderTop:'1px solid var(--teal-mid)', borderBottom:'1px solid var(--teal-mid)', padding:'10px 0', position:'relative', zIndex:1 }}
       >
-        <div style={{ display:'flex', animation:'ticker 30s linear infinite', width:'max-content' }}>
+        <div className="ticker-track" style={{ display:'flex', animation:'ticker 30s linear infinite', width:'max-content' }}>
           {[...TICKER, ...TICKER].map((item,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:9, padding:'0 28px', fontSize:12, color:'var(--muted)', whiteSpace:'nowrap', borderRight:'1px solid var(--teal-mid)' }}>
               <span style={{ color:'var(--teal-d)', fontWeight:700, fontFamily:'var(--serif)', fontSize:14 }}>{item.amt}</span>
@@ -202,6 +287,16 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        <style>{`
+          .ticker-wrap:hover .ticker-track,
+          .ticker-wrap:focus .ticker-track,
+          .ticker-wrap:focus-within .ticker-track {
+            animation-play-state: paused;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .ticker-track { animation: none !important; }
+          }
+        `}</style>
       </div>
 
       {/* ── HOW IT WORKS ── */}
@@ -214,21 +309,76 @@ export default function HomePage() {
           <h2 style={{ fontFamily:'var(--serif)', fontSize:'clamp(30px,4vw,50px)', fontWeight:600, lineHeight:1.1, color:'var(--ink)', marginBottom:14 }}>
             From gap discovered<br/>to gap <em style={{ fontStyle:'italic', color:'var(--teal)' }}>closed</em>
           </h2>
-          <p style={{ fontSize:16, fontWeight:300, color:'var(--muted)', lineHeight:1.75 }}>
+          <p style={{ fontSize:16, fontWeight:300, color:'var(--muted)', lineHeight:1.75, marginBottom: 8 }}>
             Not a job board. Not a course platform. An AI system that treats your career like a financial portfolio — actively managed and grown every day.
+          </p>
+          <p style={{ fontSize:13, color:'var(--teal-d)', fontWeight:600 }}>
+            Real screens below. This is what your dashboard actually looks like.
           </p>
         </div>
 
-        <div className="reveal r2" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))', gap:2, background:'var(--border)', borderRadius:'var(--r-lg)', overflow:'hidden', boxShadow:'var(--sh-sm)' }}>
+        <div className="reveal r2 hiw-grid">
           {HOW.map(card => (
-            <div key={card.n} style={{ background: card.hi ? 'var(--teal-xl)' : 'var(--paper)', padding:'32px 22px', borderTop: card.hi ? `2px solid var(--teal)` : 'none', transition:'background 0.18s' }}>
-              <div style={{ fontFamily:'var(--serif)', fontSize:12, fontStyle:'italic', color:'var(--amber)', marginBottom:16 }}>{card.n}</div>
-              <div style={{ width:48, height:48, background: card.hi ? 'var(--teal)' : 'var(--teal-l)', borderRadius:'var(--r-md)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, marginBottom:14 }}>{card.ico}</div>
-              <div style={{ fontSize:14, fontWeight:600, color:'var(--ink)', marginBottom:8 }}>{card.t}</div>
+            <div key={card.n} className={`hiw-card${card.hi ? ' hiw-card-hi' : ''}`}>
+              <div style={{ fontFamily:'var(--serif)', fontSize:12, fontStyle:'italic', color:'var(--amber)', marginBottom:14 }}>{card.n}</div>
+              {card.visual}
+              <div style={{ fontSize:14, fontWeight:600, color:'var(--ink)', margin: '16px 0 8px' }}>{card.t}</div>
               <div style={{ fontSize:12, color:'var(--muted)', lineHeight:1.65 }}>{card.d}</div>
             </div>
           ))}
         </div>
+
+        <style>{`
+          .hiw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2px;
+            background: var(--border);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            box-shadow: var(--sh-sm);
+          }
+          .hiw-card {
+            background: var(--paper);
+            padding: 24px 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+          .hiw-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--sh-md);
+            position: relative;
+            z-index: 1;
+          }
+          .hiw-card-hi {
+            background: var(--teal-xl);
+            border-top: 2px solid var(--teal);
+          }
+          .hiw-mini {
+            background: var(--paper-2);
+            border: 1px solid var(--border-l);
+            border-radius: var(--r-md);
+            padding: 12px 14px;
+            min-height: 92px;
+          }
+          .hiw-mini-dark {
+            background: linear-gradient(135deg, var(--teal-d), var(--teal));
+            border: none;
+          }
+          .hiw-mini-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+          }
+          .hiw-mini-track {
+            height: 4px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 6px;
+          }
+        `}</style>
 
         <div className="reveal r3" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:24, flexWrap:'wrap' }}>
           {['Daily interview practice','Living CV builder','Salary negotiation coach','Freelance income launcher'].map((s,i) => (
@@ -245,6 +395,89 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── FEATURE SPOTLIGHTS ──
+          Landing page previously sold only the Earning Gap calculator —
+          the other four real product features (GrowDNA, CV Analysis,
+          CV Builder, AI Interview, GrowPath) had no presence here at all.
+          Each spotlight is the same reusable component, alternating sides,
+          so a future geo-targeted page can reuse these with localized
+          copy instead of rebuilding this section per market. */}
+
+      <FeatureSpotlight
+        eyebrow="GrowDNA Assessment"
+        eyebrowColor="var(--teal-d)"
+        headline={<>Discover your <em style={{ fontStyle: 'italic', color: 'var(--teal)' }}>career archetype</em></>}
+        description="A 10-question deep assessment that goes beyond a resume — surfacing your hidden earning assets, benchmarking you against verified peers in your city, and giving you a Hiring Readiness Score out of 1000."
+        ctaLabel="Start my GrowDNA assessment"
+        ctaHref="/signup"
+        imageSide="right"
+        visual={
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+            <GrowDNAMockup />
+          </div>
+        }
+      />
+
+      <FeatureSpotlight
+        eyebrow="CV Analysis"
+        eyebrowColor="var(--teal-d)"
+        headline={<>Know exactly why recruiters <em style={{ fontStyle: 'italic', color: 'var(--teal)' }}>pass you over</em></>}
+        description="AI analyses your resume like an ATS system, a recruiter, and a market intelligence engine combined — scoring keyword matches, section strength, and hiring probability, then telling you precisely what to fix first."
+        ctaLabel="Analyse my resume"
+        ctaHref="/signup"
+        imageSide="left"
+        visual={
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+            <CVAnalysisMockup />
+          </div>
+        }
+      />
+
+      <FeatureSpotlight
+        eyebrow="CV Builder"
+        eyebrowColor="var(--amber)"
+        headline={<>Build a resume that's <em style={{ fontStyle: 'italic', color: 'var(--amber)' }}>actually optimised</em></>}
+        description="A structured resume builder with a live preview — add experience, education, skills, and certifications, then export a clean, ATS-friendly PDF. No design skills needed."
+        ctaLabel="Build my resume"
+        ctaHref="/signup"
+        imageSide="right"
+        visual={
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+            <CVBuilderMockup />
+          </div>
+        }
+      />
+
+      <FeatureSpotlight
+        eyebrow="AI Interview Practice"
+        eyebrowColor="var(--teal-d)"
+        headline={<>Practice with an interviewer that <em style={{ fontStyle: 'italic', color: 'var(--teal)' }}>actually pushes back</em></>}
+        description="Real-feeling mock interviews with distinct interviewer personas, follow-up questions that probe weak answers, and a detailed report — including a rewritten version of your weakest answer, so you know exactly how to improve."
+        ctaLabel="Practice an interview"
+        ctaHref="/signup"
+        imageSide="left"
+        visual={
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+            <InterviewMockup />
+          </div>
+        }
+      />
+
+      <FeatureSpotlight
+        eyebrow="GrowPath Roadmap"
+        eyebrowColor="var(--red)"
+        headline={<>Get a <em style={{ fontStyle: 'italic', color: 'var(--red)' }}>month-by-month plan</em>, not just a number</>}
+        description="Your GrowDNA results turned into a phased roadmap — specific skill targets, visibility milestones, and companies to target, sequenced across the exact number of months it will realistically take to close your gap."
+        ctaLabel="See my GrowPath"
+        ctaHref="/signup"
+        imageSide="right"
+        visual={
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+            <GrowPathMockup />
+          </div>
+        }
+      />
 
       {/* ── CALCULATOR PREVIEW ── static, non-interactive, routes to signup ── */}
       <div id="calculator" style={{ background:'var(--paper-2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1, overflow:'hidden' }}>
@@ -265,6 +498,9 @@ export default function HomePage() {
           <div className="reveal r2"><CalculatorPreview /></div>
         </div>
       </div>
+
+      {/* ── PRICING TEASER ── */}
+      <PricingTeaser />
 
       {/* ── TESTIMONIALS ── */}
       <div style={{ background:'var(--paper-3)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1 }}>
@@ -297,6 +533,9 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── FAQ ── */}
+      <FAQSection />
+
       {/* ── WAITLIST → SIGNUP ── */}
       <section id="waitlist" style={{ padding:'100px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
@@ -324,10 +563,15 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+      <footer style={{ background:'var(--ink)', padding:'24px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:14 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.4)' }}>
           <div style={{ width:26, height:26, background:'linear-gradient(135deg,var(--teal),#1AA574)', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#fff' }}>EG</div>
           EarnGro
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:18, flexWrap:'wrap' }}>
+          <Link href="/privacy" style={{ fontSize:11, color:'rgba(255,255,255,0.45)', textDecoration:'none' }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ fontSize:11, color:'rgba(255,255,255,0.45)', textDecoration:'none' }}>Terms of Service</Link>
+          <Link href="/contact" style={{ fontSize:11, color:'rgba(255,255,255,0.45)', textDecoration:'none' }}>Contact</Link>
         </div>
         <div style={{ fontSize:11, color:'rgba(255,255,255,0.2)' }}>
           © 2026 EarnGro · India & Southeast Asia · Every working person deserves to earn their true worth.

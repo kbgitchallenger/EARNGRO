@@ -5,9 +5,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ATSScoreCard from '@/components/cv/ATSScoreCard'
 import AnalyzeClientButton from '@/components/cv/AnalyzeClientButton'
-import RefreshButton from '@/components/cv/RefreshButton'
-import LimitReachedCard from '@/components/shared/LimitReachedCard'
-import { hasUsedFeature, canAfford } from '@/services/credits.service'
+import ParsingStatus from '@/components/cv/ParsingStatus'
+import CheckoutButton from '@/components/billing/CheckoutButton'
+import { getBalance, getFeatureCost } from '@/services/credits.service'
+import { resumeRepository } from '@/repositories/resume.repository'
 
 export default async function CVAnalysisPage({
   params,
@@ -34,6 +35,14 @@ export default async function CVAnalysisPage({
 
   if (!version) redirect('/cv/history')
 
+  // Distinguish a genuine parse failure from "still processing" — without
+  // this, both looked identical (just !version.raw_text) and a real
+  // failure silently waited out ParsingStatus's full 60s timeout before
+  // the user found out anything was wrong. Uses the existing repository
+  // method (confirmed against resume.repository.ts) rather than a
+  // duplicate inline query.
+  const parseJob = await resumeRepository.getParseJobByVersion(id)
+  const parseFailed = parseJob?.status === 'failed'
   const { data: analysis } = await supabase
     .from('cv_analyses')
     .select('*')
@@ -52,31 +61,20 @@ export default async function CVAnalysisPage({
     total_experience_years?: number
   } | null
 
-  // Determine page state
   const isParsing = !version.raw_text
   const hasParsed = !!version.raw_text
   const hasAnalysis = !!analysis
-
-  // ── Eligibility check — only matters if analysis already exists (re-run) ──
   const plan = profile?.plan ?? 'free'
-  let canReanalyze = true
-  let limitReason: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null = null
+  const isFreePlan = plan === 'free'
 
-  if (hasAnalysis) {
-    if (plan === 'free') {
-      const alreadyUsed = await hasUsedFeature(user.id, 'cv_parse_analyze')
-      if (alreadyUsed) {
-        canReanalyze = false
-        limitReason = 'FREE_LIMIT_REACHED'
-      }
-    } else {
-      const affordable = await canAfford(user.id, 'ats_reanalyze')
-      if (!affordable) {
-        canReanalyze = false
-        limitReason = 'INSUFFICIENT_CREDITS'
-      }
-    }
-  }
+  // Real credit cost + balance — shown BEFORE any action, not discovered
+  // after clicking. This is the actual fix for the trust gap: previously
+  // this page showed a generic "Get your report" CTA with no cost and no
+  // plan check at all, so a free-plan user could click through only to
+  // hit a raw 403 from the API with no context.
+  const [creditCost, creditBalance] = hasParsed && !isFreePlan
+    ? await Promise.all([getFeatureCost('cv_analyze'), getBalance(user.id)])
+    : [0, 0]
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
@@ -106,43 +104,86 @@ export default async function CVAnalysisPage({
 
       <div style={{ padding: '0 20px' }}>
 
-        {/* State 1 — Still parsing */}
-        {isParsing && (
+        {/* State 1 — Parsing (or genuinely failed). A real failure now
+            surfaces immediately via parse_jobs.status rather than making
+            the user wait through ParsingStatus's full timeout to find out. */}
+        {isParsing && parseFailed && (
           <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: '48px 32px', textAlign: 'center' }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>🔍</div>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>⚠️</div>
             <h2 style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
-              Analysis pending
+              We couldn't read this resume
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 360, margin: '0 auto 24px', lineHeight: 1.7 }}>
-              Your resume is still being processed. Refresh in a moment or upload again if it is taking too long.
+            <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 380, margin: '0 auto 8px', lineHeight: 1.7 }}>
+              {parseJob?.error_message ?? 'Something went wrong extracting text from your file.'}
             </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <RefreshButton />
-              <Link href="/cv/upload" style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 99, padding: '11px 22px', textDecoration: 'none' }}>
-                Upload again
-              </Link>
-            </div>
+            <p style={{ fontSize: 12.5, color: 'var(--muted-l)', maxWidth: 380, margin: '0 auto 24px' }}>
+              Common causes: a scanned/image-only PDF, a password-protected file, or an unsupported format.
+            </p>
+            <Link href="/cv/upload" style={{ display: 'inline-flex', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--teal)', borderRadius: 99, padding: '11px 24px', textDecoration: 'none' }}>
+              Upload a different file
+            </Link>
           </div>
         )}
 
-        {/* State 2 — Parsed, no analysis yet — always allowed, never gated */}
+        {isParsing && !parseFailed && <ParsingStatus />}
+
+        {/* State 2 — Parsed, no analysis yet. Plan-aware gate replaces the
+            old one-size-fits-all gradient CTA with zero cost transparency
+            and zero plan check. */}
         {hasParsed && !hasAnalysis && (
           <>
             {parsed && <ProfileSummary parsed={parsed} marketScore={version.market_score} />}
-            <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: '32px 24px', textAlign: 'center', marginTop: 14 }}>
-              <div style={{ fontSize: 44, marginBottom: 14 }}>🎯</div>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 10 }}>
-                Get your ATS Intelligence Report
+
+            {isFreePlan ? (
+              <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: '32px 24px', textAlign: 'center', marginTop: 14 }}>
+                <div style={{ fontSize: 44, marginBottom: 14 }}>🎯</div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 10 }}>
+                  Unlock your ATS Intelligence Report
+                </div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', maxWidth: 380, margin: '0 auto 6px', lineHeight: 1.65 }}>
+                  Full ATS scoring, keyword gap analysis, and market alignment against real India/SEA hiring data.
+                </p>
+                <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', maxWidth: 380, margin: '0 auto 22px' }}>
+                  Available on the Grow plan — ₹99/month for 1,500 credits.
+                </p>
+                <CheckoutButton
+                  type="plan_upgrade"
+                  planKey="grow"
+                  label="Upgrade to Grow →"
+                  style={{ maxWidth: 260, margin: '0 auto', background: '#fff', color: 'var(--teal-d)' }}
+                />
               </div>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', maxWidth: 380, margin: '0 auto 20px', lineHeight: 1.65 }}>
-                AI analyses your resume against ATS systems, recruiter expectations, and India/SEA market demand.
-              </p>
-              <AnalyzeClientButton versionId={version.id} white />
-            </div>
+            ) : (
+              <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: '32px 24px', textAlign: 'center', marginTop: 14 }}>
+                <div style={{ fontSize: 44, marginBottom: 14 }}>🎯</div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 10 }}>
+                  Get your ATS Intelligence Report
+                </div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', maxWidth: 380, margin: '0 auto 16px', lineHeight: 1.65 }}>
+                  AI analyses your resume against ATS systems, recruiter expectations, and India/SEA market demand.
+                </p>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 99, marginBottom: 20 }}>
+                  Costs {creditCost} credits · you have {creditBalance}
+                </div>
+                <div>
+                  {creditBalance >= creditCost ? (
+                    <AnalyzeClientButton versionId={version.id} white />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <div style={{ fontSize: 12.5, color: '#FEF3C7' }}>Not enough credits for this analysis.</div>
+                      <CheckoutButton type="recharge" planKey="grow_recharge" label="Add credits →" style={{ maxWidth: 220, background: '#fff', color: 'var(--teal-d)' }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
-        {/* State 3 — Analysis exists — show results, gate re-run if limit hit */}
+        {/* State 3 — Analysis exists. Re-run always costs the same real
+            price (cv_analyze), shown up front rather than discovered on
+            click, and the gate now checks the CURRENT plan/credit reality
+            instead of stale feature names that no longer match the backend. */}
         {hasAnalysis && (
           <>
             {parsed && <ProfileSummary parsed={parsed} marketScore={version.market_score} />}
@@ -150,10 +191,24 @@ export default async function CVAnalysisPage({
               <ATSScoreCard data={analysis} />
             </div>
             <div style={{ marginTop: 14, textAlign: 'center' }}>
-              {canReanalyze ? (
-                <AnalyzeClientButton versionId={version.id} />
+              {isFreePlan ? (
+                <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', maxWidth: 420, margin: '0 auto' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Want to re-run this analysis?</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.6 }}>Re-analysis is available on the Grow plan.</div>
+                  <CheckoutButton type="plan_upgrade" planKey="grow" label="Upgrade to Grow →" />
+                </div>
+              ) : creditBalance >= creditCost ? (
+                <div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>
+                    Update Your Resume and Re-analyze for Updated Results· you have {creditBalance}
+                  </div>
+                  <AnalyzeClientButton versionId={version.id} />
+                </div>
               ) : (
-                <LimitReachedCard reason={limitReason ?? 'FREE_LIMIT_REACHED'} feature="cv_analysis" />
+                <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', maxWidth: 380, margin: '0 auto' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>Not enough credits to re-analyze</div>
+                  <CheckoutButton type="recharge" planKey={plan === 'accelerate' ? 'accelerate_recharge' : 'grow_recharge'} label="Add credits →" />
+                </div>
               )}
             </div>
           </>
@@ -164,7 +219,8 @@ export default async function CVAnalysisPage({
   )
 }
 
-// Extracted profile summary card
+// Extracted profile summary card — unchanged from before, this part was
+// already good: extraction is free and always shown regardless of plan.
 function ProfileSummary({
   parsed,
   marketScore,

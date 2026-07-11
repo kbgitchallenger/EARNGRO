@@ -80,7 +80,7 @@ export default function MobileNav({ plan }: MobileNavProps) {
         return (
           <Link
             key={item.href}
-            href={isLocked ? '/settings' : item.href}
+            href={item.href}
             className={`mobile-nav-item${isActive ? ' active' : ''}${isLocked ? ' locked' : ''}`}
             style={{ position: 'relative' }}
           >

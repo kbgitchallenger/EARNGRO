@@ -24,14 +24,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unknown plan or pack' }, { status: 400 })
     }
 
-    // Razorpay order — one-time payment. The receipt encodes what this
-    // order is FOR (type + key + user), so the webhook can act on it
-    // without a separate lookup table. Short receipt ids only (max 40
-    // chars per Razorpay), so we use a compact format, not raw UUIDs.
+    // Razorpay caps receipt at 40 chars. All the routing info the webhook
+    // actually needs lives in `notes` below, not in this string — receipt
+    // just needs to be short and reasonably unique, not descriptive.
+    const receipt = `${type === 'plan_upgrade' ? 'pu' : 'rc'}_${key.slice(0, 4)}_${Date.now().toString(36)}`
+
     const order = await razorpay.orders.create({
       amount: item.amountPaise,
       currency: 'INR',
-      receipt: `${type}_${key}_${user.id.slice(0, 8)}_${Date.now()}`,
+      receipt,
       notes: {
         user_id: user.id,
         type,

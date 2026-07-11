@@ -126,7 +126,7 @@ export default function Sidebar({ plan }: SidebarProps) {
           return (
             <Link
               key={item.href}
-              href={isLocked ? '/settings' : item.href}
+              href={item.href}
               className={`sidebar-link${isActive ? ' active' : ''}${isLocked ? ' locked' : ''}`}
             >
               <span className="sidebar-link-icon">{item.icon}</span>

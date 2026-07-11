@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getTransactionHistory, getFeatureLabel } from '@/services/credits.service'
+import CheckoutButton from '@/components/billing/CheckoutButton'
 
 export const metadata = { title: 'Billing & Usage — EarnGro' }
 
@@ -150,12 +151,12 @@ export default async function BillingPage() {
                     <span style={{ color: 'var(--teal)', flexShrink: 0 }}>✓</span>{p}
                   </div>
                 ))}
-                <Link
-                  href="/pricing"
-                  style={{ display: 'block', textAlign: 'center', marginTop: 10, background: 'var(--teal)', color: '#fff', fontSize: 12.5, fontWeight: 700, padding: '9px', borderRadius: 99, textDecoration: 'none' }}
-                >
-                  Upgrade to {opt.name} →
-                </Link>
+                <CheckoutButton
+                  type="plan_upgrade"
+                  planKey={opt.plan}
+                  label={`Upgrade to ${opt.name} →`}
+                  style={{ marginTop: 10 }}
+                />
               </div>
             ))}
           </div>

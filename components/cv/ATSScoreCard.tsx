@@ -1,4 +1,4 @@
-//app/components/cv/ATSScoreCard.tsx
+//components/cv/ATSScoreCard.tsx
 'use client'
 
 interface KeywordMatch {
