@@ -45,7 +45,7 @@ const NAV = [
       </svg>
     ),
   },
- 
+
    {
     href: '/growpath',
     label: 'GrowPath',
@@ -65,8 +65,12 @@ const NAV = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
       </svg>
     ),
+    // Now Accelerate-only server-side (route + page gated separately).
+    // Reflecting that here too so free/Grow users see the lock icon
+    // instead of discovering the block only after clicking through.
+    locked: true,
   },
-  
+
     {
     href: '/pricing',
     label: 'Pricing',
@@ -81,6 +85,7 @@ const NAV = [
 export default function Sidebar({ plan }: SidebarProps) {
   const pathname = usePathname()
   const isPaid = plan !== 'free'
+  const isAccelerate = plan === 'accelerate'
 
   return (
     <aside className="sidebar">
@@ -109,11 +114,14 @@ export default function Sidebar({ plan }: SidebarProps) {
         )}
       </div>
 
+      {/* Credit balance now lives in Topbar (visible on every screen size,
+          including mobile) rather than duplicated here. */}
+
       {/* Nav */}
       <nav className="sidebar-nav">
         {NAV.map(item => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-          const isLocked = item.locked && !isPaid
+          const isLocked = item.locked && !isAccelerate
 
           return (
             <Link

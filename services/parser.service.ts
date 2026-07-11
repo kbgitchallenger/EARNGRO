@@ -4,6 +4,7 @@ import { ocrFallback } from '@/lib/parsers/ocr.fallback'
 import { callAIJSON } from '@/lib/ai/client'
 import { RESUME_NORMALIZE_PROMPT } from '@/lib/ai/prompts/resume.prompts'
 import { ParsedResumeSchema, type ParsedResume } from '@/lib/ai/validators/resume.validator'
+import { deductCredits } from '@/services/credits.service'
 import type { ParseResult } from '@/types/resume.types'
 
 export class ParserService {
@@ -52,8 +53,24 @@ export class ParserService {
       throw new Error('Resume appears empty or unreadable.')
     }
 
+    // ── Credit check — previously missing entirely. This is a real AI call
+    // (normalize) that was completely unmetered. Checked before the call,
+    // not after, and thrown as a typed error so callers (runParsePipeline /
+    // cv/parse/route.ts) can distinguish "out of credits" from other
+    // parse failures and return a proper 402 instead of a generic 500.
+    if (userId) {
+      const credit = await deductCredits(userId, 'cv_parse')
+      if (!credit.allowed) {
+        const err = new Error('INSUFFICIENT_CREDITS') as Error & { code: string; balance: number; required: number }
+        err.code = 'INSUFFICIENT_CREDITS'
+        err.balance = credit.balance
+        err.required = credit.cost
+        throw err
+      }
+    }
+
     const t3 = Date.now()
-    const parsedData = await this.normalize(rawText, userId)
+    const parsedData = await this.normalize(rawText)
     console.log(`⏱ AI normalize: ${Date.now() - t3}ms`)
     console.log(`⏱ TOTAL pipeline: ${Date.now() - t0}ms`)
 
@@ -73,11 +90,11 @@ export class ParserService {
     return buffer
   }
 
-  private async normalize(rawText: string, userId?: string): Promise<ParsedResume> {
+  private async normalize(rawText: string): Promise<ParsedResume> {
     return callAIJSON(
       RESUME_NORMALIZE_PROMPT(rawText.slice(0, 6000)),
       ParsedResumeSchema,
-      { maxTokens: 2000, feature: 'cv_parse_analyze', userId }
+      { maxTokens: 2000, feature: 'cv_parse' }
     )
   }
 }

@@ -9,9 +9,16 @@ interface TopbarProps {
   name: string
   email: string
   plan: string
+  creditsBalance?: number
 }
 
-export default function Topbar({ name, email, plan }: TopbarProps) {
+const PLAN_CREDIT_POOL: Record<string, number> = {
+  free: 300,
+  grow: 1500,
+  accelerate: 5000,
+}
+
+export default function Topbar({ name, email, plan, creditsBalance = 0 }: TopbarProps) {
   const router = useRouter()
 
   async function signOut() {
@@ -24,6 +31,13 @@ export default function Topbar({ name, email, plan }: TopbarProps) {
   const initials = name
     ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?'
+
+  const pool = PLAN_CREDIT_POOL[plan] ?? 300
+  const pct = pool > 0 ? creditsBalance / pool : 0
+  const creditColor = pct <= 0.05 ? 'var(--red)' : pct <= 0.2 ? 'var(--amber)' : 'var(--teal-d)'
+  const creditBg = pct <= 0.05 ? 'var(--red-l)' : pct <= 0.2 ? 'var(--amber-l)' : 'var(--teal-l)'
+  const creditBorder = pct <= 0.05 ? '#F5CCCC' : pct <= 0.2 ? 'var(--amber-mid)' : 'var(--teal-mid)'
+  const isLow = pct <= 0.2
 
   return (
     <header style={{
@@ -64,8 +78,32 @@ export default function Topbar({ name, email, plan }: TopbarProps) {
 />
       </Link>
 
-      {/* Right — user info + sign out */}
+      {/* Right — credit balance + plan badge + user info + sign out */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+
+        {/* Credit balance — always visible here, on every screen size,
+            so a low/zero balance is discoverable before an action fails,
+            not just something the user finds out about mid-flow. */}
+        <Link
+          href="/settings/billing"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: creditBg, border: `1px solid ${creditBorder}`,
+            borderRadius: 99, padding: '5px 12px', textDecoration: 'none',
+            flexShrink: 0,
+          }}
+          title={`${creditsBalance} of ${pool} credits remaining this cycle`}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: creditColor }}>
+            {creditsBalance.toLocaleString('en-IN')}
+          </span>
+          <span className="topbar-credits-label" style={{ fontSize: 11, color: 'var(--muted)' }}>credits</span>
+          {isLow && (
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: creditColor, whiteSpace: 'nowrap' }}>
+              {plan === 'free' ? '· Upgrade →' : '· Add →'}
+            </span>
+          )}
+        </Link>
 
         {/* Plan badge */}
         {plan === 'free' && (

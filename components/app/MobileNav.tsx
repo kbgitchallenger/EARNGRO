@@ -3,6 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+interface MobileNavProps {
+  plan: string
+}
+
 const MOBILE_NAV = [
   {
     href: '/dashboard',
@@ -48,8 +52,9 @@ const MOBILE_NAV = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
       </svg>
     ),
+    accelerateOnly: true,
   },
-  
+
   {
     href: '/settings',
     label: 'Settings',
@@ -62,17 +67,30 @@ const MOBILE_NAV = [
   },
 ]
 
-export default function MobileNav() {
+export default function MobileNav({ plan }: MobileNavProps) {
   const pathname = usePathname()
+  const isAccelerate = plan === 'accelerate'
 
   return (
     <nav className="mobile-nav">
       {MOBILE_NAV.map(item => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const isLocked = item.accelerateOnly && !isAccelerate
+
         return (
-          <Link key={item.href} href={item.href} className={`mobile-nav-item${isActive ? ' active' : ''}`}>
+          <Link
+            key={item.href}
+            href={isLocked ? '/settings' : item.href}
+            className={`mobile-nav-item${isActive ? ' active' : ''}${isLocked ? ' locked' : ''}`}
+            style={{ position: 'relative' }}
+          >
             {item.icon}
             <span>{item.label}</span>
+
+            {/* Lock badge on Accelerate-only items for free/Grow users */}
+            {isLocked && (
+              <span style={{ position: 'absolute', top: 2, right: '28%', fontSize: 9 }} aria-hidden>🔒</span>
+            )}
           </Link>
         )
       })}

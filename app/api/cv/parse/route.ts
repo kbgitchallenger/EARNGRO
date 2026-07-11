@@ -28,16 +28,33 @@ export async function POST(request: Request) {
 
     const { versionId, jobId, fileUrl, mimeType } = validated.data
 
-    const result = await resumeService.runParsePipeline(
-      versionId, jobId, fileUrl, mimeType
-    )
+    let result
+    try {
+      result = await resumeService.runParsePipeline(
+        versionId, jobId, fileUrl, mimeType, user.id
+      )
+    } catch (err) {
+      // Distinguish "out of credits" (real 402, previously this parse call
+      // was unmetered so this branch never existed) from genuine parse
+      // failures (bad PDF, unsupported format, etc.)
+      const typedErr = err as Error & { code?: string; balance?: number; required?: number }
+      if (typedErr.code === 'INSUFFICIENT_CREDITS') {
+        return NextResponse.json(
+          { error: 'INSUFFICIENT_CREDITS', balance: typedErr.balance ?? 0, required: typedErr.required ?? 0 },
+          { status: 402 }
+        )
+      }
+      throw err
+    }
 
-    // Fire-and-forget ATS analysis after successful parse
-    
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL 
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    // Fire-and-forget ATS analysis after successful parse — this call is
+    // now separately gated (plan + credits) inside cv/analyze/route.ts
+    // itself, so a free-plan user's parse still succeeds even though the
+    // auto-triggered analyze will correctly reject with a 403 there.
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
-      fetch(`${appUrl}/api/cv/analyze`, {
+    fetch(`${appUrl}/api/cv/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ versionId }),

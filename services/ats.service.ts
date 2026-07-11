@@ -23,10 +23,7 @@ import { resumeRepository } from '@/repositories/resume.repository'
 
 import type { CVAnalysis } from '@/types/resume.types'
 
-// Hard caps on unbounded inputs — resumeText and jobDescription previously
-// had no ceiling, unlike parserService.normalize() which already slices to
-// 6000 chars. A long resume + a fully pasted job posting could push input
-// tokens well past what cv_parse_analyze / ats_reanalyze assume they cost.
+// Hard caps on unbounded inputs
 const MAX_RESUME_CHARS = 8000
 const MAX_JD_CHARS = 3000
 
@@ -40,7 +37,12 @@ function capText(text: string | null | undefined, max: number): string | undefin
 export class ATSService {
 
   // ── Full ATS score ────────────────────────────────────────────
-  // Comprehensive scoring against a JD or generically
+  // Comprehensive scoring against a JD or generically. Both this and
+  // analyze() below are now billed under one honest 'cv_analyze' feature
+  // name — previously split into 'cv_parse_analyze' (first run) vs
+  // 'ats_reanalyze' (repeat) at different prices, despite calling the
+  // identical function with identical cost. That distinction had no real
+  // cost basis and has been removed.
 
   async score(
     cvVersionId: string,
@@ -54,7 +56,6 @@ export class ATSService {
     const cappedResume = capText(resumeText, MAX_RESUME_CHARS)!
     const cappedJD = capText(jobDescription, MAX_JD_CHARS)
 
-    // Create analysis record in pending state
     const analysis = await analysisRepository.create({
       cv_version_id: cvVersionId,
       user_id: userId,
@@ -68,10 +69,9 @@ export class ATSService {
       const result = await callAIJSON(
         ATS_SCORE_PROMPT(cappedResume, cappedJD ?? null, jobTitle),
         ATSResultSchema,
-        { maxTokens: 2000, feature: 'cv_parse_analyze', userId }
+        { maxTokens: 2000, feature: 'cv_analyze', userId }
       )
 
-      // Save full results
       const updated = await analysisRepository.update(analysis.id, {
         ats_score: result.ats_score,
         recruiter_score: result.recruiter_score,
@@ -87,7 +87,6 @@ export class ATSService {
         processing_status: 'complete',
       })
 
-      // Update version market_score
       await resumeRepository.update(cvVersionId, {
         market_score: result.market_alignment,
       })
@@ -102,8 +101,6 @@ export class ATSService {
   }
 
   // ── Advanced analysis workflow ────────────────────────────────
-  // Enhanced analysis with composite scoring + analysisId
-
   async analyze(
     versionId: string,
     userId: string,
@@ -115,15 +112,12 @@ export class ATSService {
     const cappedResume = capText(rawText, MAX_RESUME_CHARS)!
     const cappedJD = capText(jobDescription, MAX_JD_CHARS)
 
-    // Run AI analysis — tagged 'ats_reanalyze' since this is the re-run path,
-    // distinct from the initial cv_parse_analyze during upload.
     const result = await callAIJSON(
       ATS_SCORE_PROMPT(cappedResume, cappedJD),
       ATSResultSchema,
-      { maxTokens: 2000, feature: 'ats_reanalyze', userId }
+      { maxTokens: 2000, feature: 'cv_analyze', userId }
     )
 
-    // Calculate composite score
     const compositeScore = Math.round(
       result.ats_score * 0.35 +
       result.recruiter_score * 0.25 +
@@ -131,7 +125,6 @@ export class ATSService {
       result.hiring_probability * 0.15
     )
 
-    // Save to database
     const saved = await analysisRepository.create({
       cv_version_id: versionId,
       user_id: userId,
@@ -150,18 +143,12 @@ export class ATSService {
       processing_status: 'complete',
     })
 
-    // Update version market_score
-   await resumeRepository.update(versionId, {market_score: compositeScore,})
+    await resumeRepository.update(versionId, { market_score: compositeScore })
 
-    return {
-      ...result,
-      analysisId: saved.id,
-    }
+    return { ...result, analysisId: saved.id }
   }
 
   // ── Quick score ───────────────────────────────────────────────
-  // Fast background score on upload — no JD needed
-
   async quickScore(resumeText: string, userId?: string): Promise<QuickScore> {
     const cappedResume = capText(resumeText, MAX_RESUME_CHARS)!
     return callAIJSON(
@@ -172,8 +159,6 @@ export class ATSService {
   }
 
   // ── Keyword extraction ────────────────────────────────────────
-  // Pre-process JD to show keyword gaps before full scoring
-
   async extractJDKeywords(jobDescription: string, userId?: string): Promise<{
     must_have: string[]
     good_to_have: string[]
@@ -202,8 +187,6 @@ export class ATSService {
   }
 
   // ── Version comparison ────────────────────────────────────────
-  // Analyses improvement between two resume versions
-
   async compareVersions(
     v1Id: string,
     v2Id: string,
@@ -241,7 +224,6 @@ export class ATSService {
   }
 
   // ── Helpers ───────────────────────────────────────────────────
-
   async getLatestForVersion(versionId: string) {
     return analysisRepository.findLatestByVersion(versionId)
   }
@@ -250,69 +232,19 @@ export class ATSService {
     return analysisRepository.getByUser(userId)
   }
 
-  // ── Score label helper ────────────────────────────────────────
-
-  getScoreLabel(
-    score: number
-  ): { label: string; color: string; emoji: string } {
-
-    if (score >= 80) {
-      return {
-        label: 'Excellent',
-        color: 'var(--teal)',
-        emoji: '🚀',
-      }
-    }
-
-    if (score >= 65) {
-      return {
-        label: 'Strong',
-        color: '#16a34a',
-        emoji: '✅',
-      }
-    }
-
-    if (score >= 50) {
-      return {
-        label: 'Good',
-        color: 'var(--amber)',
-        emoji: '📈',
-      }
-    }
-
-    if (score >= 35) {
-      return {
-        label: 'Needs Work',
-        color: '#ea580c',
-        emoji: '⚠️',
-      }
-    }
-
-    return {
-      label: 'Critical Gaps',
-      color: 'var(--red)',
-      emoji: '🔴',
-    }
+  getScoreLabel(score: number): { label: string; color: string; emoji: string } {
+    if (score >= 80) return { label: 'Excellent', color: 'var(--teal)', emoji: '🚀' }
+    if (score >= 65) return { label: 'Strong', color: '#16a34a', emoji: '✅' }
+    if (score >= 50) return { label: 'Good', color: 'var(--amber)', emoji: '📈' }
+    if (score >= 35) return { label: 'Needs Work', color: '#ea580c', emoji: '⚠️' }
+    return { label: 'Critical Gaps', color: 'var(--red)', emoji: '🔴' }
   }
 
   getHiringProbabilityLabel(prob: number): string {
-
-    if (prob >= 75) {
-      return 'Very likely to be shortlisted'
-    }
-
-    if (prob >= 55) {
-      return 'Good shortlist probability'
-    }
-
-    if (prob >= 35) {
-      return 'Moderate — improvements needed'
-    }
-
-    if (prob >= 20) {
-      return 'Low — significant gaps'
-    }
-
+    if (prob >= 75) return 'Very likely to be shortlisted'
+    if (prob >= 55) return 'Good shortlist probability'
+    if (prob >= 35) return 'Moderate — improvements needed'
+    if (prob >= 20) return 'Low — significant gaps'
     return 'Very low — major restructure needed'
   }
 }

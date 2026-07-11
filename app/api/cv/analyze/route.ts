@@ -18,10 +18,31 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+    // ── Plan gate — CV Analysis is Grow+ only ───────────────────
+    // Real cost (127 credits) leaves no room in the free tier's 300-credit
+    // budget alongside GrowDNA (103) + CV Parse (96). Free users can parse
+    // their CV and use Bullets, but full ATS analysis requires upgrading —
+    // this is a hard plan block, not just a credit check, matching the
+    // pattern already used for GrowPath.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+
+    if ((profile?.plan ?? 'free') === 'free') {
+      return NextResponse.json(
+        {
+          error: 'UPGRADE_REQUIRED',
+          message: 'Full CV Analysis is available on the Grow plan. Upgrade to unlock ATS scoring, keyword gaps, and market alignment.',
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { versionId, jobDescription } = BodySchema.parse(body)
 
-    // Fetch version data
     const { data: version, error } = await supabase
       .from('cv_versions')
       .select('id, raw_text, parsed_data, user_id')
@@ -37,26 +58,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Resume has not been parsed yet' }, { status: 400 })
     }
 
-    // ── CREDIT CHECK ─────────────────────────────────────────────
-    // First analysis for THIS version = cv_parse_analyze (233 credits)
-    // Re-running analysis on the SAME version = ats_reanalyze (138 credits)
-    const { count: priorAnalysisCount } = await supabase
-      .from('cv_analyses')
-      .select('id', { count: 'exact', head: true })
-      .eq('cv_version_id', versionId)
-
-    const isFirstAnalysis = (priorAnalysisCount ?? 0) === 0
-    const feature = isFirstAnalysis ? 'cv_parse_analyze' : 'ats_reanalyze'
-
-    const credit = await deductCredits(user.id, feature, { versionId })
+    // ── Single honest price, every time — no first-run vs repeat
+    // distinction (both call the identical function at identical cost).
+    const credit = await deductCredits(user.id, 'cv_analyze', { versionId })
 
     if (!credit.allowed) {
       return NextResponse.json(
         {
           error: 'INSUFFICIENT_CREDITS',
-          message: isFirstAnalysis
-            ? "You've used your free CV analysis. Upgrade to Grow for unlimited re-analysis."
-            : 'Not enough credits to re-analyse this resume. Upgrade or add credits to continue.',
+          message: 'Not enough credits for CV analysis. Add credits or wait for your next cycle.',
           balance: credit.balance,
           required: credit.cost,
         },

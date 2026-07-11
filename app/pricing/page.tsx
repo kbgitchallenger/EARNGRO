@@ -8,11 +8,12 @@ const PLANS = [
     price: '₹0',
     period: 'forever',
     tagline: 'Get your real number, no strings attached',
+    credits: '300 credits — one-time',
     features: [
-      '1 complete GrowDNA assessment — fully unlocked',
-      '1 complete CV analysis — fully unlocked',
-      'Unlimited Earning Gap Calculator',
-      'See your full results, every time',
+      '1 complete GrowDNA assessment',
+      '1 CV parse & profile extraction',
+      'Up to 5 AI bullet-point optimizations',
+      'Your full result, no paywalled sections',
     ],
     cta: 'Current plan',
     highlight: false,
@@ -23,12 +24,14 @@ const PLANS = [
     originalPrice: '₹199',
     period: '/month',
     tagline: 'For people actively closing their gap',
+    credits: '1,500 credits — refresh every 30 days',
     features: [
-      'Unlimited GrowDNA retakes',
-      'Up to 5 CV versions with full analysis',
-      'AI Interview practice',
+      'Everything in Free',
+      'Full CV Analysis — ATS score, keyword gaps, market alignment',
+      'GrowPath — your month-by-month roadmap',
+      'Unlimited GrowDNA retakes (credit-limited)',
       'Progress tracking & change narratives',
-      'Priority support',
+      'Buy extra credits anytime — ₹49 / 1,000 credits',
     ],
     cta: 'Upgrade to Grow',
     highlight: true,
@@ -36,15 +39,16 @@ const PLANS = [
   },
   {
     name: 'Accelerate',
-    price: '₹499',
+    price: '₹299',
+    originalPrice: '₹399',
     period: '/month',
     tagline: 'For serious career builders',
+    credits: '5,000 credits — refresh every 30 days',
     features: [
-      'Everything in Grow, unlimited',
-      'Full GrowPath roadmap',
-      'Unlimited CV versions',
+      'Everything in Grow',
+      'AI Interview Arena — practice sessions with scored feedback',
       'Priority AI processing',
-      'Add extra credits anytime — ₹99 / 1000 credits',
+      'Buy extra credits anytime — ₹99 / 2,500 credits',
     ],
     cta: 'Upgrade to Accelerate',
     highlight: false,
@@ -59,7 +63,7 @@ export default function PricingPage() {
           Simple pricing, real value
         </h1>
         <p style={{ fontSize: 15, color: 'var(--muted)', maxWidth: 480, margin: '0 auto' }}>
-          Start free with a complete, unlocked result. Upgrade when you're ready to keep tracking and closing your gap.
+          Start free with a complete GrowDNA result. Upgrade when you're ready for full CV analysis, GrowPath, and AI interview practice.
         </p>
       </div>
 
@@ -94,7 +98,7 @@ export default function PricingPage() {
               {plan.tagline}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
               {plan.originalPrice && (
                 <span style={{ fontSize: 16, color: plan.highlight ? 'rgba(255,255,255,0.5)' : 'var(--muted-l)', textDecoration: 'line-through' }}>
                   {plan.originalPrice}
@@ -106,6 +110,16 @@ export default function PricingPage() {
               <span style={{ fontSize: 13, color: plan.highlight ? 'rgba(255,255,255,0.7)' : 'var(--muted)' }}>
                 {plan.period}
               </span>
+            </div>
+
+            <div style={{
+              display: 'inline-flex', alignSelf: 'flex-start', fontSize: 11.5, fontWeight: 600,
+              color: plan.highlight ? 'rgba(255,255,255,0.85)' : 'var(--teal-d)',
+              background: plan.highlight ? 'rgba(255,255,255,0.12)' : 'var(--teal-l)',
+              border: plan.highlight ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--teal-mid)',
+              padding: '3px 10px', borderRadius: 99, marginBottom: 20,
+            }}>
+              {plan.credits}
             </div>
 
             <div style={{ flex: 1, marginBottom: 24 }}>
@@ -134,7 +148,7 @@ export default function PricingPage() {
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 40, fontSize: 12, color: 'var(--muted)' }}>
-        Need more credits on Accelerate? Add ₹99 for 1000 extra credits anytime, no plan change needed.
+        Credits reset every 30 days on paid plans and don't roll over. Free plan credits are one-time only.
       </div>
     </div>
   )

@@ -12,26 +12,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  // Fetch profile
+  // Fetch profile — added credits_balance so the nav can show a live,
+  // always-visible balance instead of users only discovering they're low
+  // when an action fails mid-flow.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, email, plan, avatar_url')
+    .select('full_name, email, plan, avatar_url, credits_balance')
     .eq('id', user.id)
     .single()
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User'
   const plan = profile?.plan || 'free'
+  const creditsBalance = profile?.credits_balance ?? 0
 
   return (
     <div className="app-shell">
       <Sidebar plan={plan} />
       <div className="app-main">
-        <Topbar name={displayName} plan={plan} email={user.email || ''} />
+        <Topbar name={displayName} plan={plan} email={user.email || ''} creditsBalance={creditsBalance} />
         <main className="app-content">
           {children}
         </main>
       </div>
-      <MobileNav />
+      <MobileNav plan={plan} />
     </div>
   )
 }

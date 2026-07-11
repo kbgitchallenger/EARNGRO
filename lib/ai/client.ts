@@ -81,7 +81,7 @@ export async function callAIJSON<T extends ZodSchema>(
   schema: T,
   options: AICallOptions = {}
 ): Promise<z.infer<T>> {
-  const model = options.model ?? 'claude-sonnet-4-5'
+  const model = options.model ?? 'claude-sonnet-4-6'
 
   const message = await anthropic.messages.create({
     model,
