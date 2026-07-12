@@ -25,6 +25,17 @@ export const CertificationSchema = z.object({
   year:   z.string().optional().nullable(),
 })
 
+// Optional. The AI normalize prompt does not yet extract this field, and
+// nothing populates it automatically from an uploaded resume — it's only
+// filled in if a user manually adds an entry via CVBuilder's Publications
+// section. Real follow-up: teach RESUME_NORMALIZE_PROMPT to extract these.
+export const PublicationSchema = z.object({
+  title:   z.string(),
+  venue:   z.string().optional().nullable(),
+  year:    z.string().optional().nullable(),
+  authors: z.string().optional().nullable(),
+})
+
 export const ParsedResumeSchema = z.object({
   name:                   z.string(),
   email:                  z.string().optional().nullable(),
@@ -38,6 +49,7 @@ export const ParsedResumeSchema = z.object({
   education:              z.array(EducationEntrySchema),
   skills:                 z.array(z.string()),
   certifications:         z.array(CertificationSchema).optional().default([]),
+  publications:           z.array(PublicationSchema).optional().default([]),
   languages:              z.array(z.string()).optional().default([]),
   total_experience_years: z.number().min(0),
   // NOTE: made optional — RESUME_NORMALIZE_PROMPT does not ask the AI for these,
@@ -74,6 +86,7 @@ export const MarketPositioningSchema = z.object({
 export type ParsedResume             = z.infer<typeof ParsedResumeSchema>
 export type ExperienceEntry          = z.infer<typeof ExperienceEntrySchema>
 export type EducationEntry           = z.infer<typeof EducationEntrySchema>
+export type Publication              = z.infer<typeof PublicationSchema>
 export type OptimizedBullet          = z.infer<typeof OptimizedBulletSchema>
 export type BulletOptimizationResult = z.infer<typeof BulletOptimizationResultSchema>
 export type MarketPositioning        = z.infer<typeof MarketPositioningSchema>

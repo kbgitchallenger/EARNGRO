@@ -5,10 +5,16 @@ import { useRouter } from 'next/navigation'
 import CVPreview, { type CVTemplate } from './CVPreview'
 import type { ParsedResume } from '@/lib/ai/validators/resume.validator'
 
-const TEMPLATE_OPTIONS: { id: CVTemplate; label: string; desc: string }[] = [
-  { id: 'classic', label: 'Classic', desc: 'Serif, traditional' },
-  { id: 'modern', label: 'Modern', desc: 'Clean, teal accents' },
-  { id: 'minimal', label: 'Minimal', desc: 'Neutral, conservative' },
+const TEMPLATE_OPTIONS: { id: CVTemplate; label: string; desc: string; atsRisk: 'safe' | 'moderate' }[] = [
+  { id: 'classic', label: 'Classic', desc: 'Serif, traditional', atsRisk: 'safe' },
+  { id: 'modern', label: 'Modern', desc: 'Clean, teal accents', atsRisk: 'safe' },
+  { id: 'minimal', label: 'Minimal', desc: 'Neutral, conservative', atsRisk: 'safe' },
+  { id: 'sidebar', label: 'Sidebar', desc: 'Two-column, visual', atsRisk: 'moderate' },
+  { id: 'fresher', label: 'Fresher', desc: 'Education first', atsRisk: 'safe' },
+  { id: 'technical', label: 'Technical', desc: 'Categorized skills', atsRisk: 'safe' },
+  { id: 'sales', label: 'Sales/Business', desc: 'Metrics highlighted', atsRisk: 'safe' },
+  { id: 'executive', label: 'Executive', desc: 'Concise, senior tone', atsRisk: 'safe' },
+  { id: 'academic', label: 'Academic', desc: 'Research-focused', atsRisk: 'safe' },
 ]
 
 const EMPTY: ParsedResume = {
@@ -16,7 +22,8 @@ const EMPTY: ParsedResume = {
   experience: [], education: [], skills: [], certifications: [],
   total_experience_years: 0,
   languages: [],
-  industry_signals: []
+  industry_signals: [],
+  publications: []
 }
 
 const inp: React.CSSProperties = {
@@ -50,6 +57,21 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   const [error, setError] = useState('')
   const router = useRouter()
   const isFreePlan = plan === 'free'
+
+  // ── Estimated page length — a real, honest heuristic, not a claim of
+  // pixel-perfect print pagination. ~3,200 characters of actual resume
+  // content ≈ one A4 page at this template's font size/line-height. Used
+  // to nudge toward the one-page norm recruiters expect for most
+  // experience levels, without silently forcing it.
+  const estimatedChars = [
+    data.summary ?? '',
+    ...(data.experience ?? []).flatMap(e => [e.role, e.company, ...(e.bullets ?? [])]),
+    ...(data.education ?? []).map(e => `${e.degree} ${e.institution}`),
+    (data.skills ?? []).join(' '),
+    ...(data.certifications ?? []).map(c => c.name),
+    ...(data.publications ?? []).map(p => p.title),
+  ].join(' ').length
+  const estimatedPages = Math.max(0.1, estimatedChars / 3200)
 
   const set = (k: keyof ParsedResume, v: unknown) =>
     setData(p => ({ ...p, [k]: v }))
@@ -113,6 +135,19 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('certifications', (data.certifications ?? []).filter((_, j) => j !== i))
   }
 
+  // ── Publications helpers — schema/preview support existed, editing UI
+  // did not. Mirrors the Certifications CRUD pattern exactly.
+  function addPub() {
+    set('publications', [...(data.publications ?? []), { title: '', venue: '', year: '', authors: '' }])
+  }
+  function setPub(i: number, k: string, v: string) {
+    const arr = (data.publications ?? []).map((p, j) => j === i ? { ...p, [k]: v } : p)
+    set('publications', arr)
+  }
+  function removePub(i: number) {
+    set('publications', (data.publications ?? []).filter((_, j) => j !== i))
+  }
+
   function exportPDF() {
     if (!data.name.trim()) {
       setError('Add your name before exporting.')
@@ -167,6 +202,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
             --teal: #0e7a5a;
             --teal-d: #095c43;
             --teal-l: #f0faf5;
+            --teal-xl: #f7fdfb; /* approximation, not confirmed against globals.css */
             --teal-mid: #c8e9db;
             --border: #e5e2da; /* approximation, not confirmed against globals.css */
             --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -232,10 +268,24 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
             onClick={() => setTemplate(opt.id)}
             className={`cvb-template-btn${template === opt.id ? ' active' : ''}`}
           >
-            <span style={{ fontWeight: 600 }}>{opt.label}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>{opt.label}</span>
+              <span style={{
+                fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 99,
+                background: opt.atsRisk === 'safe'
+                  ? (template === opt.id ? 'rgba(255,255,255,0.2)' : 'var(--teal-l)')
+                  : (template === opt.id ? 'rgba(255,255,255,0.2)' : 'var(--amber-l, #FEF3C7)'),
+                color: template === opt.id ? '#fff' : (opt.atsRisk === 'safe' ? 'var(--teal-d)' : 'var(--amber)'),
+              }}>
+                {opt.atsRisk === 'safe' ? 'ATS-safe' : 'Visual'}
+              </span>
+            </span>
             <span style={{ fontSize: 11, color: template === opt.id ? 'rgba(255,255,255,0.75)' : 'var(--muted)' }}>{opt.desc}</span>
           </button>
         ))}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14 }}>
+        "ATS-safe" templates use a single column, the format automated hiring systems parse most reliably. "Visual" templates look more distinctive but carry a higher chance of being misread by some ATS software.
       </div>
 
       {/* Toolbar */}
@@ -266,6 +316,13 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
           <span aria-hidden>💧</span> Free plan exports include an EarnGro watermark. <a href="/pricing">Upgrade</a> to remove it.
         </div>
       )}
+
+      <div className="cvb-length-note" style={{ color: estimatedPages > 1.15 ? 'var(--amber)' : 'var(--muted)' }}>
+        <span aria-hidden>📄</span> Estimated length: {estimatedPages.toFixed(1)} page{estimatedPages >= 1.5 ? 's' : ''}
+        {estimatedPages > 1.15 && (
+          <span> — most recruiters expect 1 page for this experience level. Consider trimming, unless you're targeting a senior/academic role.</span>
+        )}
+      </div>
 
       {error && <div className="cvb-error">{error}</div>}
 
@@ -392,6 +449,36 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
+            {/* Publications — schema (PublicationSchema) and the Academic
+                template's preview already existed; this editing UI did not,
+                so the Academic template previously had no way to actually
+                populate this section. */}
+            <div className="cvb-card">
+              <div className="cvb-card-head">
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Publications</div>
+                <button onClick={addPub} className="cvb-add-btn">+ Add</button>
+              </div>
+              {(data.publications ?? []).map((pub, i) => (
+                <div key={i} style={{ marginBottom: 12, padding: 12, background: 'var(--paper-2)', borderRadius: 'var(--r-md)', border: '1px solid var(--border-l)' }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={lbl}>Title</label>
+                    <input style={inp} value={pub.title} onChange={e => setPub(i, 'title', e.target.value)} placeholder="Predictive Maintenance in IoT Networks" />
+                  </div>
+                  <div className="cvb-2col" style={{ marginBottom: 10 }}>
+                    <div><label style={lbl}>Venue / Journal</label><input style={inp} value={pub.venue ?? ''} onChange={e => setPub(i, 'venue', e.target.value)} placeholder="IEEE Transactions on X" /></div>
+                    <div><label style={lbl}>Year</label><input style={inp} value={pub.year ?? ''} onChange={e => setPub(i, 'year', e.target.value)} placeholder="2024" /></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}><label style={lbl}>Authors</label><input style={inp} value={pub.authors ?? ''} onChange={e => setPub(i, 'authors', e.target.value)} placeholder="Kumar, R., Sharma, P." /></div>
+                    <button onClick={() => removePub(i)} className="cvb-remove-x">×</button>
+                  </div>
+                </div>
+              ))}
+              {(data.publications ?? []).length === 0 && (
+                <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--muted)', fontSize: 13 }}>No publications added yet</div>
+              )}
+            </div>
+
             {/* Languages — NEW, previously had no UI at all */}
             <div className="cvb-card">
               <div style={sectionHead}>Languages</div>
@@ -441,6 +528,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
 
         .cvb-watermark-note { font-size: 12px; color: var(--amber); background: var(--amber-l); border: 1px solid var(--amber-mid); border-radius: var(--r-md); padding: 8px 14px; margin-bottom: 14px; }
         .cvb-watermark-note a { color: var(--teal-d); font-weight: 600; }
+        .cvb-length-note { font-size: 12px; margin-bottom: 14px; }
         .cvb-error { font-size: 13px; color: var(--red); background: var(--red-l); border: 1px solid #F5CCCC; border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 14px; }
 
         .cvb-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 16px; }

@@ -133,7 +133,8 @@ export class ResumeService {
             })) ?? [],
 
             languages: [],
-            industry_signals: []
+            industry_signals: [],
+            publications: parsed.publications ?? []
           },
           city
         ),
