@@ -52,28 +52,38 @@ function interviewColor(score: number): string {
   return 'var(--red)'
 }
 
-// Determines the single most important action for this user right now
+// Determines the single most important action for this user right now.
+// FIX: now takes `plan` and gates every Interview-related recommendation
+// behind plan === 'accelerate' — previously this recommended /interview
+// regardless of plan, so the "Your Move Today" hero could push a locked
+// feature with no warning.
 function getNextMove(params: {
   hrsScore: number | null
   cvScore: number | null
   interviewScore: number | null
   hasGrowPath: boolean
   hasDna: boolean
+  plan: string
 }): { icon: string; title: string; desc: string; href: string; urgent: boolean } {
+  const canInterview = params.plan === 'accelerate'
+
   if (!params.hasDna) {
     return { icon: '🧬', title: 'Start your GrowDNA assessment', desc: 'Discover your exact earning gap in 4 minutes', href: '/growdna', urgent: true }
   }
   if (!params.cvScore) {
     return { icon: '📄', title: 'Upload your CV for ATS analysis', desc: 'Find out how your resume scores against real job requirements', href: '/cv', urgent: true }
   }
-  if (params.interviewScore !== null && params.interviewScore < 50) {
+  if (canInterview && params.interviewScore !== null && params.interviewScore < 50) {
     return { icon: '🎯', title: 'Practice your interview skills', desc: `Your last interview scored ${params.interviewScore}/100 — a 10-point improvement closes your gap 2× faster`, href: '/interview', urgent: true }
   }
-  if (params.hrsScore !== null && params.hrsScore < 400) {
+  if (canInterview && params.hrsScore !== null && params.hrsScore < 400) {
     return { icon: '🎯', title: 'Book an AI interview session', desc: 'Your HRS is below 400 — interview practice is your fastest lever right now', href: '/interview', urgent: false }
   }
   if (params.cvScore !== null && params.cvScore < 60) {
     return { icon: '📄', title: 'Improve your CV score', desc: `CV scoring ${params.cvScore}/100 — apply the AI suggestions to reach 70+`, href: '/cv', urgent: false }
+  }
+  if (!canInterview && params.hrsScore !== null && params.hrsScore < 400) {
+    return { icon: '⚡', title: 'Unlock AI Interview with Accelerate', desc: 'Interview practice is the fastest lever to close your gap — available on the Accelerate plan', href: '/pricing', urgent: false }
   }
   return { icon: '🗺️', title: 'Check your GrowPath milestones', desc: 'You\'re on track — see what\'s next on your roadmap', href: '/growpath', urgent: false }
 }
@@ -128,12 +138,17 @@ export default async function DashboardPage() {
   const changeNarrative = dna && prevDna ? getChangeNarrative(dna, prevDna) : null
   const hasRecentPositiveMove = !!changeNarrative?.isCelebration
 
+  // FIX: real delta number instead of a bare "Up" word with no magnitude —
+  // matches the specificity the change-narrative banner above it already has.
+  const hrsDelta = dna && prevDna ? (dna.hrs_score ?? 0) - (prevDna.hrs_score ?? 0) : null
+
   const nextMove = getNextMove({
     hrsScore: dna?.hrs_score ?? null,
     cvScore: cvData?.market_score ?? null,
     interviewScore: latestInterview?.overall_score ?? null,
     hasGrowPath: false,
     hasDna: hasGap,
+    plan,
   })
 
   return (
@@ -280,10 +295,13 @@ export default async function DashboardPage() {
 
             {/* 2. HRS Score */}
             <div className="dash-stat-card dashboard-kpi" style={{ position: 'relative' }}>
-              {hasRecentPositiveMove && (
+              {/* FIX: real delta number instead of a bare "Up" word */}
+              {hasRecentPositiveMove && hrsDelta !== null && (
                 <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', animation: 'hrsPulseDot 2s ease-in-out infinite', display: 'inline-block' }} />
-                  <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Up</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {hrsDelta > 0 ? `+${hrsDelta}` : 'Up'}
+                  </span>
                 </div>
               )}
               <div className="stat-label">HRS Score</div>
@@ -305,7 +323,7 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            {/* 3. Interview Score — NEW in command center */}
+            {/* 3. Interview Score */}
             <div className="dash-stat-card dashboard-kpi" style={{ borderTop: `3px solid ${latestInterview?.overall_score ? interviewColor(latestInterview.overall_score) : 'var(--border)'}` }}>
               <div className="stat-label">Last Interview</div>
               {latestInterview?.overall_score ? (
@@ -326,21 +344,28 @@ export default async function DashboardPage() {
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--muted-l)', marginBottom: 4 }}>—</div>
                   <div className="stat-sub">No sessions yet</div>
                   <div className="stat-footer" style={{ marginTop: 10 }}>
-                    <Link href="/interview" className="stat-link">Start practising →</Link>
+                    <Link href={plan === 'accelerate' ? '/interview' : '/pricing'} className="stat-link">
+                      {plan === 'accelerate' ? 'Start practising →' : 'Unlock with Accelerate →'}
+                    </Link>
                   </div>
                 </>
               )}
             </div>
 
-            {/* 4. Gap closes / Career Health */}
+            {/* 4. Gap closes / Career Health — FIX: added an icon + soft
+                background pill on the number so this reads visually
+                distinct from HRS's plain giant number, rather than the
+                two looking like twins of the same metric. */}
             {chs ? (
               <div className="dash-stat-card dashboard-kpi" style={{ borderTop: `3px solid ${chsColor(chs.score)}` }}>
-                <div className="stat-label">Career Health</div>
-                <div className="stat-value" style={{ color: chsColor(chs.score) }}>
-                  {chs.score}
+                <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span aria-hidden>🌱</span> Career Health
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4, background: `${chsColor(chs.score)}14`, padding: '4px 10px', borderRadius: 8, marginTop: 4 }}>
+                  <span className="stat-value" style={{ color: chsColor(chs.score), margin: 0 }}>{chs.score}</span>
                   <span className="stat-denom">/100</span>
                 </div>
-                <div className="stat-sub" style={{ marginTop: 4 }}>{chsLabel(chs.score)}</div>
+                <div className="stat-sub" style={{ marginTop: 6 }}>{chsLabel(chs.score)}</div>
                 <div style={{ margin: '10px 0', height: 1, background: 'var(--border-l)' }} />
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>From GrowPath milestones</div>
               </div>
@@ -364,7 +389,6 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
-
 
           {/* CV score strip */}
           {cvData?.market_score && (
@@ -390,6 +414,7 @@ export default async function DashboardPage() {
           {/* Quick actions */}
           <div className="dash-section-title" style={{ marginTop: 4 }}>Continue your GrowPath</div>
           <div className="dash-actions">
+
             <Link href="/cv" className="action-card">
               <div className="action-ico">📄</div>
               <div className="action-body">
@@ -398,14 +423,26 @@ export default async function DashboardPage() {
               </div>
               <div className="action-arrow">→</div>
             </Link>
-            <Link href="/interview" className="action-card" style={{ borderTop: '3px solid var(--teal)' }}>
+
+            {/* FIX: this card previously had no lock treatment at all for
+                any non-Accelerate plan, unlike GrowPath's card right below
+                it which correctly locks for free-plan users. Now consistent. */}
+            <Link
+              href={plan === 'accelerate' ? '/interview' : '/pricing'}
+              className={`action-card${plan !== 'accelerate' ? ' locked' : ''}`}
+              style={{ borderTop: '3px solid var(--teal)' }}
+            >
               <div className="action-ico">🎯</div>
               <div className="action-body">
-                <div className="action-title">AI Interview Practice</div>
+                <div className="action-title">
+                  AI Interview Practice{' '}
+                  {plan !== 'accelerate' && <span className="action-lock-badge">Accelerate</span>}
+                </div>
                 <div className="action-desc">Boost your HRS score with a mock interview session</div>
               </div>
               <div className="action-arrow">→</div>
             </Link>
+
             <Link
               href={plan === 'free' ? '/pricing' : '/growpath'}
               className={`action-card${plan === 'free' ? ' locked' : ''}`}

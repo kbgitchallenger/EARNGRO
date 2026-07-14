@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import GrowPathView from '@/components/growpath/GrowPathView'
+import LockedFeaturePreview from '@/components/shared/LockedFeaturePreview'
+import GrowPathMockup from '@/components/marketing/mockups/GrowPathMockup'
 
 export default async function GrowPathPage() {
   const supabase = await createClient()
@@ -12,6 +14,29 @@ export default async function GrowPathPage() {
     .select('plan')
     .eq('id', user.id)
     .single()
+
+  const isFreePlan = (profile?.plan ?? 'free') === 'free'
+
+  // FIX: free-plan check now happens BEFORE any of the downstream queries
+  // (phases, companies, CV analysis, career health) — previously these all
+  // ran unconditionally even though a free user was about to see a fixed
+  // locked-upsell screen regardless of the result. Also replaces the plain
+  // text lock-wall with a real, blurred preview of the actual GrowPath
+  // screen, so the user sees the depth of what they're missing instead of
+  // just being told a feature exists.
+  if (isFreePlan) {
+    return (
+      <LockedFeaturePreview
+        icon="🗺️"
+        title="Build your GrowPath"
+        description="A phased, month-by-month plan built from your GrowDNA results — skill targets, visibility milestones, and companies to target."
+        requiredPlan="grow"
+        ctaLabel="Upgrade to Grow →"
+      >
+        <GrowPathMockup />
+      </LockedFeaturePreview>
+    )
+  }
 
   const { data: plan } = await supabase
     .from('growpath_plans')
@@ -88,7 +113,7 @@ export default async function GrowPathPage() {
       dna={dna}
       careerHealth={chs}
       cvAnalysis={cvAnalysis}
-      isFreePlan={(profile?.plan ?? 'free') === 'free'}
+      isFreePlan={false}
     />
   )
 }

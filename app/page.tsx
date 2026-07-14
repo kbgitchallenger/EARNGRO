@@ -13,14 +13,14 @@ import PricingTeaser from '@/components/marketing/PricingTeaser'
 import FAQSection from '@/components/marketing/FAQSection'
 
 const TICKER = [
-  { amt:'₹6.2L',  name:'Priya S.',  role:'Marketing Manager · Mumbai',      time:'2h ago' },
-  { amt:'₹11.4L', name:'Arjun M.',  role:'Data Scientist · Bengaluru',       time:'3h ago' },
-  { amt:'₹4.8L',  name:'Divya R.',  role:'HR Manager · Delhi',               time:'4h ago' },
-  { amt:'₹8.9L',  name:'Carlos T.', role:'Product Manager · Manila',         time:'5h ago' },
-  { amt:'₹3.6L',  name:'Ananya K.', role:'Fresh Graduate · Hyderabad',       time:'6h ago' },
-  { amt:'₹14.2L', name:'Rahul P.',  role:'Engineering Lead · Singapore',     time:'7h ago' },
-  { amt:'₹5.5L',  name:'Siti N.',   role:'Finance Analyst · Jakarta',        time:'8h ago' },
-  { amt:'₹7.3L',  name:'Vikram S.', role:'Consultant · Pune',                time:'9h ago' },
+  { amt:'₹6.2L',  role:'Marketing Manager · Mumbai' },
+  { amt:'₹11.4L', role:'Data Scientist · Bengaluru' },
+  { amt:'₹4.8L',  role:'HR Manager · Delhi' },
+  { amt:'₹8.9L',  role:'Product Manager · Manila' },
+  { amt:'₹3.6L',  role:'Fresh Graduate · Hyderabad' },
+  { amt:'₹14.2L', role:'Engineering Lead · Singapore' },
+  { amt:'₹5.5L',  role:'Finance Analyst · Jakarta' },
+  { amt:'₹7.3L',  role:'Consultant · Pune' },
 ]
 
 const HOW = [
@@ -187,7 +187,7 @@ export default function HomePage() {
                 flexShrink: 0,
               }}
             />
-            AI-powered career intelligence platform
+            AI Career Growth Platform · Free Earning Gap check in 2 min
           </div>
 
           <h1
@@ -249,6 +249,13 @@ export default function HomePage() {
               See how it works →
             </a>
           </div>
+
+          <div className="fade d5" style={{ marginBottom: 52, fontSize: 13, color: 'var(--muted)' }}>
+            Free to start ·{' '}
+            <Link href="/pricing" style={{ color: 'var(--teal-d)', fontWeight: 600, textDecoration: 'none' }}>
+              Plans from ₹99/month →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -275,15 +282,18 @@ export default function HomePage() {
       <div
         className="ticker-wrap"
         tabIndex={0}
-        aria-label="Recent earning gap results — scrolling, pauses on hover or focus"
+        aria-label="Example Earning Gap calculations — scrolling, pauses on hover or focus"
         style={{ background:'var(--teal-xl)', overflow:'hidden', borderTop:'1px solid var(--teal-mid)', borderBottom:'1px solid var(--teal-mid)', padding:'10px 0', position:'relative', zIndex:1 }}
       >
+        <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--teal-d)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+          Example Earning Gaps calculated by EarnGro
+        </div>
         <div className="ticker-track" style={{ display:'flex', animation:'ticker 30s linear infinite', width:'max-content' }}>
           {[...TICKER, ...TICKER].map((item,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:9, padding:'0 28px', fontSize:12, color:'var(--muted)', whiteSpace:'nowrap', borderRight:'1px solid var(--teal-mid)' }}>
               <span style={{ color:'var(--teal-d)', fontWeight:700, fontFamily:'var(--serif)', fontSize:14 }}>{item.amt}</span>
               <span style={{ color:'var(--teal)', fontWeight:700 }}>↑</span>
-              {item.name} · {item.role} · {item.time}
+              {item.role}
             </div>
           ))}
         </div>
@@ -508,11 +518,14 @@ export default function HomePage() {
           <div className="reveal r1">
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
               <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
-              Early user stories
+              Illustrative scenarios
             </div>
-            <h2 style={{ fontFamily:'var(--serif)', fontSize:'clamp(30px,4vw,50px)', fontWeight:600, lineHeight:1.1, color:'var(--ink)' }}>
-              Real gaps.<br/><em style={{ fontStyle:'italic', color:'var(--teal)' }}>Real growth.</em>
+            <h2 style={{ fontFamily:'var(--serif)', fontSize:'clamp(30px,4vw,50px)', fontWeight:600, lineHeight:1.1, color:'var(--ink)', marginBottom: 10 }}>
+              The gaps professionals<br/><em style={{ fontStyle:'italic', color:'var(--teal)' }}>discover.</em>
             </h2>
+            <p style={{ fontSize: 13, color: 'var(--muted-l)' }}>
+              Composite scenarios based on typical outcomes — not verified individual testimonials.
+            </p>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(270px,1fr))', gap:16, marginTop:52 }}>
             {TESTS.map((t,i) => (

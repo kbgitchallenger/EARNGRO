@@ -43,7 +43,7 @@ const PLANS = [
     key: 'accelerate',
     name: 'Accelerate',
     price: '₹299',
-    originalPrice: '₹399',
+    originalPrice: '₹599',
     period: '/month',
     tagline: 'For serious career builders',
     credits: '5,000 credits — refresh every 30 days',
@@ -54,6 +54,7 @@ const PLANS = [
       'Buy extra credits anytime — ₹99 / 2,500 credits',
     ],
     highlight: false,
+    badge: '50% off — limited time',
   },
 ]
 

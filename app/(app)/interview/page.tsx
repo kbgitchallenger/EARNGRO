@@ -2,9 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import InterviewSetup from '@/components/interview/InterviewSetup'
-import CheckoutButton from '@/components/billing/CheckoutButton'
+import LockedFeaturePreview from '@/components/shared/LockedFeaturePreview'
+import InterviewMockup from '@/components/marketing/mockups/InterviewMockup'
 
 export const metadata = { title: 'AI Interview Practice — EarnGro' }
 
@@ -23,26 +23,22 @@ export default async function InterviewPage() {
 
   // ── Plan gate — AI Interview is Accelerate-only ──────────────────
   // Same hard block pattern as GrowPath and CV Analyze: checked server-side
-  // before any data fetch, not just hidden client-side. Previously this
-  // page had no gate at all — any free or Grow-plan user could reach the
-  // setup form and even start a real, billable session.
+  // before any data fetch, not just hidden client-side.
+  // FIX: replaced the plain text lock-wall with a real, blurred preview of
+  // the actual interview session screen — the user now sees the depth of
+  // what they're missing (persona, live chat, feedback scores) instead of
+  // just being told the feature exists behind a paywall.
   if (plan !== 'accelerate') {
     return (
-      <div style={{ maxWidth: 480, margin: '60px auto 0', padding: '0 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>🎤</div>
-        <h1 style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>
-          AI Interview is an Accelerate feature
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.7 }}>
-          Practice with a real-feeling AI interviewer, get scored per answer, and leave with a concrete improved example — available on the Accelerate plan.
-        </p>
-        <CheckoutButton
-          type="plan_upgrade"
-          planKey="accelerate"
-          label="Upgrade to Accelerate →"
-          style={{ maxWidth: 260, margin: '0 auto' }}
-        />
-      </div>
+      <LockedFeaturePreview
+        icon="🎤"
+        title="AI Interview is an Accelerate feature"
+        description="Practice with a real-feeling AI interviewer, get scored per answer, and leave with a concrete improved example — available on the Accelerate plan."
+        requiredPlan="accelerate"
+        ctaLabel="Upgrade to Accelerate →"
+      >
+        <InterviewMockup />
+      </LockedFeaturePreview>
     )
   }
 
