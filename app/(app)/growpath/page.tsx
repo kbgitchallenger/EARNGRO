@@ -17,14 +17,28 @@ export default async function GrowPathPage() {
 
   const isFreePlan = (profile?.plan ?? 'free') === 'free'
 
-  // FIX: free-plan check now happens BEFORE any of the downstream queries
-  // (phases, companies, CV analysis, career health) — previously these all
-  // ran unconditionally even though a free user was about to see a fixed
-  // locked-upsell screen regardless of the result. Also replaces the plain
-  // text lock-wall with a real, blurred preview of the actual GrowPath
-  // screen, so the user sees the depth of what they're missing instead of
-  // just being told a feature exists.
+  // Free-plan check happens before the heavy downstream queries (phases,
+  // companies, CV analysis, career health — none of which a free user can
+  // see anyway). We DO fetch a lightweight grow_dna row here, scoped to
+  // only the fields the locked preview needs, so the preview shows this
+  // user's REAL gap/timeline/weakest dimension instead of generic example
+  // data — sharpens the FOMO since it's genuinely theirs, not a stock shot.
   if (isFreePlan) {
+    const { data: previewDna } = await supabase
+      .from('grow_dna')
+      .select('current_salary, target_salary, months_to_close, dimension_scores')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let weakestDimension = 'visibility'
+    if (previewDna?.dimension_scores) {
+      const ds = previewDna.dimension_scores as Record<string, number>
+      const dims = ['market_alignment', 'skill_premium', 'visibility', 'mobility', 'negotiation']
+      weakestDimension = dims.reduce((worst, d) => (ds[d] ?? 100) < (ds[worst] ?? 100) ? d : worst, dims[0])
+    }
+
     return (
       <LockedFeaturePreview
         icon="🗺️"
@@ -33,7 +47,12 @@ export default async function GrowPathPage() {
         requiredPlan="grow"
         ctaLabel="Upgrade to Grow →"
       >
-        <GrowPathMockup />
+        <GrowPathMockup
+          currentSalary={previewDna?.current_salary ?? undefined}
+          targetSalary={previewDna?.target_salary ?? undefined}
+          monthsToClose={previewDna?.months_to_close ?? undefined}
+          weakestDimension={weakestDimension}
+        />
       </LockedFeaturePreview>
     )
   }
@@ -72,7 +91,6 @@ export default async function GrowPathPage() {
     .limit(1)
     .maybeSingle()
 
-  // Career Health Score — most recent computed value, separate from HRS
   const { data: chs } = await supabase
     .from('career_health_scores')
     .select('score, from_milestones_pct, from_practiced_skills, computed_at')
@@ -81,9 +99,6 @@ export default async function GrowPathPage() {
     .limit(1)
     .maybeSingle()
 
-  // Latest CV analysis — feeds Top Skill Gaps + Market Positioning.
-  // Joined through cv_versions since analyses are scoped to a version, not
-  // directly to the user.
   const { data: latestVersion } = await supabase
     .from('cv_versions')
     .select('id')

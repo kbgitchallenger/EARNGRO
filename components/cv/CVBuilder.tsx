@@ -55,6 +55,12 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [error, setError] = useState('')
+  // NEW — bullet optimization state. `optimizing` tracks which experience
+  // index currently has a request in flight; `optimizeResults` holds the
+  // pending AI rewrites per experience index until the user accepts or
+  // they're cleared.
+  const [optimizing, setOptimizing] = useState<number | null>(null)
+  const [optimizeResults, setOptimizeResults] = useState<Record<number, { original: string; optimized: string; improvement_type: string; explanation: string }[]>>({})
   const router = useRouter()
   const isFreePlan = plan === 'free'
 
@@ -111,6 +117,49 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('experience', arr)
   }
 
+  // ── Bullet optimization — NEW. Previously the bullet_optimize feature
+  // (priced at 19 credits) had no UI entry point anywhere in this file,
+  // meaning free-tier users' 5 free optimizations were completely
+  // invisible, unused value. Operates on all bullets for one experience
+  // entry at once, matching the real BulletOptimizationResultSchema shape
+  // (a batch response), not a per-bullet call — fewer clicks, more value
+  // per credit spent.
+  async function optimizeBullets(ei: number) {
+    const exp = (data.experience ?? [])[ei]
+    if (!exp || !exp.bullets?.some(b => b.trim())) return
+    setOptimizing(ei)
+    setError('')
+    try {
+      const res = await fetch('/api/cv/bullets/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bullets: exp.bullets, role: exp.role, company: exp.company }),
+      })
+      if (res.status === 402) {
+        const body = await res.json().catch(() => ({}))
+        setError(`Not enough credits — this needs ${body.required ?? 19} credits, you have ${body.balance ?? 0}.`)
+        return
+      }
+      if (!res.ok) throw new Error('Optimization failed')
+      const result = await res.json()
+      setOptimizeResults(prev => ({ ...prev, [ei]: result.bullets }))
+    } catch {
+      setError('Failed to optimize bullets. Please try again.')
+    } finally {
+      setOptimizing(null)
+    }
+  }
+
+  function applyOptimizedBullet(ei: number, bulletIndex: number, optimizedText: string) {
+    setBullet(ei, bulletIndex, optimizedText)
+    setOptimizeResults(prev => {
+      const updated = { ...prev }
+      if (updated[ei]) updated[ei] = updated[ei].filter((_, i) => i !== bulletIndex)
+      if (updated[ei]?.length === 0) delete updated[ei]
+      return updated
+    })
+  }
+
   // ── Education helpers ───────────────────────────────────────────
   function addEdu() {
     set('education', [...(data.education ?? []), { institution: '', degree: '', year: '' }])
@@ -123,7 +172,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('education', (data.education ?? []).filter((_, j) => j !== i))
   }
 
-  // ── Certifications helpers — NEW, previously had no UI at all ────
+  // ── Certifications helpers ────
   function addCert() {
     set('certifications', [...(data.certifications ?? []), { name: '', issuer: '', year: '' }])
   }
@@ -387,10 +436,37 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                       <button onClick={() => removeBullet(i, bi)} className="cvb-remove-x">×</button>
                     </div>
                   ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                    <button onClick={() => addBullet(i)} style={{ fontSize: 11, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--sans)', fontWeight: 600 }}>+ Add bullet</button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 14 }}>
+                      <button onClick={() => addBullet(i)} style={{ fontSize: 11, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--sans)', fontWeight: 600 }}>+ Add bullet</button>
+                      <button
+                        onClick={() => optimizeBullets(i)}
+                        disabled={optimizing === i || !exp.bullets?.some(b => b.trim())}
+                        style={{ fontSize: 11, color: '#fff', background: 'var(--teal)', border: 'none', borderRadius: 99, padding: '4px 12px', cursor: optimizing === i ? 'not-allowed' : 'pointer', fontFamily: 'var(--sans)', fontWeight: 600, opacity: optimizing === i ? 0.7 : 1 }}
+                      >
+                        {optimizing === i ? 'Optimizing…' : '✨ Optimize bullets'}
+                      </button>
+                    </div>
                     <button onClick={() => removeExp(i)} style={{ fontSize: 11, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--sans)' }}>Remove role</button>
                   </div>
+
+                  {/* AI-optimized bullet suggestions — new. Previously this
+                      feature had 19-credit pricing and a real API contract
+                      (BulletOptimizationResultSchema) but zero UI, meaning
+                      free-tier users' 5 free optimizations were invisible. */}
+                  {optimizeResults[i]?.map((opt, bi) => (
+                    <div key={bi} style={{ marginTop: 10, padding: 12, background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)' }}>
+                      <div style={{ fontSize: 10.5, color: 'var(--muted)', textDecoration: 'line-through', marginBottom: 6 }}>{opt.original}</div>
+                      <div style={{ fontSize: 12.5, color: 'var(--ink)', marginBottom: 6, lineHeight: 1.5 }}>{opt.optimized}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--teal-d)', fontStyle: 'italic', marginBottom: 8 }}>{opt.explanation}</div>
+                      <button
+                        onClick={() => applyOptimizedBullet(i, bi, opt.optimized)}
+                        style={{ fontSize: 11, fontWeight: 600, color: '#fff', background: 'var(--teal)', border: 'none', borderRadius: 99, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--sans)' }}
+                      >
+                        Apply this rewrite →
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ))}
               {(data.experience ?? []).length === 0 && (
@@ -429,8 +505,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
-            {/* Certifications — NEW, previously had no UI at all despite
-                the schema and PDF export both supporting it */}
+            {/* Certifications */}
             <div className="cvb-card">
               <div className="cvb-card-head">
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Certifications</div>

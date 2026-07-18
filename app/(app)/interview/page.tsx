@@ -21,14 +21,28 @@ export default async function InterviewPage() {
 
   const plan = profile?.plan ?? 'free'
 
-  // ── Plan gate — AI Interview is Accelerate-only ──────────────────
-  // Same hard block pattern as GrowPath and CV Analyze: checked server-side
-  // before any data fetch, not just hidden client-side.
-  // FIX: replaced the plain text lock-wall with a real, blurred preview of
-  // the actual interview session screen — the user now sees the depth of
-  // what they're missing (persona, live chat, feedback scores) instead of
-  // just being told the feature exists behind a paywall.
+  // Plan gate — AI Interview is Accelerate-only, checked server-side
+  // before any further data fetch.
   if (plan !== 'accelerate') {
+    // Lightweight real GrowDNA fetch, scoped to only what the preview
+    // needs, so the locked preview shows a persona genuinely matched to
+    // this user's weakest dimension and their real role — not a fixed
+    // generic example.
+    const { data: previewDna } = await supabase
+      .from('grow_dna')
+      .select('role, dimension_scores')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let weakestDimension = 'visibility'
+    if (previewDna?.dimension_scores) {
+      const ds = previewDna.dimension_scores as Record<string, number>
+      const dims = ['market_alignment', 'skill_premium', 'visibility', 'mobility', 'negotiation']
+      weakestDimension = dims.reduce((worst, d) => (ds[d] ?? 100) < (ds[worst] ?? 100) ? d : worst, dims[0])
+    }
+
     return (
       <LockedFeaturePreview
         icon="🎤"
@@ -37,7 +51,10 @@ export default async function InterviewPage() {
         requiredPlan="accelerate"
         ctaLabel="Upgrade to Accelerate →"
       >
-        <InterviewMockup />
+        <InterviewMockup
+          role={previewDna?.role ?? undefined}
+          weakestDimension={weakestDimension}
+        />
       </LockedFeaturePreview>
     )
   }

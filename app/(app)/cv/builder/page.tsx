@@ -16,6 +16,16 @@ export default async function CVBuilderPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // FIX: this page never fetched the user's plan at all, so CVBuilder's
+  // `plan = 'free'` default fired for every user regardless of their real
+  // subscription — a Grow/Accelerate user would always see the free-tier
+  // watermark warning and get a watermarked export.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
+
   const { from } = await searchParams
 
   // If ?from=versionId — pre-populate with parsed data from that version
@@ -57,7 +67,7 @@ export default async function CVBuilderPage({
           Build or edit your resume · Live preview · AI analysis on save
         </p>
       </div>
-      <CVBuilder initialData={initialData} />
+      <CVBuilder initialData={initialData} plan={profile?.plan ?? 'free'} />
     </div>
   )
 }
