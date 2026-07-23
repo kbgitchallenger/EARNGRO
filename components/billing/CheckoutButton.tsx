@@ -6,7 +6,7 @@ import Script from 'next/script'
 
 interface CheckoutButtonProps {
   type: 'plan_upgrade' | 'recharge'
-  planKey: string // 'grow' | 'accelerate' | 'grow_recharge' | 'accelerate_recharge'
+  planKey: string
   label: string
   style?: React.CSSProperties
   className?: string
@@ -52,6 +52,19 @@ export default function CheckoutButton({ type, planKey, label, style, className 
             setLoading(false)
           },
         },
+      })
+
+      // FIX: previously only success (`handler`) and manual close
+      // (`modal.ondismiss`) were handled. A real failure — e.g. Razorpay
+      // blocking the payment for a business/website mismatch, a declined
+      // card, etc. — fires neither of those, so `loading` stayed true
+      // forever and the button was stuck on "Opening checkout…" with no
+      // explanation. `payment.failed` is Razorpay's documented event for
+      // exactly this case.
+      rzp.on('payment.failed', function (response: any) {
+        setLoading(false)
+        const reason = response?.error?.description || response?.error?.reason || 'Payment failed. Please try again.'
+        setError(reason)
       })
 
       rzp.open()
