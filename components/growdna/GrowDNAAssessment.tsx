@@ -21,6 +21,10 @@ interface Props {
   cvFacts?: CVFacts
   canRetake?: boolean
   limitReason?: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null
+  // Safest default 'free' — same pattern already used in CVBuilder, so a
+  // parent page that forgets to pass this fails toward the more
+  // restrictive card, not a silently-wrong permissive one.
+  plan?: string
   existingResult: {
     id: string
     career_archetype: string
@@ -415,9 +419,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         }
         .dna-hero-hrs strong { font-family: var(--serif); font-size: 16px; }
 
-        /* Bug fix: fixed 3-col grid + fixed 24px font caused overlapping
-           numbers on narrow phones ("28.0L" colliding with "14"). Now scales
-           down and stacks to a single column below 420px. */
         .dna-stats-grid {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
@@ -439,8 +440,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
           white-space: nowrap;
         }
 
-        /* Bug fix: fixed 2-col Strengths/Gaps grid had no mobile override,
-           forcing long sentences into unreadably narrow columns. */
         .dna-sg-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -469,7 +468,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 }
 
 // ── Main Component ────────────────────────────────────────────────
-export default function GrowDNAAssessment({ userId, existingResult, cvFacts, canRetake, limitReason }: Props) {
+export default function GrowDNAAssessment({ userId, existingResult, cvFacts, canRetake, limitReason, plan = 'free' }: Props) {
   const [answers, setAnswers]       = useState<Answers>({})
   const [currentIdx, setCurrentIdx] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -479,6 +478,12 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const [nudge, setNudge] = useState<string | null>(null)
   const [showLimitCard, setShowLimitCard] = useState(false)
   const [limitReasonOverride, setLimitReasonOverride] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
+  // NEW — previously the 402 response body's balance/required were parsed
+  // but never stored, so LimitReachedCard always rendered with no numbers
+  // at all for this feature, even after the card itself was fixed to show
+  // them when provided.
+  const [limitBalance, setLimitBalance] = useState<number | undefined>(undefined)
+  const [limitRequired, setLimitRequired] = useState<number | undefined>(undefined)
   const [prefillApplied, setPrefillApplied] = useState(false)
 
   const seniority = (answers.seniority as string) || 'mid'
@@ -490,11 +495,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const totalQ  = questions.length
   const isLast  = currentIdx === totalQ - 1
 
-  // ── Consume calculator prefill whenever the user is on a fresh
-  // assessment (not viewing an existing result). Fires on mount for
-  // brand-new users, and again whenever showExisting flips to false
-  // (e.g. clicking "Retake assessment") — so returning users who ran
-  // the Calculator right before retaking also get their answers carried over.
   useEffect(() => {
     if (showExisting) return
 
@@ -513,14 +513,12 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
 
     setAnswers(prev => ({ ...prev, ...newFields }))
 
-    // Jump to the first MODULE_A question NOT covered by the prefill,
-    // rather than assuming a fixed index — resilient to question reordering.
     const firstUnanswered = MODULE_A.findIndex(
       q => newFields[q.id as keyof Answers] === undefined
     )
 
     if (firstUnanswered === -1) {
-      setCurrentIdx(MODULE_A.length) // every MODULE_A question was pre-filled
+      setCurrentIdx(MODULE_A.length)
     } else if (firstUnanswered > 0) {
       setCurrentIdx(firstUnanswered)
     }
@@ -551,7 +549,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
 
       if (warning) {
         setNudge(warning.message)
-        return // don't auto-advance — let them see the nudge first
+        return
       }
     }
 
@@ -599,6 +597,8 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         const body = await res.json().catch(() => ({}))
         setSubmitting(false)
         setLimitReasonOverride(body.error === 'INSUFFICIENT_CREDITS' ? 'INSUFFICIENT_CREDITS' : 'FREE_LIMIT_REACHED')
+        setLimitBalance(body.balance)
+        setLimitRequired(body.required)
         setShowLimitCard(true)
         return
       }
@@ -617,7 +617,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     const reason = limitReasonOverride ?? limitReason ?? 'FREE_LIMIT_REACHED'
     return (
       <div style={{ padding: '24px 24px 0' }}>
-        <LimitReachedCard reason={reason} feature="growdna" />
+        <LimitReachedCard reason={reason} feature="growdna" plan={plan} balance={limitBalance} required={limitRequired} />
       </div>
     )
   }
@@ -641,7 +641,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     const ai = existingResult.raw_ai_response ?? {}
     const ds = existingResult.dimension_scores ?? {}
 
-    // Normalise close_actions — can be string[] or object[]
     const rawActions = existingResult.close_actions ?? []
     const normActions: { action: string; impact: string; timeline: string }[] = rawActions.map(a =>
       typeof a === 'string'

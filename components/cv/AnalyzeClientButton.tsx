@@ -9,13 +9,23 @@ export default function AnalyzeClientButton({
   versionId,
   white,
   label,
+  plan = 'free',
 }: {
   versionId: string
   white?: boolean
   label?: string
+  // Safest default 'free' — same pattern used across the app. A parent
+  // page that forgets to pass this fails toward the more restrictive
+  // card/message, not a silently-wrong permissive one.
+  plan?: string
 }) {
   const [loading, setLoading] = useState(false)
   const [limitReason, setLimitReason] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
+  // NEW — previously the 402 response body's balance/required were parsed
+  // but never stored, so LimitReachedCard rendered with no numbers at all
+  // even after the card itself was fixed to show them when provided.
+  const [limitBalance, setLimitBalance] = useState<number | undefined>(undefined)
+  const [limitRequired, setLimitRequired] = useState<number | undefined>(undefined)
   // Separate from limitReason — a 403 means the plan itself doesn't include
   // this feature at all (no amount of credits fixes it), which is a
   // different situation from "out of credits" and needs different copy
@@ -37,6 +47,8 @@ export default function AnalyzeClientButton({
       if (res.status === 402) {
         const body = await res.json().catch(() => ({}))
         setLimitReason(body.error === 'INSUFFICIENT_CREDITS' ? 'INSUFFICIENT_CREDITS' : 'FREE_LIMIT_REACHED')
+        setLimitBalance(body.balance)
+        setLimitRequired(body.required)
         return
       }
 
@@ -74,7 +86,7 @@ export default function AnalyzeClientButton({
   }
 
   if (limitReason) {
-    return <LimitReachedCard reason={limitReason} feature="cv_analysis" />
+    return <LimitReachedCard reason={limitReason} feature="cv_analyze" plan={plan} balance={limitBalance} required={limitRequired} />
   }
 
   return (

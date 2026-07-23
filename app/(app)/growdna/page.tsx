@@ -76,6 +76,7 @@ export default async function GrowDNAPage() {
       cvFacts={cvFacts}
       canRetake={canRetake}
       limitReason={limitReason}
+      plan={plan}
     />
   )
 }

@@ -167,7 +167,7 @@ export default async function CVAnalysisPage({
                 </div>
                 <div>
                   {creditBalance >= creditCost ? (
-                    <AnalyzeClientButton versionId={version.id} white />
+                    <AnalyzeClientButton versionId={version.id} white plan={plan} />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                       <div style={{ fontSize: 12.5, color: '#FEF3C7' }}>Not enough credits for this analysis.</div>
@@ -202,7 +202,7 @@ export default async function CVAnalysisPage({
                   <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>
                     Update Your Resume and Re-analyze for Updated Results· you have {creditBalance}
                   </div>
-                  <AnalyzeClientButton versionId={version.id} />
+                  <AnalyzeClientButton versionId={version.id} plan={plan} />
                 </div>
               ) : (
                 <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', maxWidth: 380, margin: '0 auto' }}>

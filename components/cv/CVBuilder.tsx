@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CVPreview, { type CVTemplate } from './CVPreview'
+import LimitReachedCard from '@/components/shared/LimitReachedCard'
 import type { ParsedResume } from '@/lib/ai/validators/resume.validator'
 
 const TEMPLATE_OPTIONS: { id: CVTemplate; label: string; desc: string; atsRisk: 'safe' | 'moderate' }[] = [
@@ -61,6 +62,11 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   // they're cleared.
   const [optimizing, setOptimizing] = useState<number | null>(null)
   const [optimizeResults, setOptimizeResults] = useState<Record<number, { original: string; optimized: string; improvement_type: string; explanation: string }[]>>({})
+  // NEW — replaces a plain setError() string for the 402 case with
+  // structured data so we can render the same rich LimitReachedCard used
+  // everywhere else credits run out in this app, instead of a flat
+  // one-line message that gave no upgrade/recharge path.
+  const [bulletLimitReached, setBulletLimitReached] = useState<Record<number, { balance: number; required: number }>>({})
   const router = useRouter()
   const isFreePlan = plan === 'free'
 
@@ -129,6 +135,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     if (!exp || !exp.bullets?.some(b => b.trim())) return
     setOptimizing(ei)
     setError('')
+    setBulletLimitReached(prev => { const u = { ...prev }; delete u[ei]; return u })
     try {
       const res = await fetch('/api/cv/bullets/optimize', {
         method: 'POST',
@@ -137,7 +144,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
       })
       if (res.status === 402) {
         const body = await res.json().catch(() => ({}))
-        setError(`Not enough credits — this needs ${body.required ?? 19} credits, you have ${body.balance ?? 0}.`)
+        setBulletLimitReached(prev => ({ ...prev, [ei]: { balance: body.balance ?? 0, required: body.required ?? 19 } }))
         return
       }
       if (!res.ok) throw new Error('Optimization failed')
@@ -467,6 +474,21 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                       </button>
                     </div>
                   ))}
+
+                  {/* Rich, plan-aware limit card instead of a flat error
+                      string — matches every other credit gate in the app,
+                      and gives a real recharge/upgrade path right here. */}
+                  {bulletLimitReached[i] && (
+                    <div style={{ marginTop: 10 }}>
+                      <LimitReachedCard
+                        reason="INSUFFICIENT_CREDITS"
+                        feature="bullet_optimize"
+                        balance={bulletLimitReached[i].balance}
+                        required={bulletLimitReached[i].required}
+                        plan={plan}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
               {(data.experience ?? []).length === 0 && (
