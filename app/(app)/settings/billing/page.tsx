@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getTransactionHistory, getFeatureLabel } from '@/services/credits.service'
 import CheckoutButton from '@/components/billing/CheckoutButton'
+import PaymentHistory from '@/components/billing/PaymentHistory'
 
 export const metadata = { title: 'Billing & Usage — EarnGro' }
 
@@ -162,6 +163,13 @@ export default async function BillingPage() {
           </div>
         </div>
       )}
+
+      {/* Payment history — NEW. Separate from credit usage below: this is
+          "what did I actually pay, how much, by what method, did it
+          succeed" — real money transactions, not credit ledger movements. */}
+      <div style={{ marginBottom: 20 }}>
+        <PaymentHistory userId={user.id} />
+      </div>
 
       {/* Usage history */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px' }}>

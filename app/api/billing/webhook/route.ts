@@ -45,6 +45,34 @@ export async function POST(request: Request) {
 
   const event = JSON.parse(rawBody)
 
+  // NEW: payment.failed is now handled explicitly instead of being
+  // silently skipped like every other non-captured event. This is real,
+  // useful data for support ("why didn't my payment go through") that was
+  // previously discarded entirely.
+  if (event.event === 'payment.failed') {
+    const payment = event.payload.payment.entity
+    const notes = payment.notes ?? {}
+    const { user_id, type, key } = notes
+
+    if (user_id && type && key) {
+      const { error } = await supabaseAdmin.from('payments').insert({
+        user_id,
+        razorpay_payment_id: payment.id,
+        razorpay_order_id: payment.order_id,
+        type,
+        plan_or_pack_key: key,
+        amount_paise: payment.amount,
+        currency: payment.currency,
+        status: 'failed',
+        payment_method: payment.method,
+        failure_reason: payment.error_description ?? payment.error_reason ?? 'Unknown',
+      })
+      if (error) console.error('Failed to log payment.failed record:', error.message)
+      else console.log(`Razorpay webhook: logged failed payment ${payment.id} for user ${user_id}`)
+    }
+    return NextResponse.json({ received: true, logged: 'failed_payment' })
+  }
+
   if (event.event !== 'payment.captured') {
     console.log(`Razorpay webhook: skipped event type "${event.event}" (not payment.captured)`)
     return NextResponse.json({ received: true, skipped: event.event })
@@ -112,6 +140,21 @@ export async function POST(request: Request) {
 
       console.log(`Razorpay webhook: successfully upgraded user ${user_id} to ${key}`)
 
+      // Real billing-history record — separate from the credits ledger
+      // above, which tracks balance changes, not payment/transaction detail.
+      const { error: payErr } = await supabaseAdmin.from('payments').insert({
+        user_id,
+        razorpay_payment_id: payment.id,
+        razorpay_order_id: payment.order_id,
+        type,
+        plan_or_pack_key: key,
+        amount_paise: payment.amount,
+        currency: payment.currency,
+        status: 'captured',
+        payment_method: payment.method,
+      })
+      if (payErr) console.error('Failed to log payments record (non-fatal, credits already applied):', payErr.message)
+
     } else if (type === 'recharge') {
       const packInfo = RECHARGE_PACKS[key]
       if (!packInfo) throw new Error(`Unknown recharge pack key in webhook: ${key}`)
@@ -143,6 +186,19 @@ export async function POST(request: Request) {
       if (txErr) throw new Error(`credit_transactions insert failed: ${txErr.message}`)
 
       console.log(`Razorpay webhook: successfully recharged user ${user_id} with ${packInfo.credits} credits`)
+
+      const { error: payErr } = await supabaseAdmin.from('payments').insert({
+        user_id,
+        razorpay_payment_id: payment.id,
+        razorpay_order_id: payment.order_id,
+        type,
+        plan_or_pack_key: key,
+        amount_paise: payment.amount,
+        currency: payment.currency,
+        status: 'captured',
+        payment_method: payment.method,
+      })
+      if (payErr) console.error('Failed to log payments record (non-fatal, credits already applied):', payErr.message)
     }
 
     return NextResponse.json({ received: true, processed: true })
