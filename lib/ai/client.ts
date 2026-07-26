@@ -83,28 +83,53 @@ export async function callAIJSON<T extends ZodSchema>(
 ): Promise<z.infer<T>> {
   const model = options.model ?? 'claude-sonnet-4-6'
 
-  const message = await anthropic.messages.create({
-    model,
-    max_tokens: options.maxTokens ?? 1024,
-    system: 'You are a JSON API. Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no trailing commas. Start your response with { and end with }. Ensure all strings are properly escaped.',
-    messages: [{ role: 'user', content: prompt }],
-  })
+  // FIX: previously a single malformed/unparseable response (e.g. Claude
+  // occasionally emitting a stray unescaped quote mid-string, breaking the
+  // whole JSON structure) failed the entire request with no recovery —
+  // this hit GrowDNA in production. Patching already-broken JSON
+  // heuristically is inherently fragile (extractJSON's existing repairs
+  // below only catch a couple of specific patterns); regenerating from
+  // scratch is far more reliable, since this failure mode is typically a
+  // one-off slip rather than a systematic one. Bounded to 2 total attempts
+  // so a genuinely broken prompt/schema still fails fast, not silently
+  // doubling cost forever.
+  const MAX_ATTEMPTS = 2
+  let lastError: unknown
 
-  // Log real usage — don't await inline in a way that could delay the response;
-  // this is intentionally not blocking the parse/return below.
-  logUsage({
-    feature: options.feature,
-    userId: options.userId,
-    model,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
-  })
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const message = await anthropic.messages.create({
+        model,
+        max_tokens: options.maxTokens ?? 1024,
+        system: 'You are a JSON API. Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no trailing commas. Start your response with { and end with }. Ensure all strings are properly escaped.',
+        messages: [{ role: 'user', content: prompt }],
+      })
 
-  const textBlock = message.content.find(b => b.type === 'text')
-  if (!textBlock || textBlock.type !== 'text') throw new Error('No text response from AI')
+      // Log every real attempt, including ones that ultimately fail to
+      // parse — the tokens were genuinely spent either way.
+      logUsage({
+        feature: options.feature,
+        userId: options.userId,
+        model,
+        inputTokens: message.usage.input_tokens,
+        outputTokens: message.usage.output_tokens,
+      })
 
-  const parsed = extractJSON(textBlock.text)
-  return schema.parse(parsed)
+      const textBlock = message.content.find(b => b.type === 'text')
+      if (!textBlock || textBlock.type !== 'text') throw new Error('No text response from AI')
+
+      const parsed = extractJSON(textBlock.text)
+      return schema.parse(parsed)
+
+    } catch (err) {
+      lastError = err
+      if (attempt < MAX_ATTEMPTS) {
+        console.warn(`callAIJSON: attempt ${attempt} failed (feature: ${options.feature ?? 'unknown'}), retrying once —`, err instanceof Error ? err.message : err)
+      }
+    }
+  }
+
+  throw lastError
 }
 
 export async function callAIText(
