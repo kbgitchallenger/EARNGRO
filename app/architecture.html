@@ -1,0 +1,594 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EarnGro — Technical Architecture</title>
+<style>
+:root{
+  --ink:#0F1117;--ink-2:#2C2F3A;--muted:#6B7280;--muted-l:#9CA3AF;
+  --teal:#0E7A5A;--teal-d:#095C43;--teal-l:#E6F4EF;--teal-m:#B3DDD1;
+  --amber:#D97706;--amber-l:#FEF3C7;
+  --paper:#F9FAFB;--surface:#FFFFFF;--border:#E5E7EB;--border-l:#F3F4F6;
+  --red:#DC2626;--blue:#1D4ED8;--blue-l:#EFF6FF;
+  --purple:#7C3AED;--purple-l:#F5F3FF;
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono','Fira Code','SF Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:0 40px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,#0E7A5A,#1AA574);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}
+.logo-name{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
+.logo-name em{font-style:normal;color:var(--teal);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.topbar-badge{font-size:11px;font-family:var(--mono);background:var(--teal-l);color:var(--teal-d);padding:3px 10px;border-radius:99px;font-weight:600;}
+.topbar-tag{font-size:11px;color:var(--muted);}
+
+/* ── HERO ── */
+.hero{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:48px 40px 40px;
+}
+.hero-inner{max-width:1000px;margin:0 auto;}
+.hero-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--teal);margin-bottom:12px;}
+.hero-title{font-size:36px;font-weight:800;letter-spacing:-0.8px;color:var(--ink);line-height:1.15;margin-bottom:12px;}
+.hero-sub{font-size:15px;color:var(--muted);max-width:560px;line-height:1.65;margin-bottom:28px;}
+.hero-stats{display:flex;gap:32px;flex-wrap:wrap;}
+.stat{display:flex;flex-direction:column;gap:2px;}
+.stat-num{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;font-family:var(--mono);}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+
+/* ── LAYOUT ── */
+.page{max-width:1000px;margin:0 auto;padding:40px 40px 80px;}
+
+/* ── SECTION HEADERS ── */
+.sec-header{margin-bottom:20px;}
+.sec-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--teal);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.sec-tag::before{content:'';width:16px;height:2px;background:var(--teal);border-radius:1px;}
+.sec-title{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
+.sec-sub{font-size:13px;color:var(--muted);margin-top:4px;}
+.section{margin-bottom:48px;}
+
+/* ── ARCHITECTURE DIAGRAM ── */
+.arch-wrap{
+  background:#fff;border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;margin-bottom:48px;
+}
+.arch-layer{
+  border-bottom:1px solid var(--border);
+  padding:20px 24px;
+  display:grid;align-items:center;gap:16px;
+}
+.arch-layer:last-child{border-bottom:none;}
+.arch-layer-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--muted);
+  width:100px;flex-shrink:0;
+}
+.arch-boxes{display:flex;gap:10px;flex-wrap:wrap;flex:1;}
+.arch-box{
+  display:flex;flex-direction:column;gap:3px;
+  padding:10px 14px;border-radius:10px;
+  border:1px solid;font-size:12px;font-weight:600;
+  min-width:100px;
+}
+.arch-box-sub{font-size:10px;font-weight:400;opacity:0.7;margin-top:1px;}
+
+.box-teal{background:var(--teal-l);border-color:var(--teal-m);color:var(--teal-d);}
+.box-amber{background:var(--amber-l);border-color:#FCD34D;color:#92400E;}
+.box-blue{background:var(--blue-l);border-color:#BFDBFE;color:#1E40AF;}
+.box-purple{background:var(--purple-l);border-color:#DDD6FE;color:#5B21B6;}
+.box-gray{background:var(--border-l);border-color:var(--border);color:var(--ink-2);}
+.box-red{background:#FEF2F2;border-color:#FECACA;color:#991B1B;}
+
+/* ── STACK GRID ── */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:48px;}
+.stack-card{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:18px;display:flex;flex-direction:column;gap:10px;
+}
+.stack-card-header{display:flex;align-items:center;gap:10px;}
+.stack-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.stack-name{font-size:13px;font-weight:700;color:var(--ink);}
+.stack-role{font-size:11px;color:var(--muted);}
+.stack-tag{
+  display:inline-block;font-size:10px;font-weight:600;
+  padding:2px 8px;border-radius:99px;
+  font-family:var(--mono);align-self:flex-start;
+}
+
+/* ── DATA FLOW ── */
+.flow-wrap{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:48px;}
+.flow-steps{display:flex;gap:0;position:relative;}
+.flow-step{
+  flex:1;padding:16px 14px;
+  border-right:1px solid var(--border);
+  position:relative;
+}
+.flow-step:last-child{border-right:none;}
+.flow-step-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--teal);color:#fff;
+  font-size:10px;font-weight:800;font-family:var(--mono);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:8px;
+}
+.flow-step-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.flow-step-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.flow-step-tag{
+  margin-top:8px;font-size:10px;font-family:var(--mono);
+  color:var(--teal-d);background:var(--teal-l);
+  padding:2px 7px;border-radius:99px;display:inline-block;font-weight:600;
+}
+
+/* ── SECURITY TABLE ── */
+.sec-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.sec-table th{
+  background:var(--border-l);padding:10px 16px;
+  text-align:left;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--muted);border-bottom:1px solid var(--border);
+}
+.sec-table td{
+  padding:12px 16px;font-size:12px;color:var(--ink-2);
+  border-bottom:1px solid var(--border-l);vertical-align:top;
+  line-height:1.55;
+}
+.sec-table tr:last-child td{border-bottom:none;}
+.sec-table tr:hover td{background:var(--paper);}
+.status-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;
+}
+.dot-green{width:6px;height:6px;border-radius:50%;background:#10B981;}
+.dot-amber{width:6px;height:6px;border-radius:50%;background:#F59E0B;}
+
+/* ── CREDIT MODEL ── */
+.credit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:48px;}
+.credit-card{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:20px;overflow:hidden;position:relative;
+}
+.credit-card.featured{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,122,90,0.08);}
+.credit-plan{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;}
+.credit-price{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;margin-bottom:4px;}
+.credit-price span{font-size:13px;font-weight:400;color:var(--muted);}
+.credit-credits{font-size:13px;font-weight:700;color:var(--teal);margin-bottom:12px;}
+.credit-features{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.credit-features li{font-size:12px;color:var(--ink-2);display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+.credit-features li::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0;font-size:11px;margin-top:1px;}
+.credit-badge{
+  position:absolute;top:14px;right:14px;
+  font-size:9px;font-weight:700;
+  background:var(--teal);color:#fff;
+  padding:3px 8px;border-radius:99px;letter-spacing:0.04em;
+}
+
+/* ── SCALABILITY ── */
+.scale-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:48px;}
+.scale-card{
+  background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;
+}
+.scale-icon{font-size:24px;margin-bottom:10px;}
+.scale-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.scale-desc{font-size:12px;color:var(--muted);line-height:1.55;}
+
+/* ── FOOTER ── */
+footer{
+  background:#fff;border-top:1px solid var(--border);
+  padding:24px 40px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;
+}
+.footer-copy{font-size:12px;color:var(--muted);}
+.footer-links{display:flex;gap:20px;}
+.footer-links a{font-size:12px;color:var(--muted);text-decoration:none;}
+.footer-links a:hover{color:var(--teal);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .topbar{padding:0 16px;}
+  .hero{padding:32px 16px 28px;}
+  .page{padding:28px 16px 60px;}
+  .hero-title{font-size:26px;}
+  .arch-layer{grid-template-columns:1fr;}
+  .arch-layer-label{width:auto;}
+  .flow-steps{flex-direction:column;}
+  .flow-step{border-right:none;border-bottom:1px solid var(--border);}
+  .flow-step:last-child{border-bottom:none;}
+  .credit-grid{grid-template-columns:1fr;}
+  footer{padding:20px 16px;}
+  .hero-stats{gap:20px;}
+  .topbar-tag{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <a href="https://earngro.app" class="logo">
+    <div class="logo-mark">EG</div>
+    <span class="logo-name">Earn<em>Gro</em></span>
+  </a>
+  <div class="topbar-right">
+    <span class="topbar-tag">Confidential — for internal review</span>
+    <span class="topbar-badge">v1.0 · July 2026</span>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Technical Architecture</div>
+    <h1 class="hero-title">EarnGro — System Design</h1>
+    <p class="hero-sub">AI-powered Career Wealth Intelligence Platform. Built for India and Southeast Asia on a modern, scalable, serverless stack optimised for rapid iteration and low operational overhead.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">Next.js 16</span><span class="stat-lbl">Frontend framework</span></div>
+      <div class="stat"><span class="stat-num">Claude AI</span><span class="stat-lbl">AI engine</span></div>
+      <div class="stat"><span class="stat-num">Supabase</span><span class="stat-lbl">Backend & auth</span></div>
+      <div class="stat"><span class="stat-num">Vercel</span><span class="stat-lbl">Deployment</span></div>
+      <div class="stat"><span class="stat-num">earngro.app</span><span class="stat-lbl">Live domain</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="page">
+
+  <!-- ARCHITECTURE LAYERS -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">System overview</div>
+      <div class="sec-title">Architecture layers</div>
+      <div class="sec-sub">Serverless, edge-first architecture with clean separation between presentation, business logic, AI orchestration, and data.</div>
+    </div>
+
+    <div class="arch-wrap">
+      <!-- Layer 1: Client -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;background:#FAFFFE;">
+        <div class="arch-layer-label">Client layer</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-teal">Next.js App Router<div class="arch-box-sub">React 19 · TypeScript strict</div></div>
+          <div class="arch-box box-teal">Tailwind v4<div class="arch-box-sub">CSS-first design system</div></div>
+          <div class="arch-box box-teal">Supabase Client<div class="arch-box-sub">Auth session management</div></div>
+          <div class="arch-box box-teal">Razorpay SDK<div class="arch-box-sub">Client-side checkout</div></div>
+        </div>
+      </div>
+      <!-- Layer 2: Edge -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;">
+        <div class="arch-layer-label">Edge / Proxy</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-blue">Next.js Proxy<div class="arch-box-sub">Route protection & redirects</div></div>
+          <div class="arch-box box-blue">Auth Middleware<div class="arch-box-sub">Supabase SSR session</div></div>
+          <div class="arch-box box-blue">Cloudflare DNS<div class="arch-box-sub">earngro.app routing</div></div>
+          <div class="arch-box box-blue">Rate limiter<div class="arch-box-sub">IP-based anonymous caps</div></div>
+        </div>
+      </div>
+      <!-- Layer 3: API -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;">
+        <div class="arch-layer-label">API routes</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-purple">/api/growdna<div class="arch-box-sub">Assessment + gap calc</div></div>
+          <div class="arch-box box-purple">/api/cv/*<div class="arch-box-sub">Upload · parse · analyze · score</div></div>
+          <div class="arch-box box-purple">/api/interview/*<div class="arch-box-sub">Session · answer · report</div></div>
+          <div class="arch-box box-purple">/api/billing/*<div class="arch-box-sub">Checkout · webhook</div></div>
+          <div class="arch-box box-purple">/api/calculate<div class="arch-box-sub">Anonymous gap calculator</div></div>
+        </div>
+      </div>
+      <!-- Layer 4: Services -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;">
+        <div class="arch-layer-label">Service layer</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-amber">resume.service<div class="arch-box-sub">Parse pipeline · versioning</div></div>
+          <div class="arch-box box-amber">ats.service<div class="arch-box-sub">Scoring · keyword analysis</div></div>
+          <div class="arch-box box-amber">credits.service<div class="arch-box-sub">Deduction · rate limits</div></div>
+          <div class="arch-box box-amber">parser.service<div class="arch-box-sub">PDF · DOCX · OCR fallback</div></div>
+        </div>
+      </div>
+      <!-- Layer 5: AI -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;background:#FFFDF5;">
+        <div class="arch-layer-label">AI layer</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-amber">lib/ai/client.ts<div class="arch-box-sub">Single Anthropic instance</div></div>
+          <div class="arch-box box-amber">Prompts<div class="arch-box-sub">growdna · resume · ats · interview</div></div>
+          <div class="arch-box box-amber">Zod validators<div class="arch-box-sub">All AI responses type-safe</div></div>
+          <div class="arch-box box-amber">Retry logic<div class="arch-box-sub">3× with prompt hardening</div></div>
+        </div>
+      </div>
+      <!-- Layer 6: Data -->
+      <div class="arch-layer" style="grid-template-columns:120px 1fr;background:#F0FDF9;">
+        <div class="arch-layer-label">Data layer</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-teal">Supabase PostgreSQL<div class="arch-box-sub">Profiles · assessments · CV</div></div>
+          <div class="arch-box box-teal">Supabase Auth<div class="arch-box-sub">Email · Google OAuth</div></div>
+          <div class="arch-box box-teal">Supabase Storage<div class="arch-box-sub">Resume files (private bucket)</div></div>
+          <div class="arch-box box-teal">RLS policies<div class="arch-box-sub">Row-level data isolation</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Technology stack</div>
+      <div class="sec-title">Stack decisions & rationale</div>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#F0FDF9;">⚡</div>
+          <div><div class="stack-name">Next.js 16</div><div class="stack-role">Full-stack framework</div></div>
+        </div>
+        <span class="stack-tag" style="background:#E6F4EF;color:#095C43;">App Router + Turbopack</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">Server components eliminate client round-trips for data fetching. Turbopack cuts local rebuild to &lt;400ms. Single codebase for UI and API.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#FEF9C3;">🤖</div>
+          <div><div class="stack-name">Anthropic Claude</div><div class="stack-role">AI engine</div></div>
+        </div>
+        <span class="stack-tag" style="background:#FEF3C7;color:#92400E;">claude-sonnet-4-6</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">Best-in-class reasoning for salary analysis and psychometric assessment. Structured JSON outputs with Zod validation. Prompt injection protection on all routes.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#E6F4EF;">🗄️</div>
+          <div><div class="stack-name">Supabase</div><div class="stack-role">Backend as a service</div></div>
+        </div>
+        <span class="stack-tag" style="background:#E6F4EF;color:#095C43;">PostgreSQL + RLS</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">Managed auth, database, and file storage. Row-Level Security enforces data isolation at DB level — no user can access another's data regardless of application bugs.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#EFF6FF;">🚀</div>
+          <div><div class="stack-name">Vercel</div><div class="stack-role">Deployment & CDN</div></div>
+        </div>
+        <span class="stack-tag" style="background:#EFF6FF;color:#1E40AF;">Edge + Serverless</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">Zero-config deployments from Git. Global CDN with edge functions. Preview deployments on every PR. 60s function timeout for AI routes.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#F5F3FF;">💳</div>
+          <div><div class="stack-name">Razorpay</div><div class="stack-role">Payments</div></div>
+        </div>
+        <span class="stack-tag" style="background:#F5F3FF;color:#5B21B6;">India-native</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">India's leading payment gateway. Supports UPI, cards, netbanking. Webhook-verified credit top-ups. No card data stored on EarnGro servers.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-header">
+          <div class="stack-icon" style="background:#FEF2F2;">🔷</div>
+          <div><div class="stack-name">TypeScript + Zod</div><div class="stack-role">Type safety</div></div>
+        </div>
+        <span class="stack-tag" style="background:#FEF2F2;color:#991B1B;">Strict mode</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;">TypeScript strict mode throughout. Zod validates every AI response — a malformed Claude output throws before touching the database, never silently corrupts data.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI REQUEST FLOW -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Data flow</div>
+      <div class="sec-title">AI feature request lifecycle</div>
+      <div class="sec-sub">How a GrowDNA assessment travels from user input to scored result — the same pattern applies to CV analysis and interview sessions.</div>
+    </div>
+    <div class="flow-wrap">
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-title">Auth check</div>
+          <div class="flow-step-desc">Middleware verifies Supabase session. Unauthenticated requests redirected to login.</div>
+          <div class="flow-step-tag">proxy.ts</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-title">Credit gate</div>
+          <div class="flow-step-desc">Atomic SQL function checks + deducts credits. Race-condition safe. Returns 402 if insufficient.</div>
+          <div class="flow-step-tag">deduct_credits()</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-title">Prompt build</div>
+          <div class="flow-step-desc">User data injected into typed prompt template. Anti-injection preamble prepended. Safety rules enforced.</div>
+          <div class="flow-step-tag">lib/ai/prompts/</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">4</div>
+          <div class="flow-step-title">Claude API</div>
+          <div class="flow-step-desc">Single client instance calls Anthropic. Retries up to 3× with prompt hardening on parse failures.</div>
+          <div class="flow-step-tag">callAIJSONWithRetry()</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">5</div>
+          <div class="flow-step-title">Zod validate</div>
+          <div class="flow-step-desc">AI response parsed and validated against typed schema. Invalid shapes throw — never reach DB.</div>
+          <div class="flow-step-tag">ATSResultSchema</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">6</div>
+          <div class="flow-step-title">Persist + respond</div>
+          <div class="flow-step-desc">Validated result written to Supabase. Credits logged. Response returned to client with balance.</div>
+          <div class="flow-step-tag">supabase.from()</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATABASE SCHEMA -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Data architecture</div>
+      <div class="sec-title">Core database tables</div>
+    </div>
+    <table class="sec-table" style="margin-bottom:48px;">
+      <thead>
+        <tr><th>Table</th><th>Purpose</th><th>Key columns</th><th>RLS</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">profiles</code></td><td>User account, plan, credits</td><td>id · plan · credits_balance · credits_reset_at</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">grow_dna</code></td><td>GrowDNA assessment results</td><td>user_id · earning_gap · hrs_score · dimension_scores · career_archetype</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">cv_versions</code></td><td>Resume upload versions</td><td>user_id · version_number · raw_text · parsed_data · market_score</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">cv_analyses</code></td><td>ATS scoring results per version</td><td>cv_version_id · ats_score · recruiter_score · keyword_matches · improvements</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">cv_parse_jobs</code></td><td>Async parse job queue</td><td>cv_version_id · status · parse_method · error_message</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">interview_sessions</code></td><td>AI interview sessions + scores</td><td>user_id · mode · persona · overall_score · dimension_scores</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">credit_transactions</code></td><td>Immutable credit ledger</td><td>user_id · feature · credits_used · tokens_used · balance_after</td><td><span class="status-dot"><span class="dot-green"></span>Enabled</span></td></tr>
+        <tr><td><code style="font-size:11px;font-family:var(--mono);color:var(--teal-d);">credit_packs</code></td><td>Available recharge packs</td><td>id · credits · price_inr · available_to[]</td><td><span class="status-dot"><span class="dot-amber"></span>Public read</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CREDIT MODEL -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Revenue model</div>
+      <div class="sec-title">Credit-based monetisation</div>
+      <div class="sec-sub">Credits are the internal unit of AI cost allocation. Each AI feature deducts a fixed credit amount atomically before calling Claude — no credit, no call.</div>
+    </div>
+    <div class="credit-grid">
+      <div class="credit-card">
+        <div class="credit-plan">Free</div>
+        <div class="credit-price">₹0</div>
+        <div class="credit-credits">400 credits · one-time</div>
+        <ul class="credit-features">
+          <li>1× GrowDNA assessment</li>
+          <li>1× CV upload + ATS analysis</li>
+          <li>CV Builder access</li>
+          <li>Earning gap calculator</li>
+        </ul>
+      </div>
+      <div class="credit-card featured">
+        <div class="credit-badge">LAUNCH OFFER</div>
+        <div class="credit-plan">Grow</div>
+        <div class="credit-price">₹99<span>/month</span></div>
+        <div class="credit-credits">1,500 credits · resets monthly</div>
+        <ul class="credit-features">
+          <li>Unlimited GrowDNA retakes</li>
+          <li>Multiple CV versions (up to 5)</li>
+          <li>GrowPath roadmap</li>
+          <li>Credit recharge packs available</li>
+        </ul>
+      </div>
+      <div class="credit-card">
+        <div class="credit-plan">Accelerate</div>
+        <div class="credit-price">₹299<span>/month</span></div>
+        <div class="credit-credits">5,000 credits · resets monthly</div>
+        <ul class="credit-features">
+          <li>Everything in Grow</li>
+          <li>AI Interview Arena (all personas)</li>
+          <li>Unlimited CV versions</li>
+          <li>Priority AI processing</li>
+        </ul>
+      </div>
+    </div>
+    <table class="sec-table">
+      <thead>
+        <tr><th>Feature</th><th>Credits (est.)</th><th>AI cost to EarnGro</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GrowDNA assessment</td><td>72</td><td>~₹1.20</td><td>~800 input + 360 output tokens</td></tr>
+        <tr><td>CV parse — PDF/DOCX</td><td>105</td><td>~₹1.74</td><td>~3000 input + 800 output tokens</td></tr>
+        <tr><td>CV parse — OCR fallback</td><td>149</td><td>~₹2.49</td><td>Vision tokens for scanned PDFs</td></tr>
+        <tr><td>ATS full analysis</td><td>149</td><td>~₹2.49</td><td>Resume + JD scoring prompt</td></tr>
+        <tr><td>ATS re-analysis</td><td>134</td><td>~₹2.24</td><td>Subsequent runs on same version</td></tr>
+        <tr><td>Interview answer score</td><td>107</td><td>~₹1.79</td><td>Q+A scoring per turn</td></tr>
+        <tr><td>Bullet optimization</td><td>57</td><td>~₹0.95</td><td>Per-role batch optimization</td></tr>
+        <tr><td>Calculator (anonymous)</td><td>—</td><td>~₹1.10</td><td>Rate-limited by IP, 1/day free</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECURITY -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Security</div>
+      <div class="sec-title">Security architecture</div>
+    </div>
+    <table class="sec-table" style="margin-bottom:48px;">
+      <thead>
+        <tr><th>Layer</th><th>Control</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Authentication</td><td>Supabase Auth — bcrypt passwords, JWT sessions, Google OAuth</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Data isolation</td><td>Row-Level Security on all user tables — DB-level enforcement</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>File access</td><td>Resume files in private bucket — time-limited signed URLs only</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Encryption at rest</td><td>AES-256 via Supabase (all database + storage)</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Encryption in transit</td><td>TLS 1.2+ enforced on all routes</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Prompt injection</td><td>Anti-injection preamble on all AI prompts · user data treated as data not instructions</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Credit abuse</td><td>Atomic SQL deduction function · per-user + per-feature gates · IP rate limiting for anonymous routes</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Webhook security</td><td>Razorpay webhook signature verification on billing routes</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Internal API</td><td>INTERNAL_API_SECRET for server-to-server CV analysis calls</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+        <tr><td>Input validation</td><td>Zod on all API route inputs and all Claude JSON outputs</td><td><span class="status-dot"><span class="dot-green"></span>Live</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SCALABILITY -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-tag">Scale readiness</div>
+      <div class="sec-title">Built to scale</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-card">
+        <div class="scale-icon">⚡</div>
+        <div class="scale-title">Serverless-first</div>
+        <div class="scale-desc">Zero server management. Vercel auto-scales API functions to demand. No cold-start penalty for authenticated routes.</div>
+      </div>
+      <div class="scale-card">
+        <div class="scale-icon">🔄</div>
+        <div class="scale-title">Async parse pipeline</div>
+        <div class="scale-desc">CV parsing runs async with client polling. No request timeout risk. PDF → OCR fallback chain handles all resume types.</div>
+      </div>
+      <div class="scale-card">
+        <div class="scale-icon">🛡️</div>
+        <div class="scale-title">Abuse-resistant</div>
+        <div class="scale-desc">Credit system caps AI cost per user. Atomic SQL prevents race conditions. IP rate limiting on anonymous routes.</div>
+      </div>
+      <div class="scale-card">
+        <div class="scale-icon">🏗️</div>
+        <div class="scale-title">Clean separation</div>
+        <div class="scale-desc">Services → Repositories → Routes architecture. AI layer isolated in lib/ai/. Any component replaceable independently.</div>
+      </div>
+      <div class="scale-card">
+        <div class="scale-icon">📊</div>
+        <div class="scale-title">Observability ready</div>
+        <div class="scale-desc">Credit transaction log provides full audit trail. Token usage trackable per feature. Sentry error monitoring integrated.</div>
+      </div>
+      <div class="scale-card">
+        <div class="scale-icon">🔮</div>
+        <div class="scale-title">Roadmap-ready</div>
+        <div class="scale-desc">Schema supports job matching (pgvector), recruiter analytics, resume embeddings, and B2B employer dashboard as next layers.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-copy">© 2026 · EarnGro Technical Architecture v1.0 · Confidential</span>
+  <div class="footer-links">
+    <a href="https://earngro.app">earngro.app</a>
+    <a href="mailto:kunal@talenti.biz">kunal@talenti.biz</a>
+  </div>
+</footer>
+
+</body>
+</html>
+
+
+
+
+
