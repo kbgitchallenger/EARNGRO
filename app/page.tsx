@@ -391,7 +391,7 @@ export default function HomePage() {
         `}</style>
 
         <div className="reveal r3" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:24, flexWrap:'wrap' }}>
-          {['Daily interview practice','Living CV builder','Salary negotiation coach','Freelance income launcher'].map((s,i) => (
+          {['Daily interview practice','Smart CV builder','Salary negotiation coach','Freelance income launcher'].map((s,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ display:'flex', alignItems:'center', gap:6, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', borderRadius:99, padding:'8px 16px', fontSize:12, fontWeight:600, color:'var(--teal-d)' }}>
                 <span style={{ width:8, height:8, background:'var(--teal)', borderRadius:'50%', display:'inline-block' }} />{s}
