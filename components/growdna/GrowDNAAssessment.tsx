@@ -21,9 +21,6 @@ interface Props {
   cvFacts?: CVFacts
   canRetake?: boolean
   limitReason?: 'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null
-  // Safest default 'free' — same pattern already used in CVBuilder, so a
-  // parent page that forgets to pass this fails toward the more
-  // restrictive card, not a silently-wrong permissive one.
   plan?: string
   existingResult: {
     id: string
@@ -160,6 +157,13 @@ function TapScale({ question, value, onChange }: {
 }
 
 // ── Salary Input ──────────────────────────────────────────────────
+// FIX: previously relied on external CSS classes (.salary-input-wrap,
+// .salary-sym, .salary-input) that I've never seen the definition of —
+// the reported "rupee sign overlaps the typed number" bug almost
+// certainly meant the input's left padding wasn't sized to clear the
+// absolutely-positioned ₹ symbol. Rewritten with fully self-contained
+// inline styles so this is guaranteed correct regardless of what that
+// external stylesheet does, rather than guessing at an unseen file.
 function SalaryInput({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) {
   const [raw, setRaw] = useState(value ? String(value) : '')
 
@@ -171,15 +175,39 @@ function SalaryInput({ value, onChange }: { value: number | undefined; onChange:
   }
 
   return (
-    <div className="salary-wrap">
-      <div className="salary-input-wrap">
-        <span className="salary-sym">₹</span>
-        <input type="number" className="salary-input" placeholder="e.g. 800000" value={raw}
+    <div>
+      <div style={{ position: 'relative' }}>
+        <span style={{
+          position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 18, fontWeight: 600, color: 'var(--muted)', pointerEvents: 'none',
+        }}>₹</span>
+        <input
+          type="number"
+          placeholder="e.g. 800000"
+          value={raw}
           onChange={e => { setRaw(e.target.value); const n = parseFloat(e.target.value); if (!isNaN(n) && n > 0) onChange(n) }}
-          min={0} />
+          min={0}
+          style={{
+            width: '100%',
+            // Left padding sized to clear the ₹ symbol's actual width +
+            // spacing (16px offset + ~14px glyph + 10px breathing room) —
+            // this is the exact fix for the overlap, guaranteed to apply
+            // since it's inline, not dependent on an external class.
+            padding: '14px 16px 14px 42px',
+            fontSize: 18, fontWeight: 600, color: 'var(--ink)',
+            border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)',
+            outline: 'none', fontFamily: 'var(--sans)',
+          }}
+        />
       </div>
-      {value && value > 0 && <div className="salary-preview">{fmtPreview(value)} per year</div>}
-      <div className="salary-hint">Annual CTC · base salary only · no variable or ESOPs</div>
+      {value && value > 0 && (
+        <div style={{ fontSize: 13, color: 'var(--teal-d)', fontWeight: 600, marginTop: 8 }}>
+          {fmtPreview(value)} per year
+        </div>
+      )}
+      <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
+        Annual CTC · base salary only · no variable or ESOPs
+      </div>
     </div>
   )
 }
@@ -207,7 +235,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
   const router = useRouter()
   const emoji = ARCHETYPE_EMOJI[result.career_archetype] ?? '🎯'
 
-  // Normalise scores — API may return them nested or flat
   const raw = result as unknown as Record<string, number | Record<string, string[]>>
   const s   = result.scores ?? {}
   const sc = (k: string) => {
@@ -239,8 +266,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
   return (
     <div className="dna-result-wrap">
-
-      {/* Archetype hero */}
       <div className="dna-hero">
         <div className="dna-hero-blob" />
         <div className="dna-hero-emoji">{emoji}</div>
@@ -248,19 +273,14 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         <div className="dna-hero-title">{result.career_archetype}</div>
         <p className="dna-hero-desc">{archetypeDesc}</p>
         <div className="dna-hero-hrs">
-        
-        <span className="dna-hero-label">
-        Hiring Readiness<br />Score
-        </span>
-
-        <div className="dna-hero-score">
-        <span className="dna-score">{hrs}</span>
-        <span className="dna-total">/1000</span>
-  </div>
-</div>
+          <span className="dna-hero-label">Hiring Readiness<br />Score</span>
+          <div className="dna-hero-score">
+            <span className="dna-score">{hrs}</span>
+            <span className="dna-total">/1000</span>
+          </div>
+        </div>
       </div>
 
-      {/* Earning Gap */}
       <div className="dna-card">
         <div className="dna-stats-grid">
           <div className="dna-stat">
@@ -283,7 +303,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         )}
       </div>
 
-      {/* 5 Earning dimensions */}
       <div className="dna-card">
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Your 5 earning dimensions</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>Based directly on your answers below</div>
@@ -309,7 +328,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         })}
       </div>
 
-      {/* Strengths & Gaps */}
       {(strengths.length > 0 || gaps.length > 0) && (
         <div className="dna-sg-grid">
           {strengths.length > 0 && (
@@ -335,7 +353,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         </div>
       )}
 
-      {/* Immediate actions */}
       {actions.length > 0 && (
         <div className="dna-card">
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Your {actions.length} immediate actions</div>
@@ -352,7 +369,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         </div>
       )}
 
-      {/* Market insight */}
       {insight && (
         <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: 16, marginBottom: 24, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>💡</span>
@@ -360,7 +376,6 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         </div>
       )}
 
-      {/* CTAs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <button onClick={() => router.push('/growpath')}
           style={{ width: '100%', padding: 14, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.2)' }}>
@@ -373,92 +388,30 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
       </div>
 
       <style>{`
-        .dna-result-wrap {
-          max-width: 620px;
-          margin: 0 auto;
-          padding: 0 0 60px;
-        }
-        .dna-card {
-          background: var(--paper);
-          border: 1px solid var(--border);
-          border-radius: var(--r-lg);
-          padding: 24px;
-          margin-bottom: 14px;
-        }
-        .dna-hero {
-          background: linear-gradient(135deg,var(--teal-d),var(--teal));
-          border-radius: var(--r-xl);
-          padding: 32px;
-          text-align: center;
-          margin-bottom: 20px;
-          position: relative;
-          overflow: hidden;
-        }
-        .dna-hero-blob {
-          position: absolute; top: -40px; right: -40px; width: 120px; height: 120px;
-          background: rgba(255,255,255,0.05); border-radius: 50%;
-        }
+        .dna-result-wrap { max-width: 620px; margin: 0 auto; padding: 0 0 60px; }
+        .dna-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 14px; }
+        .dna-hero { background: linear-gradient(135deg,var(--teal-d),var(--teal)); border-radius: var(--r-xl); padding: 32px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden; }
+        .dna-hero-blob { position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; }
         .dna-hero-emoji { font-size: 52px; margin-bottom: 12px; position: relative; }
-        .dna-hero-eyebrow {
-          font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase;
-          letter-spacing: 0.1em; margin-bottom: 8px; position: relative;
-        }
-        .dna-hero-title {
-          font-family: var(--serif); font-size: clamp(22px,6vw,32px); font-weight: 600;
-          color: #fff; margin-bottom: 12px; position: relative; line-height: 1.25;
-        }
-        .dna-hero-desc {
-          font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.65;
-          max-width: 420px; margin: 0 auto 20px; position: relative;
-        }
-        .dna-hero-hrs {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
-          color: #fff; font-size: 12px; font-weight: 500; padding: 6px 16px;
-          border-radius: 99px; position: relative;
-        }
+        .dna-hero-eyebrow { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; position: relative; }
+        .dna-hero-title { font-family: var(--serif); font-size: clamp(22px,6vw,32px); font-weight: 600; color: #fff; margin-bottom: 12px; position: relative; line-height: 1.25; }
+        .dna-hero-desc { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.65; max-width: 420px; margin: 0 auto 20px; position: relative; }
+        .dna-hero-hrs { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 99px; position: relative; }
         .dna-hero-hrs strong { font-family: var(--serif); font-size: 16px; }
-
-        .dna-stats-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 12px;
-        }
+        .dna-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
         .dna-stat { text-align: center; }
-        .dna-stat-mid {
-          border-left: 1px solid var(--border);
-          border-right: 1px solid var(--border);
-          padding: 0 12px;
-        }
-        .dna-stat-label {
-          font-size: 10px; color: var(--muted); text-transform: uppercase;
-          letter-spacing: 0.06em; margin-bottom: 4px;
-        }
-        .dna-stat-val {
-          font-family: var(--serif); font-weight: 700;
-          font-size: clamp(18px, 6vw, 24px);
-          white-space: nowrap;
-        }
-
-        .dna-sg-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          margin-bottom: 14px;
-        }
+        .dna-stat-mid { border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 0 12px; }
+        .dna-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+        .dna-stat-val { font-family: var(--serif); font-weight: 700; font-size: clamp(18px, 6vw, 24px); white-space: nowrap; }
+        .dna-sg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 
         @media (max-width: 480px) {
           .dna-hero { padding: 24px 20px; }
           .dna-card { padding: 18px; }
           .dna-stats-grid { grid-template-columns: 1fr; gap: 14px; }
-          .dna-stat-mid {
-            border-left: none; border-right: none; padding: 0;
-            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-            padding: 10px 0;
-          }
+          .dna-stat-mid { border-left: none; border-right: none; padding: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 10px 0; }
           .dna-stat-val { font-size: 22px; }
         }
-
         @media (max-width: 640px) {
           .dna-sg-grid { grid-template-columns: 1fr; }
         }
@@ -478,10 +431,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const [nudge, setNudge] = useState<string | null>(null)
   const [showLimitCard, setShowLimitCard] = useState(false)
   const [limitReasonOverride, setLimitReasonOverride] = useState<'FREE_LIMIT_REACHED' | 'INSUFFICIENT_CREDITS' | null>(null)
-  // NEW — previously the 402 response body's balance/required were parsed
-  // but never stored, so LimitReachedCard always rendered with no numbers
-  // at all for this feature, even after the card itself was fixed to show
-  // them when provided.
   const [limitBalance, setLimitBalance] = useState<number | undefined>(undefined)
   const [limitRequired, setLimitRequired] = useState<number | undefined>(undefined)
   const [prefillApplied, setPrefillApplied] = useState(false)
@@ -612,7 +561,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     }
   }
 
-  // ── Limit reached — show before anything else ─────────────────
   if (showLimitCard) {
     const reason = limitReasonOverride ?? limitReason ?? 'FREE_LIMIT_REACHED'
     return (
@@ -622,21 +570,15 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     )
   }
 
-  // ── Result screen (fresh submission) ─────────────────────────
   if (result) {
     return (
       <div className="dna-result-page-pad" style={{ padding: '24px 24px 0' }}>
         <ResultPanel result={result} onRetake={handleRetakeClick} />
-        <style>{`
-          @media (max-width: 640px) {
-            .dna-result-page-pad { padding-bottom: 80px !important; }
-          }
-        `}</style>
+        <style>{`@media (max-width: 640px) { .dna-result-page-pad { padding-bottom: 80px !important; } }`}</style>
       </div>
     )
   }
 
-  // ── Existing result screen → full ResultPanel ─────────────────
   if (showExisting && existingResult) {
     const ai = existingResult.raw_ai_response ?? {}
     const ds = existingResult.dimension_scores ?? {}
@@ -676,20 +618,15 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     return (
       <div className="dna-result-page-pad" style={{ padding: '24px 24px 0' }}>
         <ResultPanel result={mapped} onRetake={handleRetakeClick} />
-        <style>{`
-          @media (max-width: 640px) {
-            .dna-result-page-pad { padding-bottom: 80px !important; }
-          }
-        `}</style>
+        <style>{`@media (max-width: 640px) { .dna-result-page-pad { padding-bottom: 80px !important; } }`}</style>
       </div>
     )
   }
 
-  // ── Assessment screen ─────────────────────────────────────────
   const cols = current?.columns || 3
 
   return (
-    <div className="dna-assessment">
+    <div className="dna-assessment" style={{ paddingBottom: 88 }}>
       <ProgressBar current={currentIdx + 1} total={totalQ} module={current?.module || 'A'} />
 
       {prefillApplied && (
@@ -776,7 +713,22 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         {error && <div className="dna-error">{error}</div>}
       </div>
 
-      <div className="dna-footer">
+      {/* FIX: previously sat at the natural end of the content flow, so a
+          question with many options pushed Back/Continue far down the
+          page, forcing a scroll just to advance — the exact "takes more
+          time for scrolling" complaint. Now sticky to the viewport
+          bottom, always reachable regardless of option count. The
+          .dna-assessment wrapper above got matching paddingBottom so this
+          fixed bar never covers the last option. */}
+      <div
+        className="dna-footer"
+        style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40,
+          background: 'rgba(250,247,240,0.92)', backdropFilter: 'blur(6px)',
+          borderTop: '1px solid var(--border)', padding: '14px 20px',
+          display: 'flex', justifyContent: 'space-between', gap: 12,
+        }}
+      >
         <button className="dna-back-btn" onClick={goBack} disabled={currentIdx === 0} type="button">← Back</button>
 
         {current?.type !== 'mcq' && (
