@@ -552,11 +552,22 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         return
       }
 
-      if (!res.ok) throw new Error('Submission failed')
+      if (!res.ok) {
+        // FIX: previously threw a hardcoded 'Submission failed' regardless
+        // of what the server actually said, so a specific, useful server
+        // message (e.g. "Analysis failed — your credit has been refunded
+        // automatically") was silently discarded and the user only ever
+        // saw a generic line. Now surfaces the real message when present.
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || body.message || `Server returned ${res.status}`)
+      }
       const data: AIResult = await res.json()
       setResult(data)
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      // FIX: previously always overwrote whatever was caught with a fixed
+      // generic string, even when the error carried a real, specific
+      // message (from the fix above, or a genuine network failure detail).
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setSubmitting(false)
     }
   }
