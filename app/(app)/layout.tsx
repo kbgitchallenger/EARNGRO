@@ -2,9 +2,8 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/app/Sidebar'
-import Topbar from '@/components/app/Topbar'
-import MobileNav from '@/components/app/MobileNav'
+import AppShell from '@/components/app/AppShell'
+import { getStreak } from '@/services/streaks.service'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,9 +11,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  // Fetch profile — added credits_balance so the nav can show a live,
-  // always-visible balance instead of users only discovering they're low
-  // when an action fails mid-flow.
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, email, plan, avatar_url, credits_balance')
@@ -25,16 +21,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const plan = profile?.plan || 'free'
   const creditsBalance = profile?.credits_balance ?? 0
 
+  // Real streak, fetched once here and passed down — same pattern as
+  // credits_balance above.
+  const { currentStreak } = await getStreak(user.id)
+
   return (
-    <div className="app-shell">
-      <Sidebar plan={plan} />
-      <div className="app-main">
-        <Topbar name={displayName} plan={plan} email={user.email || ''} creditsBalance={creditsBalance} />
-        <main className="app-content">
-          {children}
-        </main>
-      </div>
-      <MobileNav plan={plan} />
-    </div>
+    <AppShell
+      name={displayName}
+      email={user.email || ''}
+      plan={plan}
+      creditsBalance={creditsBalance}
+      currentStreak={currentStreak}
+    >
+      {children}
+    </AppShell>
   )
 }
