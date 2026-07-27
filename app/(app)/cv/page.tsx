@@ -24,11 +24,15 @@ export default async function CVUploadPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-      {/* Hero — if resume exists show intelligence summary */}
+      {/* Hero — if resume exists show intelligence summary.
+          FIX: the right-hand score+button block previously stayed
+          right-aligned even after wrapping below the text on mobile,
+          looking visually disconnected. Now uses a class hook so mobile
+          can switch it to a full-width, left-aligned row instead. */}
       {latest ? (
-        <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: '24px 24px', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+        <div className="cvpage-hero" style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-xl)', padding: '24px 24px', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, position: 'relative', zIndex: 1 }}>
+          <div className="cvpage-hero-inner" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, position: 'relative', zIndex: 1 }}>
             <div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
                 Latest resume · v{latest.version_number}
@@ -46,7 +50,7 @@ export default async function CVUploadPage() {
                 </span>
               ))}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+            <div className="cvpage-hero-right" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
               {latest.market_score && (
                 <div style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 'var(--r-lg)', padding: '12px 18px', textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{latest.market_score}</div>
@@ -70,7 +74,8 @@ export default async function CVUploadPage() {
         </div>
       )}
 
-      {/* Version history strip */}
+      {/* Version history strip — intentional horizontal scroll, works fine
+          as-is on mobile (this is the expected pattern there), left untouched. */}
       {versions && versions.length > 1 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
           {versions.map((v, i) => (
@@ -102,12 +107,17 @@ export default async function CVUploadPage() {
         <CVUploadZone userId={user.id} />
       </div>
 
-      {/* What we analyse grid */}
+      {/* What we analyse grid — FIX: auto-fit with minmax(160px,1fr)
+          produced exactly 2 cramped columns on a typical phone width,
+          leaving barely enough room for icon+title+description before
+          the text wrapped awkwardly. Now forces a single column below
+          480px, matching the mobile pattern already used elsewhere
+          (GrowDNA's stats grid, ATSScoreCard's section grid). */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>
           What EarnGro analyses in your resume
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
+        <div className="cvpage-analyse-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
           {[
             { icon: '🎯', title: 'ATS Score', desc: 'How well your CV passes automated screening' },
             { icon: '👔', title: 'Recruiter Score', desc: 'Human readability and first impression' },
@@ -124,6 +134,18 @@ export default async function CVUploadPage() {
           ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 480px) {
+          .cvpage-hero { padding: 20px 18px; }
+          .cvpage-hero-right { align-items: stretch; width: 100%; }
+          .cvpage-hero-right a { text-align: center; }
+          .cvpage-analyse-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (min-width: 481px) and (max-width: 640px) {
+          .cvpage-analyse-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+      `}</style>
 
     </div>
   )

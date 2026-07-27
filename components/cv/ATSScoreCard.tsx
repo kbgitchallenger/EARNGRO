@@ -103,7 +103,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</div>
           </div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }} className="ats-rings-grid">
             <ScoreRing score={data.ats_score} label="ATS Pass" color={scoreColor(data.ats_score)} />
             <ScoreRing score={data.recruiter_score} label="Recruiter" color={scoreColor(data.recruiter_score)} />
             <ScoreRing score={data.market_alignment} label="Market Fit" color={scoreColor(data.market_alignment)} />
@@ -153,7 +153,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
       )}
         </div>
       {/* Strengths + Issues */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="ats-strengths-grid">
         <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 10 }}>✅ Strengths</div>
           {data.strengths?.map((s, i) => (
@@ -189,6 +189,21 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         @media (max-width: 860px) {
           .ats-2col {
             grid-template-columns: 1fr !important;
+          }
+        }
+        /* FIX: previously hardcoded '1fr 1fr' with zero mobile override —
+           two cards squeezed side by side on a phone with no way to stack. */
+        @media (max-width: 640px) {
+          .ats-strengths-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        /* FIX: 4 score rings (72px SVGs each) with no mobile handling —
+           uncomfortably cramped at phone widths. 2×2 instead of 4-across. */
+        @media (max-width: 480px) {
+          .ats-rings-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 14px !important;
           }
         }
       `}</style>
