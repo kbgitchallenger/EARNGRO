@@ -2,6 +2,7 @@
 'use client'
 
 import CountUpNumber from '@/components/shared/CountUpNumber'
+import ShowMoreList from '@/components/shared/ShowMoreList'
 
 interface KeywordMatch {
   keyword: string
@@ -156,15 +157,29 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="ats-strengths-grid">
         <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 10 }}>✅ Strengths</div>
-          {data.strengths?.map((s, i) => (
-            <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.strengths.length - 1 ? '1px solid var(--teal-mid)' : 'none', lineHeight: 1.5 }}>{s}</div>
-          ))}
+          {data.strengths?.length > 0 && (
+            <ShowMoreList
+              items={data.strengths}
+              defaultCount={3}
+              itemLabel="strength"
+              renderItem={(s, i) => (
+                <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.strengths.length - 1 ? '1px solid var(--teal-mid)' : 'none', lineHeight: 1.5 }}>{s}</div>
+              )}
+            />
+          )}
         </div>
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-lg)', padding: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--red)', marginBottom: 10 }}>⚠️ Critical issues</div>
-          {data.critical_issues?.map((s, i) => (
-            <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.critical_issues.length - 1 ? '1px solid #fecaca' : 'none', lineHeight: 1.5 }}>{s}</div>
-          ))}
+          {data.critical_issues?.length > 0 && (
+            <ShowMoreList
+              items={data.critical_issues}
+              defaultCount={3}
+              itemLabel="issue"
+              renderItem={(s, i) => (
+                <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.critical_issues.length - 1 ? '1px solid #fecaca' : 'none', lineHeight: 1.5 }}>{s}</div>
+              )}
+            />
+          )}
         </div>
       </div>
 
@@ -172,17 +187,22 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
       {data.improvements?.length > 0 && (
         <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>AI improvements</div>
-          {data.improvements.map((imp, i) => (
-            <div key={i} style={{ paddingBottom: i < data.improvements.length - 1 ? 14 : 0, marginBottom: i < data.improvements.length - 1 ? 14 : 0, borderBottom: i < data.improvements.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{imp.section}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, padding: '8px 10px', background: '#fef2f2', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--red)' }}>
-                {imp.current}
+          <ShowMoreList
+            items={data.improvements}
+            defaultCount={2}
+            itemLabel="improvement"
+            renderItem={(imp, i) => (
+              <div key={i} style={{ paddingBottom: i < data.improvements.length - 1 ? 14 : 0, marginBottom: i < data.improvements.length - 1 ? 14 : 0, borderBottom: i < data.improvements.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{imp.section}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, padding: '8px 10px', background: '#fef2f2', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--red)' }}>
+                  {imp.current}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink)', padding: '8px 10px', background: 'var(--teal-xl)', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--teal)' }}>
+                  {imp.improved}
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--ink)', padding: '8px 10px', background: 'var(--teal-xl)', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--teal)' }}>
-                {imp.improved}
-              </div>
-            </div>
-          ))}
+            )}
+          />
         </div>
       )}
       <style>{`
