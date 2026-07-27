@@ -76,6 +76,28 @@ export default async function CVAnalysisPage({
     ? await Promise.all([getFeatureCost('cv_analyze'), getBalance(user.id)])
     : [0, 0]
 
+  // Real celebration strip data — only fetched when there's an actual
+  // analysis to compare against, and only ever shows a delta when a
+  // genuine prior scored version exists. No fake "improved!" copy when
+  // this is someone's first analysis — matches the honesty standard
+  // already applied to the change-narrative logic elsewhere in the app.
+  let scoreDelta: number | null = null
+  if (hasAnalysis && version.market_score != null) {
+    const { data: priorVersion } = await supabase
+      .from('cv_versions')
+      .select('market_score')
+      .eq('user_id', user.id)
+      .neq('id', version.id)
+      .not('market_score', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (priorVersion?.market_score != null) {
+      scoreDelta = version.market_score - priorVersion.market_score
+    }
+  }
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
 
@@ -187,6 +209,17 @@ export default async function CVAnalysisPage({
         {hasAnalysis && (
           <>
             {parsed && <ProfileSummary parsed={parsed} marketScore={version.market_score} />}
+
+            {/* Real celebration strip — only rendered when a genuine prior
+                scored version exists. No fake positivity on someone's
+                first-ever analysis, and no celebration when the score
+                actually dropped (that's not something to celebrate). */}
+            {scoreDelta !== null && scoreDelta > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--amber-l)', border: '1px solid #f3dcb0', borderRadius: 14, padding: '12px 16px', fontSize: 13, color: '#8a5a10', marginTop: 14 }}>
+                ◈ Your market score is up {scoreDelta} point{scoreDelta === 1 ? '' : 's'} since your last upload.
+              </div>
+            )}
+
             <div style={{ marginTop: 14 }}>
               <ATSScoreCard data={analysis} />
             </div>

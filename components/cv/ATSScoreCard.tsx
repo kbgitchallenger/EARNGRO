@@ -1,6 +1,8 @@
 //components/cv/ATSScoreCard.tsx
 'use client'
 
+import CountUpNumber from '@/components/shared/CountUpNumber'
+
 interface KeywordMatch {
   keyword: string
   found: boolean
@@ -42,14 +44,14 @@ const ScoreRing = ({ score, label, color }: { score: number; label: string; colo
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <svg width="72" height="72" viewBox="0 0 72 72">
-        <circle cx="36" cy="36" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
-        <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="6"
+        <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6" />
+        <circle cx="36" cy="36" r={r} fill="none" stroke="#fff" strokeWidth="6"
           strokeDasharray={circ} strokeDashoffset={offset}
           strokeLinecap="round" transform="rotate(-90 36 36)"
           style={{ transition: 'stroke-dashoffset 1s ease' }} />
-        <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill={color} fontFamily="var(--serif)">{score}</text>
+        <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff" fontFamily="var(--serif)">{score}</text>
       </svg>
-      <span style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textAlign: 'center' }}>{label}</span>
     </div>
   )
 }
@@ -80,12 +82,26 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Composite + 4 scores */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-          <div style={{ background: `linear-gradient(135deg, ${scoreColor(composite)}22, ${scoreColor(composite)}08)`, border: `1px solid ${scoreColor(composite)}40`, borderRadius: 'var(--r-lg)', padding: '16px 20px', textAlign: 'center', minWidth: 100 }}>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 42, fontWeight: 700, color: scoreColor(composite), lineHeight: 1 }}>{composite}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Overall Score</div>
+      {/* Composite + 4 scores — PREMIUM: this panel now matches the
+          approved premium mockup treatment (dark teal radial gradient,
+          count-up composite number, white ring strokes for contrast).
+          Everything below this panel (bars, keywords, strengths/issues,
+          improvements) is completely untouched from the original file. */}
+      <div style={{
+        background: 'radial-gradient(circle at 15% 15%, #0f8a66, #083d2e 75%)',
+        borderRadius: 'var(--r-xl)', padding: 24, position: 'relative', overflow: 'hidden',
+        boxShadow: '0 20px 40px -12px rgba(8,61,46,0.35)',
+      }}>
+        <svg viewBox="0 0 100 100" style={{ position: 'absolute', left: -30, bottom: -30, width: 160, height: 160, opacity: 0.25 }}>
+          <path d="M20 10 Q50 30 20 50 Q50 70 20 90" stroke="#fff" strokeWidth="2" fill="none" />
+          <path d="M80 10 Q50 30 80 50 Q50 70 80 90" stroke="#fff" strokeWidth="2" fill="none" />
+        </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap', position: 'relative' }}>
+          <div style={{ textAlign: 'center', minWidth: 100 }}>
+            <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, lineHeight: 1 }}>
+              <CountUpNumber value={composite} style={{ fontSize: 44, color: '#fff' }} />
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</div>
           </div>
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
             <ScoreRing score={data.ats_score} label="ATS Pass" color={scoreColor(data.ats_score)} />
@@ -95,7 +111,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           </div>
         </div>
         {data.ai_summary && (
-          <div style={{ background: 'var(--paper-2)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
+          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, position: 'relative' }}>
             💡 {data.ai_summary}
           </div>
         )}
@@ -112,7 +128,6 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           ))}
         </div>
 
-      {/* Keywords */}
       {/* Keywords */}
         {data.keyword_matches?.length > 0 && (
           <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
