@@ -3,6 +3,7 @@
 
 import CountUpNumber from '@/components/shared/CountUpNumber'
 import ShowMoreList from '@/components/shared/ShowMoreList'
+import PremiumHero from '@/components/ui/PremiumHero'
 
 interface KeywordMatch {
   keyword: string
@@ -83,21 +84,12 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Composite + 4 scores — PREMIUM: this panel now matches the
-          approved premium mockup treatment (dark teal radial gradient,
-          count-up composite number, white ring strokes for contrast).
-          Everything below this panel (bars, keywords, strengths/issues,
-          improvements) is completely untouched from the original file. */}
-      <div style={{
-        background: 'radial-gradient(circle at 15% 15%, #0f8a66, #083d2e 75%)',
-        borderRadius: 'var(--r-xl)', padding: 24, position: 'relative', overflow: 'hidden',
-        boxShadow: '0 20px 40px -12px rgba(8,61,46,0.35)',
-      }}>
-        <svg viewBox="0 0 100 100" style={{ position: 'absolute', left: -30, bottom: -30, width: 160, height: 160, opacity: 0.25 }}>
-          <path d="M20 10 Q50 30 20 50 Q50 70 20 90" stroke="#fff" strokeWidth="2" fill="none" />
-          <path d="M80 10 Q50 30 80 50 Q50 70 80 90" stroke="#fff" strokeWidth="2" fill="none" />
-        </svg>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap', position: 'relative' }}>
+      {/* Composite + 4 scores — now using the shared PremiumHero shell
+          instead of a hand-duplicated gradient block. Everything below
+          this panel (bars, keywords, strengths/issues, improvements) is
+          completely untouched. */}
+      <PremiumHero style={{ marginBottom: 14, flexDirection: 'column', alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'center', minWidth: 100 }}>
             <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, lineHeight: 1 }}>
               <CountUpNumber value={composite} style={{ fontSize: 44, color: '#fff' }} />
@@ -112,11 +104,11 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           </div>
         </div>
         {data.ai_summary && (
-          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, position: 'relative' }}>
+          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
             💡 {data.ai_summary}
           </div>
         )}
-      </div>
+      </PremiumHero>
 
             {/* Section scores + Keywords — 2 column on desktop */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 14 }} className="ats-2col">

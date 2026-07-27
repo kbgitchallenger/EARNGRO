@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import CountUpNumber from '@/components/shared/CountUpNumber'
+import PremiumHero from '@/components/ui/PremiumHero'
 
 function fmt(n: number | null | undefined) {
   if (!n) return '—'
@@ -82,7 +84,7 @@ function HealthGauge({ score, size = 128 }: { score: number; size?: number }) {
       </svg>
       <div style={{ marginTop: -size * 0.12, textAlign: 'center' }}>
         <div style={{ fontFamily: 'var(--serif)', fontSize: size * 0.22, fontWeight: 700, color }}>
-          {score}<span style={{ fontSize: size * 0.11, fontWeight: 400, color: 'var(--muted)' }}>/100</span>
+          <CountUpNumber value={score} /><span style={{ fontSize: size * 0.11, fontWeight: 400, color: 'var(--muted)' }}>/100</span>
         </div>
         <div style={{ fontSize: size * 0.095, color, fontWeight: 600, marginTop: 2 }}>{label}</div>
       </div>
@@ -104,7 +106,7 @@ function DarkHealthGauge({ score, size = 120 }: { score: number; size?: number }
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontFamily: 'var(--serif)', fontSize: size * 0.24, fontWeight: 700, color: '#fff' }}>
-          {score}<span style={{ fontSize: size * 0.11, color: 'rgba(255,255,255,0.6)' }}>/100</span>
+          <CountUpNumber value={score} /><span style={{ fontSize: size * 0.11, color: 'rgba(255,255,255,0.6)' }}>/100</span>
         </div>
         <div style={{ fontSize: size * 0.08, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Career Health</div>
         <div style={{ fontSize: size * 0.085, color: '#FBBF24', fontWeight: 600 }}>{label}</div>
@@ -287,8 +289,16 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
         </div>
       )}
 
+      {/* PREMIUM: hero converted from the flat linear-gradient to the same
+          dark radial-gradient + DNA helix treatment used on Dashboard,
+          CV Analysis, and Interview Report — this is GrowPath's equivalent
+          "what matters most right now" moment. */}
       {nextAction && (
-        <div className="gp-hero">
+        <PremiumHero
+          className="gp-hero"
+          style={{ marginBottom: 20, alignItems: undefined, gap: 16 }}
+          rightSlot={careerHealth ? <div className="gp-hero-right"><DarkHealthGauge score={chsScore} /></div> : undefined}
+        >
           <div className="gp-hero-left">
             <div className="gp-next-label">🎯 Your Next Action</div>
             <div className="gp-next-title">{nextAction.title}</div>
@@ -302,8 +312,7 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
               <Link href={TYPE_CTA[nextAction.type].href} className="gp-btn-primary gp-btn-onhero">{TYPE_CTA[nextAction.type].label}</Link>
             )}
           </div>
-          {careerHealth && <div className="gp-hero-right"><DarkHealthGauge score={chsScore} /></div>}
-        </div>
+        </PremiumHero>
       )}
 
       <div className="gp-stats-row">
@@ -330,7 +339,7 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
         </div>
         <div className="gp-stat-cell">
           <div className="gp-stat-label">Target Timeline</div>
-          <div className="gp-stat-val" style={{ color: 'var(--amber)' }}>{dna?.months_to_close ?? '—'} months</div>
+          <div className="gp-stat-val" style={{ color: 'var(--amber)' }}><CountUpNumber value={dna?.months_to_close ?? 0} /> months</div>
           <div className="gp-stat-sub">{doneMilestones}/{totalMilestones} milestones completed</div>
         </div>
       </div>
@@ -374,10 +383,10 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
 
         <div className="gp-card">
           <div className="gp-card-title-row"><span className="gp-card-title">Plan Highlights</span></div>
-          <div className="gp-highlight-row"><span aria-hidden>📅</span><div><div className="gp-highlight-val">{monthsTotal ?? '—'} Months</div><div className="gp-highlight-sub">Duration</div></div></div>
+          <div className="gp-highlight-row"><span aria-hidden>📅</span><div><div className="gp-highlight-val"><CountUpNumber value={monthsTotal ?? 0} /> Months</div><div className="gp-highlight-sub">Duration</div></div></div>
           <div className="gp-highlight-row"><span aria-hidden>🧭</span><div><div className="gp-highlight-val">{displayPhases.length} Phases</div><div className="gp-highlight-sub">{displayPhases.map(p => p.title).join(' → ')}</div></div></div>
-          <div className="gp-highlight-row"><span aria-hidden>✅</span><div><div className="gp-highlight-val">{totalMilestones} Milestones</div><div className="gp-highlight-sub">Actionable steps</div></div></div>
-          <div className="gp-highlight-row"><span aria-hidden>🏢</span><div><div className="gp-highlight-val">{companies.length} Target Companies</div><div className="gp-highlight-sub">Personalised for you</div></div></div>
+          <div className="gp-highlight-row"><span aria-hidden>✅</span><div><div className="gp-highlight-val"><CountUpNumber value={totalMilestones} /> Milestones</div><div className="gp-highlight-sub">Actionable steps</div></div></div>
+          <div className="gp-highlight-row"><span aria-hidden>🏢</span><div><div className="gp-highlight-val"><CountUpNumber value={companies.length} /> Target Companies</div><div className="gp-highlight-sub">Personalised for you</div></div></div>
           <a href="#full-roadmap" className="gp-btn-secondary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}>View Full Plan Overview →</a>
         </div>
       </div>
@@ -491,7 +500,9 @@ const growPathStyles = `
 
   .gp-cv-nudge { display: flex; align-items: center; gap: 12px; background: var(--amber-l); border: 1px solid var(--amber-mid); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 20px; flex-wrap: wrap; }
 
-  .gp-hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: linear-gradient(135deg, var(--teal-d), var(--teal)); border-radius: var(--r-xl); padding: 22px 24px; margin-bottom: 20px; color: #fff; flex-wrap: wrap; }
+  /* Base gradient/shadow/shell now provided by the shared PremiumHero
+     component — only the mobile-only override below (still needed) and
+     these two layout hooks for content inside it remain. */
   .gp-hero-left { flex: 1; min-width: 240px; }
   .gp-hero-right { flex-shrink: 0; }
   .gp-next-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.65); margin-bottom: 8px; }
@@ -500,14 +511,14 @@ const growPathStyles = `
   .gp-next-month { font-size: 12px; color: rgba(255,255,255,0.75); }
 
   .gp-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .gp-stat-cell { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; }
+  .gp-stat-cell { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
   .gp-stat-gauge { display: flex; flex-direction: column; align-items: center; }
   .gp-stat-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .gp-stat-val { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--ink); }
   .gp-stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   .gp-insight-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; align-items: start; }
-  .gp-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; }
+  .gp-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
   .gp-card-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .gp-card-title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
   .gp-empty-note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
@@ -539,14 +550,14 @@ const growPathStyles = `
   .gp-view-disabled { color: var(--muted); cursor: not-allowed; }
 
   .gp-phase-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
-  .gp-phase-card { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; }
+  .gp-phase-card { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
   .gp-phase-icon { width: 40px; height: 40px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
   .gp-phase-card-title { font-size: 15px; font-weight: 700; color: var(--ink); font-family: var(--serif); }
   .gp-phase-card-range { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
   .gp-phase-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
   .gp-phase-card-count { font-size: 12px; font-weight: 600; color: var(--teal-d); margin-bottom: 12px; }
 
-  .gp-upcoming { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; }
+  .gp-upcoming { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
   .gp-upcoming-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .gp-upcoming-title { font-size: 13.5px; font-weight: 600; color: var(--ink); }
   .gp-upcoming-due { font-size: 12px; color: var(--teal-d); font-weight: 600; white-space: nowrap; }
@@ -554,7 +565,7 @@ const growPathStyles = `
   .gp-companies { margin-bottom: 24px; }
   .gp-companies-title-row { margin-bottom: 14px; }
   .gp-companies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-  .gp-company-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); cursor: default; }
+  .gp-company-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); cursor: default; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
   .gp-company-more { cursor: pointer; }
   .gp-company-mono { width: 40px; height: 40px; border-radius: 50%; background: var(--teal-l); color: var(--teal-d); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
   .gp-company-name { font-size: 11.5px; font-weight: 600; color: var(--ink); text-align: center; }
@@ -564,7 +575,7 @@ const growPathStyles = `
   .gp-phase-title { font-size: 16px; font-weight: 700; color: var(--ink); font-family: var(--serif); }
   .gp-phase-range { font-size: 12px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 
-  .gp-milestone { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 10px; transition: box-shadow 0.15s ease, border-color 0.15s ease; overflow: hidden; }
+  .gp-milestone { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: box-shadow 0.15s ease, border-color 0.15s ease; overflow: hidden; }
   .gp-milestone:hover { border-color: var(--teal-mid); box-shadow: var(--sh-sm); }
   .gp-milestone-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; }
   .gp-milestone-check { width: 24px; height: 24px; min-width: 24px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 1px; }

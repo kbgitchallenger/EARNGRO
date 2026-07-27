@@ -132,7 +132,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* Interview mode */}
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Interview type</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {MODES.map(m => (
@@ -161,7 +161,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
           </div>
 
           {/* Role + Industry + Experience */}
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Your profile</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
@@ -224,7 +224,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
           {/* Interviewer persona — desktop: full list, unchanged.
               Mobile: hidden via CSS, replaced by the compact scroll row below. */}
-          <div className="is-persona-desktop" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <div className="is-persona-desktop" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Choose your interviewer</div>
             <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14 }}>Different styles build real adaptability</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -261,7 +261,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
               full phrase for whichever persona is currently selected. Same
               personaId state and setPersonaId handler as the desktop list —
               no new logic, purely an alternate presentation. */}
-          <div className="is-persona-mobile" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '16px 0 16px 20px' }}>
+          <div className="is-persona-mobile" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: '16px 0 16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, paddingRight: 20 }}>Choose your interviewer</div>
             <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, paddingRight: 20 }}>Different styles build real adaptability</div>
             <div className="is-persona-scroll-row">
@@ -343,7 +343,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
           {/* Recent sessions */}
           {recentSessions.length > 0 && (
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16 }}>
+            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>Recent sessions</div>
               {recentSessions.map(s => (
                 <div

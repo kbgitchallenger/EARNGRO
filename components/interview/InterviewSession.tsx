@@ -356,7 +356,7 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
     <div className="interview-session-wrap" style={{ display: 'flex', flexDirection: 'column', maxWidth: 740, margin: '0 auto' }}>
 
       {/* ── TOP BAR ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', flexShrink: 0 }}>
         <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${persona.color}20`, border: `2px solid ${persona.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
           {persona.emoji}
         </div>
@@ -378,7 +378,7 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
       </div>
 
       {/* ── QUESTION TIMELINE ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', flexShrink: 0 }}>
         {Array.from({ length: totalTurns }, (_, i) => {
           const isDone = i < answeredCount
           const isCurrent = i === answeredCount && !sessionEnding

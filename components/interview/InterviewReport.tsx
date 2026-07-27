@@ -1,8 +1,11 @@
+//components/interview/InterviewReport.tsx
 'use client'
 
 import Link from 'next/link'
 import { INTERVIEWER_PERSONAS } from '@/lib/interview/personas'
 import ShowMoreList from '@/components/shared/ShowMoreList'
+import CountUpNumber from '@/components/shared/CountUpNumber'
+import PremiumHero from '@/components/ui/PremiumHero'
 
 interface Turn {
   turn_index: number
@@ -131,23 +134,24 @@ export default function InterviewReport({ session, turns }: Props) {
           </Link>
         </div>
 
-        {/* Overall score hero */}
-        <div className="ir-score-hero" style={{
-          background: `linear-gradient(135deg, ${persona.color}18, ${persona.color}08)`,
-          border: `1px solid ${persona.color}30`,
-          borderRadius: 'var(--r-xl)', padding: '24px 20px', marginBottom: 16,
-        }}>
+        {/* Overall score hero — now using the shared PremiumHero shell.
+            className="ir-score-hero" is preserved so this file's own
+            mobile media query (stacks to column at 540px) still applies —
+            alignItems/gap are explicitly undefined here so that external
+            class, not PremiumHero's own inline defaults, controls those
+            two properties responsively. */}
+        <PremiumHero className="ir-score-hero" style={{ marginBottom: 16, alignItems: undefined, gap: undefined }}>
           {/* Score circle */}
           <div style={{ textAlign: 'center', minWidth: 90 }}>
-            <div className="ir-score-num" style={{ color: SCORE_COLOR(overallScore) }}>
-              {overallScore}
+            <div className="ir-score-num" style={{ color: '#fff' }}>
+              <CountUpNumber value={overallScore} style={{ fontFamily: 'var(--serif)', fontWeight: 700 }} />
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>out of 100</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>out of 100</div>
             <div style={{
               display: 'inline-block', marginTop: 8,
-              fontSize: 11, fontWeight: 700, color: SCORE_COLOR(overallScore),
-              background: `${SCORE_COLOR(overallScore)}15`,
-              border: `1px solid ${SCORE_COLOR(overallScore)}30`,
+              fontSize: 11, fontWeight: 700, color: '#fff',
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.25)',
               padding: '3px 10px', borderRadius: 99,
             }}>
               {SCORE_LABEL(overallScore)}
@@ -156,7 +160,7 @@ export default function InterviewReport({ session, turns }: Props) {
 
           {/* Dimension bars */}
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 10 }}>
               {persona.name}&apos;s assessment
             </div>
             {avgScores && (
@@ -168,8 +172,8 @@ export default function InterviewReport({ session, turns }: Props) {
                   { label: 'Relevance',  key: 'relevance'   as const },
                 ].map(d => (
                   <div key={d.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="ir-dim-label">{d.label}</div>
-                    <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div className="ir-dim-label" style={{ color: 'rgba(255,255,255,0.6)' }}>{d.label}</div>
+                    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
                       <div style={{
                         height: '100%',
                         background: SCORE_COLOR(avgScores[d.key]),
@@ -178,7 +182,7 @@ export default function InterviewReport({ session, turns }: Props) {
                         transition: 'width 1s ease',
                       }} />
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: SCORE_COLOR(avgScores[d.key]), width: 28, textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', width: 28, textAlign: 'right', flexShrink: 0 }}>
                       {avgScores[d.key]}
                     </div>
                   </div>
@@ -186,7 +190,7 @@ export default function InterviewReport({ session, turns }: Props) {
               </div>
             )}
           </div>
-        </div>
+        </PremiumHero>
 
         {/* Worst answer improved */}
         {worstTurn?.improved_answer && (

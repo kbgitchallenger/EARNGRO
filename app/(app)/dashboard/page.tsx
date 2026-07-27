@@ -1,3 +1,4 @@
+//app/dashboard/page.tsx
 export const revalidate = 30
 
 import { redirect } from 'next/navigation'
@@ -6,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import HRSBar from '@/components/dashboard/HRSBar'
 import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
 import StreakCard from '@/components/dashboard/StreakCard'
+import PremiumHero from '@/components/ui/PremiumHero'
 import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
 import { getStreak } from '@/services/streaks.service'
 
@@ -183,21 +185,18 @@ export default async function DashboardPage() {
       {/* ── NO DNA — ONBOARDING ── */}
       {!hasGap && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius: 'var(--r-xl)', padding: '32px 28px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ fontSize: 44, marginBottom: 14 }}>🧬</div>
-              <h2 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(20px,3vw,28px)', fontWeight: 600, color: '#fff', marginBottom: 10 }}>
-                Discover your Earning Gap
-              </h2>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, maxWidth: 460, marginBottom: 24 }}>
-                10 questions · 4 minutes · Your exact gap in rupees, your career archetype, and a personalised AI roadmap to close it.
-              </p>
-              <Link href="/growdna" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: 'var(--teal-d)', fontSize: 14, fontWeight: 700, padding: '12px 26px', borderRadius: 99, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
-                Start GrowDNA Assessment →
-              </Link>
-            </div>
-          </div>
+          <PremiumHero>
+            <div style={{ fontSize: 44, marginBottom: 14 }}>🧬</div>
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(20px,3vw,28px)', fontWeight: 600, color: '#fff', marginBottom: 10 }}>
+              Discover your Earning Gap
+            </h2>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, maxWidth: 460, marginBottom: 24 }}>
+              10 questions · 4 minutes · Your exact gap in rupees, your career archetype, and a personalised AI roadmap to close it.
+            </p>
+            <Link href="/growdna" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: 'var(--teal-d)', fontSize: 14, fontWeight: 700, padding: '12px 26px', borderRadius: 99, textDecoration: 'none', boxShadow: 'var(--shadow-md)' }}>
+              Start GrowDNA Assessment →
+            </Link>
+          </PremiumHero>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
             {[
               { ico: '💰', t: 'Your Earning Gap', d: 'Exact rupee amount you leave on the table every year' },
@@ -247,39 +246,57 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* ── YOUR MOVE TODAY — Command Center primary CTA ── */}
+          {/* ── YOUR MOVE TODAY — Command Center primary CTA ──
+              Urgent moves get the full PremiumHero treatment; calm/routine
+              moves keep the original plain paper card exactly as before —
+              that conditional distinction was a deliberate design choice
+              (not every recommendation deserves the same visual weight),
+              preserved here rather than flattened by the retrofit. */}
           <Link href={nextMove.href} style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}>
-            <div style={{
-              background: nextMove.urgent
-                ? 'linear-gradient(135deg, var(--teal-d), var(--teal))'
-                : 'var(--paper)',
-              border: nextMove.urgent ? 'none' : '1.5px solid var(--teal-mid)',
-              borderRadius: 'var(--r-xl)',
-              padding: '18px 22px',
-              display: 'flex', alignItems: 'center', gap: 16,
-              boxShadow: nextMove.urgent ? '0 4px 20px rgba(14,122,90,0.2)' : 'none',
-              transition: 'transform 0.15s, box-shadow 0.15s',
-            }}>
+            {nextMove.urgent ? (
+              <PremiumHero>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 'var(--r-lg)', flexShrink: 0, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                    {nextMove.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
+                      Your move today
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
+                      {nextMove.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>
+                      {nextMove.desc}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 20, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>→</div>
+                </div>
+              </PremiumHero>
+            ) : (
               <div style={{
-                width: 48, height: 48, borderRadius: 'var(--r-lg)', flexShrink: 0,
-                background: nextMove.urgent ? 'rgba(255,255,255,0.15)' : 'var(--teal-l)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                background: 'var(--paper)', border: '1.5px solid var(--teal-mid)',
+                borderRadius: 'var(--r-xl)', padding: '18px 22px',
+                display: 'flex', alignItems: 'center', gap: 16,
+                transition: 'transform 0.15s, box-shadow 0.15s',
               }}>
-                {nextMove.icon}
+                <div style={{ width: 48, height: 48, borderRadius: 'var(--r-lg)', flexShrink: 0, background: 'var(--teal-l)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                  {nextMove.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--teal)', marginBottom: 4 }}>
+                    Your move today
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
+                    {nextMove.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.4 }}>
+                    {nextMove.desc}
+                  </div>
+                </div>
+                <div style={{ fontSize: 20, color: 'var(--teal)', flexShrink: 0 }}>→</div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: nextMove.urgent ? 'rgba(255,255,255,0.6)' : 'var(--teal)', marginBottom: 4 }}>
-                  Your move today
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: nextMove.urgent ? '#fff' : 'var(--ink)', marginBottom: 3 }}>
-                  {nextMove.title}
-                </div>
-                <div style={{ fontSize: 12, color: nextMove.urgent ? 'rgba(255,255,255,0.7)' : 'var(--muted)', lineHeight: 1.4 }}>
-                  {nextMove.desc}
-                </div>
-              </div>
-              <div style={{ fontSize: 20, color: nextMove.urgent ? 'rgba(255,255,255,0.6)' : 'var(--teal)', flexShrink: 0 }}>→</div>
-            </div>
+            )}
           </Link>
 
           {/* Streak — real data from user_streaks, complementing the
