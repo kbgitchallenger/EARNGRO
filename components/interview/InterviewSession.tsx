@@ -353,7 +353,7 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)', maxWidth: 740, margin: '0 auto' }}>
+    <div className="interview-session-wrap" style={{ display: 'flex', flexDirection: 'column', maxWidth: 740, margin: '0 auto' }}>
 
       {/* ── TOP BAR ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: 'var(--paper)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
@@ -596,6 +596,20 @@ export default function InterviewSession({ session, turns: initialTurns }: Props
       </div>
 
       <style>{`
+        /* FIX: previously a single fixed 'calc(100vh - 80px)' tuned for
+           the old topbar-only layout. AppShell's real topbar is 56px, and
+           on mobile there's now also a fixed ~76px bottom nav bar that the
+           old value never accounted for — without this, the input box and
+           send button at the bottom of this chat could sit hidden behind
+           the mobile bottom bar. */
+        .interview-session-wrap {
+          height: calc(100vh - 56px);
+        }
+        @media (max-width: 767px) {
+          .interview-session-wrap {
+            height: calc(100vh - 56px - 76px);
+          }
+        }
         @keyframes typingDot {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-5px); opacity: 1; }

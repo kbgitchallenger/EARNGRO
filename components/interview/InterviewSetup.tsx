@@ -389,7 +389,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
           .is-persona-mobile { display: block; }
           .is-cta-wrap {
             position: fixed;
-            left: 0; right: 0; bottom: 60px;
+            left: 0; right: 0; bottom: 76px;
             background: rgba(250,247,240,0.85);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);

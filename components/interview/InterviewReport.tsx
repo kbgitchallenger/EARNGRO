@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { INTERVIEWER_PERSONAS } from '@/lib/interview/personas'
+import ShowMoreList from '@/components/shared/ShowMoreList'
 
 interface Turn {
   turn_index: number
@@ -250,40 +251,45 @@ export default function InterviewReport({ session, turns }: Props) {
         {/* Full breakdown */}
         <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Full breakdown</div>
-          {answeredTurns.map((t, i) => {
-            const avg = t.sub_scores
-              ? Math.round((t.sub_scores.structure + t.sub_scores.specificity + t.sub_scores.confidence + t.sub_scores.relevance) / 4)
-              : null
-            return (
-              <div key={t.turn_index} style={{
-                paddingBottom: i < answeredTurns.length - 1 ? 16 : 0,
-                marginBottom: i < answeredTurns.length - 1 ? 16 : 0,
-                borderBottom: i < answeredTurns.length - 1 ? '1px solid var(--border-l)' : 'none',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Question {t.turn_index + 1}
+          <ShowMoreList
+            items={answeredTurns}
+            defaultCount={3}
+            itemLabel="question"
+            renderItem={(t, i) => {
+              const avg = t.sub_scores
+                ? Math.round((t.sub_scores.structure + t.sub_scores.specificity + t.sub_scores.confidence + t.sub_scores.relevance) / 4)
+                : null
+              return (
+                <div key={t.turn_index} style={{
+                  paddingBottom: i < answeredTurns.length - 1 ? 16 : 0,
+                  marginBottom: i < answeredTurns.length - 1 ? 16 : 0,
+                  borderBottom: i < answeredTurns.length - 1 ? '1px solid var(--border-l)' : 'none',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Question {t.turn_index + 1}
+                    </div>
+                    {avg !== null && (
+                      <div style={{
+                        fontSize: 12, fontWeight: 700, color: SCORE_COLOR(avg),
+                        background: `${SCORE_COLOR(avg)}12`,
+                        border: `1px solid ${SCORE_COLOR(avg)}25`,
+                        padding: '2px 10px', borderRadius: 99, flexShrink: 0,
+                      }}>
+                        {avg}/100
+                      </div>
+                    )}
                   </div>
-                  {avg !== null && (
-                    <div style={{
-                      fontSize: 12, fontWeight: 700, color: SCORE_COLOR(avg),
-                      background: `${SCORE_COLOR(avg)}12`,
-                      border: `1px solid ${SCORE_COLOR(avg)}25`,
-                      padding: '2px 10px', borderRadius: 99, flexShrink: 0,
-                    }}>
-                      {avg}/100
+                  <div className="ir-question-text">{t.question}</div>
+                  {t.feedback && (
+                    <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, fontStyle: 'italic', marginTop: 4 }}>
+                      💬 {t.feedback}
                     </div>
                   )}
                 </div>
-                <div className="ir-question-text">{t.question}</div>
-                {t.feedback && (
-                  <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, fontStyle: 'italic', marginTop: 4 }}>
-                    💬 {t.feedback}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+              )
+            }}
+          />
         </div>
 
         {/* Practice again CTA */}
