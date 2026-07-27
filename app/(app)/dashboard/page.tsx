@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import HRSBar from '@/components/dashboard/HRSBar'
 import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
+import StreakCard from '@/components/dashboard/StreakCard'
 import { getChangeNarrative } from '@/lib/growdna/changeNarrative'
+import { getStreak } from '@/services/streaks.service'
 
 function fmt(n: number | null | undefined): string {
   if (!n) return '—'
@@ -99,6 +101,7 @@ export default async function DashboardPage() {
     { data: cvData },
     { data: chs },
     { data: latestInterview },
+    streak,
   ] = await Promise.all([
     supabase.from('profiles').select('full_name, plan').eq('id', user.id).single(),
     supabase.from('grow_dna')
@@ -125,6 +128,10 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Real streak — same source as the compact pill in AppShell's rail;
+    // this renders the fuller detail view (7-day dots) on the page most
+    // relevant to daily engagement.
+    getStreak(user.id),
   ])
 
   const rawName = profile?.full_name || user.email?.split('@')[0] || 'there'
@@ -241,7 +248,7 @@ export default async function DashboardPage() {
           )}
 
           {/* ── YOUR MOVE TODAY — Command Center primary CTA ── */}
-          <Link href={nextMove.href} style={{ textDecoration: 'none', display: 'block', marginBottom: 4 }}>
+          <Link href={nextMove.href} style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}>
             <div style={{
               background: nextMove.urgent
                 ? 'linear-gradient(135deg, var(--teal-d), var(--teal))'
@@ -274,6 +281,12 @@ export default async function DashboardPage() {
               <div style={{ fontSize: 20, color: nextMove.urgent ? 'rgba(255,255,255,0.6)' : 'var(--teal)', flexShrink: 0 }}>→</div>
             </div>
           </Link>
+
+          {/* Streak — real data from user_streaks, complementing the
+              compact pill already shown persistently in AppShell's rail. */}
+          <div style={{ marginBottom: 16 }}>
+            <StreakCard currentStreak={streak.currentStreak} />
+          </div>
 
           {/* ── STAT CARDS — 4-column on desktop, 2×2 on tablet, 1-col on mobile ── */}
           <div className="dash-stats-grid">
