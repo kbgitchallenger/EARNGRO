@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { atsService } from '@/services/ats.service'
-import { deductCredits } from '@/services/credits.service'
+import { deductCredits, refundCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 import { z } from 'zod'
 
 const BodySchema = z.object({
@@ -74,15 +75,45 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await atsService.analyze(
-      versionId,
-      user.id,
-      version.raw_text,
-      version.parsed_data,
-      jobDescription
-    )
+    // FIX: everything from here is in its own try/catch, separate from the
+    // pre-deduction checks above (auth, plan gate, version lookup) — same
+    // pattern already applied to growdna/route.ts. Previously a single
+    // outer try/catch covered the whole route with no refund logic at
+    // all: if atsService.analyze() failed after the credit was already
+    // deducted, the user lost the credit for an analysis they never
+    // received, with no way back.
+    try {
+      const result = await atsService.analyze(
+        versionId,
+        user.id,
+        version.raw_text,
+        version.parsed_data,
+        jobDescription
+      )
 
-    return NextResponse.json({ ...result, credits_remaining: credit.balance })
+      // Real streak activity — a genuinely completed analysis only.
+      await recordStreakActivity(user.id)
+
+      return NextResponse.json({ ...result, credits_remaining: credit.balance })
+
+    } catch (analyzeErr) {
+      console.error('ATS analyze processing failed after credit deduction:', analyzeErr)
+
+      // Real refund — same feature name ('cv_analyze') so any future
+      // net-sum eligibility check (matching hasUsedFeature's logic)
+      // correctly sees this attempt as reversed, not consumed.
+      await refundCredits(
+        user.id,
+        'cv_analyze',
+        credit.cost,
+        `Analysis failed after credit deduction: ${analyzeErr instanceof Error ? analyzeErr.message : String(analyzeErr)}`
+      )
+
+      return NextResponse.json(
+        { error: 'Analysis failed — your credit has been refunded automatically. Please try again.' },
+        { status: 500 }
+      )
+    }
 
   } catch (err) {
     console.error('ATS analyze error:', err)

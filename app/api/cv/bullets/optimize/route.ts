@@ -1,8 +1,10 @@
+//app/api/cv/bullets/optimize/route.ts
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { callAIJSON } from '@/lib/ai/client'
-import { deductCredits } from '@/services/credits.service'
+import { deductCredits, refundCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 import { BulletOptimizationResultSchema } from '@/lib/ai/validators/resume.validator'
 import { z } from 'zod'
 
@@ -39,7 +41,15 @@ export async function POST(request: Request) {
       )
     }
 
-    const prompt = `You are an expert resume writer for India and Southeast Asia's 2026-2027 job market.
+    // FIX: everything from here is in its own try/catch, separate from the
+    // pre-deduction checks above (auth, request validation) — same pattern
+    // now applied consistently across growdna, cv/analyze, and here.
+    // Previously a single outer try/catch covered the whole route with no
+    // refund logic: if the AI call failed after the credit was already
+    // deducted, the user lost the credit for an optimization they never
+    // received, with no way back.
+    try {
+      const prompt = `You are an expert resume writer for India and Southeast Asia's 2026-2027 job market.
 
 CRITICAL RULES:
 - Do NOT invent facts, numbers, or outcomes not implied by the original bullet.
@@ -67,13 +77,34 @@ Return exactly this JSON:
   "overall_improvement": "<one sentence summarizing the overall improvement across all bullets>"
 }`
 
-    const result = await callAIJSON(prompt, BulletOptimizationResultSchema, {
-      maxTokens: 1200,
-      feature: 'bullet_optimize',
-      userId: user.id,
-    })
+      const result = await callAIJSON(prompt, BulletOptimizationResultSchema, {
+        maxTokens: 1200,
+        feature: 'bullet_optimize',
+        userId: user.id,
+      })
 
-    return Response.json({ ...result, creditsRemaining: credit.balance })
+      // Real streak activity — a genuinely completed optimization only.
+      await recordStreakActivity(user.id)
+
+      return Response.json({ ...result, creditsRemaining: credit.balance })
+
+    } catch (optimizeErr) {
+      console.error('Bullet optimize processing failed after credit deduction:', optimizeErr)
+
+      // Real refund — same feature name ('bullet_optimize') so any future
+      // net-sum eligibility check correctly sees this attempt as reversed.
+      await refundCredits(
+        user.id,
+        'bullet_optimize',
+        credit.cost,
+        `Optimization failed after credit deduction: ${optimizeErr instanceof Error ? optimizeErr.message : String(optimizeErr)}`
+      )
+
+      return Response.json(
+        { error: 'Optimization failed — your credit has been refunded automatically. Please try again.' },
+        { status: 500 }
+      )
+    }
 
   } catch (err) {
     console.error('Bullet optimize error:', err)

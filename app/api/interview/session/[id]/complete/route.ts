@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { getPersona } from '@/lib/interview/personas'
 import { buildReportPrompt } from '@/lib/interview/prompts'
 import { deductCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 
 const ReportSchema = z.object({
   overall_score:     z.number().min(0).max(100),
@@ -130,6 +131,12 @@ export async function POST(
       }, { onConflict: 'user_id,dimension' })
     )
     await Promise.all(dimUpdates)
+
+    // Real streak activity — completing a full session is exactly the
+    // "real progress" this mechanic is meant to reward. Non-fatal by
+    // design (recordStreakActivity already swallows its own errors) —
+    // a streak-tracking hiccup should never block the user's actual report.
+    await recordStreakActivity(user.id)
 
     return NextResponse.json({
       ...report,

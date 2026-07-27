@@ -1,6 +1,7 @@
 //app/api/growpath/milestones/[id]/route.ts
 import { createClient } from '@/lib/supabase/server'
 import { computeAndSaveCareerHealthScore } from '@/lib/careerHealth/compute'
+import { recordStreakActivity } from '@/services/streaks.service'
 import { z } from 'zod'
 
 const BodySchema = z.object({
@@ -45,6 +46,13 @@ export async function PATCH(
     if (error) {
       console.error('Milestone update failed:', error)
       return Response.json({ error: 'Update failed' }, { status: 500 })
+    }
+
+    // Real streak activity — ONLY on genuine completion, not on every
+    // toggle. Reverting a milestone back to todo/in_progress isn't
+    // progress, so it shouldn't count toward the streak.
+    if (body.status === 'done') {
+      await recordStreakActivity(user.id)
     }
 
     // Fire-and-forget — don't block the response on this, same pattern as

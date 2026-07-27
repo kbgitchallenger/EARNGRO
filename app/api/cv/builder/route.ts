@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { resumeService } from '@/services/resume.service'
 import { ParsedResumeSchema } from '@/lib/ai/validators/resume.validator'
+import { recordStreakActivity } from '@/services/streaks.service'
 import { z } from 'zod'
 
 export async function POST(request: Request) {
@@ -33,6 +34,10 @@ export async function POST(request: Request) {
     }
 
     const version = await resumeService.saveBuilderVersion(user.id, validated.data, name)
+
+    // Real streak activity — building/saving a resume is genuine action.
+    await recordStreakActivity(user.id)
+
     return NextResponse.json({ versionId: version.id, versionNumber: version.version_number })
 
   } catch (err) {

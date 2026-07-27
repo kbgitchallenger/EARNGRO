@@ -7,6 +7,7 @@
 // second AI pass contradicting what GrowDNA already told the user.
 
 import { createClient } from '@/lib/supabase/server'
+import { recordStreakActivity } from '@/services/streaks.service'
 
 const TYPE_KEYWORDS: Record<string, string[]> = {
   negotiation: ['negotiat', 'salary', 'offer', 'compensation', 'raise'],
@@ -135,6 +136,9 @@ export async function POST(req: Request) {
       console.error('GrowPath atomic save failed:', rpcError)
       return Response.json({ error: 'Failed to save plan' }, { status: 500 })
     }
+
+    // Real streak activity — building a roadmap is genuine, meaningful action.
+    await recordStreakActivity(user.id)
 
     return Response.json({ plan_id: planId })
 

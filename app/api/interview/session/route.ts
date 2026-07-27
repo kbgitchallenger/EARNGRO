@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { getPersona } from '@/lib/interview/personas'
 import { buildFirstQuestionPrompt } from '@/lib/interview/prompts'
 import { deductCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 
 const BodySchema = z.object({
   mode:            z.enum(['behavioral', 'functional', 'leadership', 'negotiation']),
@@ -34,6 +35,22 @@ export async function POST(request: Request) {
     const body = await request.json()
     const input = BodySchema.parse(body)
 
+    // ── Plan gate — Accelerate only. Checked here too, not just at the
+    // page level, since a direct API call would otherwise bypass any
+    // page-level gate entirely.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+
+    if ((profile?.plan ?? 'free') !== 'accelerate') {
+      return NextResponse.json(
+        { error: 'UPGRADE_REQUIRED', message: 'AI Interview is available on the Accelerate plan.' },
+        { status: 403 }
+      )
+    }
+
     // Validate persona in code — personas.ts is the single source of truth
     // now that the DB check constraint has been dropped. A bad/stale
     // personaId fails loudly here instead of either hitting a DB constraint
@@ -42,6 +59,16 @@ export async function POST(request: Request) {
     const persona = getPersona(input.personaId)
     if (!persona) {
       return NextResponse.json({ error: 'Invalid persona selected' }, { status: 400 })
+    }
+
+    // ── Credit check — starting a session generates a real AI call (the
+    // first question), checked before that call runs.
+    const credit = await deductCredits(user.id, 'interview_session_start')
+    if (!credit.allowed) {
+      return NextResponse.json(
+        { error: 'INSUFFICIENT_CREDITS', balance: credit.balance, required: credit.cost },
+        { status: 402 }
+      )
     }
 
     // Fetch CV highlights for personalization
@@ -120,6 +147,10 @@ export async function POST(request: Request) {
       source:      firstQ.source,
     })
 
+    // Real streak activity — starting a real session counts the same as
+    // any other genuine action.
+    await recordStreakActivity(user.id)
+
     return NextResponse.json({
       sessionId:     session.id,
       firstQuestion: firstQ.question,
@@ -132,6 +163,7 @@ export async function POST(request: Request) {
         color:       persona.color,
       },
       maxTurns: input.maxTurns,
+      creditsRemaining: credit.balance,
     })
 
   } catch (err) {

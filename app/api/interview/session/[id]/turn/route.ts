@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { getPersona } from '@/lib/interview/personas'
 import { buildTurnPrompt } from '@/lib/interview/prompts'
 import { deductCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 
 const BodySchema = z.object({
   answer: z.string().min(1).max(5000),
@@ -135,6 +136,12 @@ export async function POST(
         })
       }
     }
+
+    // Real streak activity — answering a scored turn is genuine effort,
+    // recorded the same way for every real action. recordStreakActivity is
+    // a same-day no-op internally, so multiple turns in one session/day
+    // don't inflate anything — this just ensures the day counts.
+    await recordStreakActivity(user.id)
 
     return NextResponse.json({
       scores:           result.scores,

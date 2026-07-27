@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { callAIJSON } from '@/lib/ai/client'
 import { z } from 'zod'
 import { deductCredits, hasUsedFeature, refundCredits } from '@/services/credits.service'
+import { recordStreakActivity } from '@/services/streaks.service'
 import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
@@ -219,6 +220,11 @@ Rules:
     if (saveError) {
       console.error('Supabase save error:', saveError)
     }
+
+    // Real streak activity — a genuinely completed assessment only, never
+    // recorded in the catch block below (a refunded/failed attempt isn't
+    // progress and shouldn't count).
+    await recordStreakActivity(user.id)
 
     return Response.json({
       assessment_id: saved?.id ?? user.id,
