@@ -107,16 +107,68 @@ export async function getTransactionHistory(
   return (data ?? []) as CreditTransaction[]
 }
 
-// Has the user ever used this specific feature? (for "1 free analysis" gating)
+// Has the user genuinely consumed credits for this feature? (for "1 free
+// analysis" gating). FIX: previously checked whether ANY row existed with
+// credits_used < 0 for this feature — meaning a failed attempt that was
+// later refunded (even correctly, under the same feature name) still
+// permanently counted as "used", since the original negative row never
+// went away. Now sums net credits_used for the feature: a refund posted
+// under the same feature name correctly cancels out a prior failure.
 export async function hasUsedFeature(userId: string, feature: string): Promise<boolean> {
   const supabase = await createClient()
-  const { count } = await supabase
+  const { data } = await supabase
     .from('credit_transactions')
-    .select('id', { count: 'exact', head: true })
+    .select('credits_used')
     .eq('user_id', userId)
     .eq('feature', feature)
-    .lt('credits_used', 0) // only count actual deductions, not resets
-  return (count ?? 0) > 0
+
+  const netUsed = (data ?? []).reduce((sum, row) => sum + row.credits_used, 0)
+  return netUsed < 0
+}
+
+// Reverses a credit deduction when the underlying operation failed AFTER
+// credits were already taken (e.g. the AI call itself errored, or the
+// response failed validation, post-deduction). Posted under the SAME
+// feature name as the original deduction — critical for hasUsedFeature's
+// net-sum check above to correctly recognise the attempt as refunded,
+// not just compensated under an unrelated ledger entry.
+export async function refundCredits(
+  userId: string,
+  feature: string,
+  amount: number,
+  reason: string
+): Promise<void> {
+  const supabase = await createClient()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('credits_balance')
+    .eq('id', userId)
+    .single()
+
+  const newBalance = (profile?.credits_balance ?? 0) + amount
+
+  const { error: updateErr } = await supabase
+    .from('profiles')
+    .update({ credits_balance: newBalance })
+    .eq('id', userId)
+
+  if (updateErr) {
+    console.error('Refund failed to update balance:', updateErr)
+    return
+  }
+
+  const { error: txErr } = await supabase.from('credit_transactions').insert({
+    user_id: userId,
+    feature,
+    credits_used: amount,
+    balance_after: newBalance,
+    metadata: { reason, type: 'refund' },
+  })
+
+  if (txErr) {
+    console.error('Refund succeeded but failed to log transaction:', txErr)
+  }
 }
 
 // ── Anonymous rate limiting (for /api/calculate, no login) ────────
@@ -153,14 +205,11 @@ export async function checkAndRecordRateLimit(request: Request): Promise<RateLim
 
   if (error) {
     if (error.code === '23505') {
-      // Unique constraint violation on (ip_address, used_month) — already used this month
       return {
         allowed: false,
         message: "You've reached this month's free limit — create an account for unlimited access.",
       }
     }
-    // Fail closed on unexpected errors — same reasoning as calculate/route.ts:
-    // better to occasionally over-block than silently disable the limit.
     console.error('Rate limit check failed unexpectedly:', error)
     return {
       allowed: false,

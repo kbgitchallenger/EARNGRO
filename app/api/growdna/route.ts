@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { callAIJSON } from '@/lib/ai/client'
 import { z } from 'zod'
-import { deductCredits, hasUsedFeature } from '@/services/credits.service'
+import { deductCredits, hasUsedFeature, refundCredits } from '@/services/credits.service'
 import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
@@ -55,56 +55,64 @@ function detectArchetype(answers: Record<string, unknown>, scores: Record<string
 }
 
 export async function POST(req: Request) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan')
-      .eq('id', user.id)
-      .single()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
 
-    const plan = profile?.plan ?? 'free'
+  const plan = profile?.plan ?? 'free'
 
-    if (plan === 'free') {
-      const alreadyUsed = await hasUsedFeature(user.id, 'growdna')
-      if (alreadyUsed) {
-        return Response.json(
-          {
-            error: 'FREE_LIMIT_REACHED',
-            message: "You've used your free GrowDNA assessment. Upgrade to Grow for unlimited retakes.",
-          },
-          { status: 402 }
-        )
-      }
-    }
-
-    const credit = await deductCredits(user.id, 'growdna')
-
-    if (!credit.allowed) {
+  if (plan === 'free') {
+    const alreadyUsed = await hasUsedFeature(user.id, 'growdna')
+    if (alreadyUsed) {
       return Response.json(
         {
-          error: 'INSUFFICIENT_CREDITS',
+          error: 'FREE_LIMIT_REACHED',
           message: "You've used your free GrowDNA assessment. Upgrade to Grow for unlimited retakes.",
-          balance: credit.balance,
-          required: credit.cost,
         },
         { status: 402 }
       )
     }
+  }
 
+  const credit = await deductCredits(user.id, 'growdna')
+
+  if (!credit.allowed) {
+    return Response.json(
+      {
+        error: 'INSUFFICIENT_CREDITS',
+        message: "You've used your free GrowDNA assessment. Upgrade to Grow for unlimited retakes.",
+        balance: credit.balance,
+        required: credit.cost,
+      },
+      { status: 402 }
+    )
+  }
+
+  // FIX: everything from here on is wrapped in its own try/catch, separate
+  // from the pre-deduction checks above. Previously a single outer
+  // try/catch covered the whole route with no refund logic at all — if the
+  // AI call failed (e.g. a malformed-JSON response) or the request body was
+  // bad, the credit stayed deducted and, for free users, hasUsedFeature
+  // permanently blocked their one free attempt with no way back in. Any
+  // failure in this block now triggers a real refund before returning the
+  // error.
+  try {
     const { answers, scores } = await req.json()
 
     const archetypeKey = detectArchetype(answers, scores)
     const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.default
     const dimensionExplanations = getDimensionExplanations(answers)
 
-const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2026–2027.
+    const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2026–2027.
 
 CRITICAL RULES:
 - Do NOT infer, invent, or assume any data not explicitly provided in the profile below.
@@ -237,8 +245,19 @@ Rules:
       },
       credits_remaining: credit.balance,
     })
+
   } catch (err) {
     console.error('GrowDNA API error:', err)
-    return Response.json({ error: 'Analysis failed' }, { status: 500 })
+
+    // Real refund — same feature name ('growdna') so hasUsedFeature's
+    // net-sum check correctly sees this attempt as reversed, not "used".
+    await refundCredits(
+      user.id,
+      'growdna',
+      credit.cost,
+      `AI call or processing failed after credit deduction: ${err instanceof Error ? err.message : String(err)}`
+    )
+
+    return Response.json({ error: 'Analysis failed — your credit has been refunded automatically. Please try again.' }, { status: 500 })
   }
 }
