@@ -1,11 +1,26 @@
-//app/%28app%29/settings/page.tsx
+//app/(app)/settings/page.tsx
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import SettingsLink from '@/components/settings/SettingsLink'
 
 const PLAN_LABEL: Record<string, string> = { free: 'Free', grow: 'Grow', accelerate: 'Accelerate' }
+
+const sections = [
+  {
+    href: '/settings/billing',
+    icon: '💳',
+    title: 'Billing & Usage',
+    desc: 'Your plan, credit balance, and full usage history',
+  },
+  {
+    href: '/pricing',
+    icon: '⚡',
+    title: 'Plans & Pricing',
+    desc: 'Compare Free, Grow, and Accelerate plans',
+  },
+]
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -22,21 +37,6 @@ export default async function SettingsPage() {
   const plan = profile?.plan ?? 'free'
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
-  const sections = [
-    {
-      href: '/settings/billing',
-      icon: '💳',
-      title: 'Billing & Usage',
-      desc: 'Your plan, credit balance, and full usage history',
-    },
-    {
-      href: '/pricing',
-      icon: '⚡',
-      title: 'Plans & Pricing',
-      desc: 'Compare Free, Grow, and Accelerate plans',
-    },
-  ]
-
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '24px 20px 60px' }}>
       <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(20px,3vw,28px)', fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
@@ -46,8 +46,14 @@ export default async function SettingsPage() {
         Manage your account, billing, and preferences
       </p>
 
-      {/* Account summary card */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '18px 20px', marginBottom: 20 }}>
+      {/* Account summary card — FIX: added consistent card shadow,
+          matching every other card in the app (previously flat). */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        background: 'var(--paper)', border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)', padding: '18px 20px', marginBottom: 20,
+        boxShadow: 'var(--shadow-sm)',
+      }}>
         <div style={{
           width: 44, height: 44, borderRadius: '50%',
           background: 'linear-gradient(135deg, var(--teal-l), var(--teal-mid))',
@@ -70,25 +76,13 @@ export default async function SettingsPage() {
         </span>
       </div>
 
+      {/* FIX: previously declared transition:'border-color 0.15s' inline
+          with no actual hover state to trigger it — plain inline styles
+          have no :hover pseudo-class, so it sat inert. SettingsLink is a
+          small client component with real onMouseEnter/onMouseLeave. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {sections.map(s => (
-          <Link
-            key={s.href}
-            href={s.href}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              background: 'var(--paper)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-lg)', padding: '16px 18px',
-              textDecoration: 'none', transition: 'border-color 0.15s',
-            }}
-          >
-            <div style={{ fontSize: 24, flexShrink: 0 }}>{s.icon}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{s.title}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.desc}</div>
-            </div>
-            <span style={{ color: 'var(--muted)', fontSize: 16 }}>→</span>
-          </Link>
+          <SettingsLink key={s.href} {...s} />
         ))}
       </div>
 

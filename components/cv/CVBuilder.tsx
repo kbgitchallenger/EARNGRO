@@ -56,25 +56,12 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [error, setError] = useState('')
-  // NEW — bullet optimization state. `optimizing` tracks which experience
-  // index currently has a request in flight; `optimizeResults` holds the
-  // pending AI rewrites per experience index until the user accepts or
-  // they're cleared.
   const [optimizing, setOptimizing] = useState<number | null>(null)
   const [optimizeResults, setOptimizeResults] = useState<Record<number, { original: string; optimized: string; improvement_type: string; explanation: string }[]>>({})
-  // NEW — replaces a plain setError() string for the 402 case with
-  // structured data so we can render the same rich LimitReachedCard used
-  // everywhere else credits run out in this app, instead of a flat
-  // one-line message that gave no upgrade/recharge path.
   const [bulletLimitReached, setBulletLimitReached] = useState<Record<number, { balance: number; required: number }>>({})
   const router = useRouter()
   const isFreePlan = plan === 'free'
 
-  // ── Estimated page length — a real, honest heuristic, not a claim of
-  // pixel-perfect print pagination. ~3,200 characters of actual resume
-  // content ≈ one A4 page at this template's font size/line-height. Used
-  // to nudge toward the one-page norm recruiters expect for most
-  // experience levels, without silently forcing it.
   const estimatedChars = [
     data.summary ?? '',
     ...(data.experience ?? []).flatMap(e => [e.role, e.company, ...(e.bullets ?? [])]),
@@ -88,12 +75,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   const set = (k: keyof ParsedResume, v: unknown) =>
     setData(p => ({ ...p, [k]: v }))
 
-  // ── Experience helpers ──────────────────────────────────────────
-  // All of these now build a fully new nested object each time, rather
-  // than mutating the existing experience[i] in place before setData —
-  // the old version mutated the previous state's nested object directly,
-  // which happened to still re-render (top-level references changed) but
-  // is the kind of pattern that silently breaks under memoization later.
   function addExp() {
     set('experience', [...(data.experience ?? []), { company: '', role: '', start_date: '', end_date: '', is_current: false, bullets: [''] }])
   }
@@ -123,13 +104,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('experience', arr)
   }
 
-  // ── Bullet optimization — NEW. Previously the bullet_optimize feature
-  // (priced at 19 credits) had no UI entry point anywhere in this file,
-  // meaning free-tier users' 5 free optimizations were completely
-  // invisible, unused value. Operates on all bullets for one experience
-  // entry at once, matching the real BulletOptimizationResultSchema shape
-  // (a batch response), not a per-bullet call — fewer clicks, more value
-  // per credit spent.
   async function optimizeBullets(ei: number) {
     const exp = (data.experience ?? [])[ei]
     if (!exp || !exp.bullets?.some(b => b.trim())) return
@@ -167,7 +141,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     })
   }
 
-  // ── Education helpers ───────────────────────────────────────────
   function addEdu() {
     set('education', [...(data.education ?? []), { institution: '', degree: '', year: '' }])
   }
@@ -179,7 +152,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('education', (data.education ?? []).filter((_, j) => j !== i))
   }
 
-  // ── Certifications helpers ────
   function addCert() {
     set('certifications', [...(data.certifications ?? []), { name: '', issuer: '', year: '' }])
   }
@@ -191,8 +163,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     set('certifications', (data.certifications ?? []).filter((_, j) => j !== i))
   }
 
-  // ── Publications helpers — schema/preview support existed, editing UI
-  // did not. Mirrors the Certifications CRUD pattern exactly.
   function addPub() {
     set('publications', [...(data.publications ?? []), { title: '', venue: '', year: '', authors: '' }])
   }
@@ -217,8 +187,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
     const previewEl = document.getElementById('cv-preview-print')
     if (!previewEl) return
 
-    // Free-plan watermark — diagonal, repeated, printed into the same
-    // document rather than overlaid client-side, so it survives to PDF.
     const watermarkStyle = isFreePlan ? `
       body { position: relative; }
       body::before {
@@ -231,9 +199,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
       }
     ` : ''
 
-    // Print body font must match the selected template — previously hardcoded
-    // to Georgia regardless of template, which would mismatch Modern/Minimal
-    // (both sans-serif on screen) once templates existed.
     const printBodyFont = template === 'classic'
       ? 'Georgia, serif'
       : '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif'
@@ -244,23 +209,13 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
       <head>
         <title>${data.name || 'Resume'} — EarnGro</title>
         <style>
-          /* CVPreview's inline styles reference these CSS custom properties
-             (var(--teal), var(--border), etc.) — they're defined in the main
-             app's globals.css, which does NOT carry over into this separate
-             print window/document. Without redefining them here, every teal
-             accent (section headings, bullet dots, skill chips) silently
-             falls back to unstyled/black in the exported PDF, even though
-             it renders correctly on screen. Teal values below match what
-             this file already used elsewhere for print; --border is an
-             approximation — worth confirming against the real globals.css
-             if the printed divider lines look off. */
           :root {
             --teal: #0e7a5a;
             --teal-d: #095c43;
             --teal-l: #f0faf5;
-            --teal-xl: #f7fdfb; /* approximation, not confirmed against globals.css */
+            --teal-xl: #f7fdfb;
             --teal-mid: #c8e9db;
-            --border: #e5e2da; /* approximation, not confirmed against globals.css */
+            --border: #e5e2da;
             --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
           }
           * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -313,10 +268,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   return (
     <div className="cvb-page">
 
-      {/* Template picker — all three are single-column by design. Multi-column
-          / sidebar layouts are a known way ATS parsers misread content order,
-          and ATS compatibility is this product's core promise, so templates
-          differ only in typography/accent, never in structural layout. */}
       <div className="cvb-template-picker">
         {TEMPLATE_OPTIONS.map(opt => (
           <button
@@ -344,7 +295,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
         "ATS-safe" templates use a single column, the format automated hiring systems parse most reliably. "Visual" templates look more distinctive but carry a higher chance of being misread by some ATS software.
       </div>
 
-      {/* Toolbar */}
       <div className="cvb-toolbar">
         <div className="cvb-tabs">
           {tabs.map(tab => (
@@ -382,14 +332,11 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
 
       {error && <div className="cvb-error">{error}</div>}
 
-      {/* Two-column layout on desktop, tab-controlled on mobile */}
       <div className="cvb-grid" data-tab={activeTab}>
 
-        {/* Edit panel */}
         {activeTab === 'edit' && (
           <div className="cvb-edit-col">
 
-            {/* Personal Info */}
             <div className="cvb-card">
               <div style={sectionHead}>Personal Information</div>
               <div className="cvb-2col">
@@ -401,13 +348,11 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               </div>
             </div>
 
-            {/* Summary */}
             <div className="cvb-card">
               <div style={sectionHead}>Professional Summary</div>
               <textarea style={{ ...inp, minHeight: 100, resize: 'vertical' }} value={data.summary ?? ''} onChange={e => set('summary', e.target.value)} placeholder="A compelling 2-3 sentence summary of your professional background and career goals." />
             </div>
 
-            {/* Experience */}
             <div className="cvb-card">
               <div className="cvb-card-head">
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Experience</div>
@@ -457,10 +402,20 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                     <button onClick={() => removeExp(i)} style={{ fontSize: 11, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--sans)' }}>Remove role</button>
                   </div>
 
-                  {/* AI-optimized bullet suggestions — new. Previously this
-                      feature had 19-credit pricing and a real API contract
-                      (BulletOptimizationResultSchema) but zero UI, meaning
-                      free-tier users' 5 free optimizations were invisible. */}
+                  {/* NEW: skeleton placeholder shown WHILE the bullet-optimize
+                      request is in flight, shaped like the actual result
+                      card that will replace it — real use of the
+                      previously-unused .skeleton/shimmer pattern, giving
+                      visual feedback beyond just the button's text change. */}
+                  {optimizing === i && (
+                    <div style={{ marginTop: 10, padding: 12, background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-md)' }}>
+                      <div className="skeleton" style={{ width: '85%', height: 12, marginBottom: 8 }} />
+                      <div className="skeleton" style={{ width: '95%', height: 14, marginBottom: 8 }} />
+                      <div className="skeleton" style={{ width: '60%', height: 11, marginBottom: 10 }} />
+                      <div className="skeleton" style={{ width: 120, height: 24, borderRadius: 99 }} />
+                    </div>
+                  )}
+
                   {optimizeResults[i]?.map((opt, bi) => (
                     <div key={bi} style={{ marginTop: 10, padding: 12, background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)' }}>
                       <div style={{ fontSize: 10.5, color: 'var(--muted)', textDecoration: 'line-through', marginBottom: 6 }}>{opt.original}</div>
@@ -475,9 +430,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                     </div>
                   ))}
 
-                  {/* Rich, plan-aware limit card instead of a flat error
-                      string — matches every other credit gate in the app,
-                      and gives a real recharge/upgrade path right here. */}
                   {bulletLimitReached[i] && (
                     <div style={{ marginTop: 10 }}>
                       <LimitReachedCard
@@ -496,7 +448,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
-            {/* Skills */}
             <div className="cvb-card">
               <div style={sectionHead}>Skills</div>
               <textarea
@@ -508,7 +459,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Separate skills with commas</div>
             </div>
 
-            {/* Education */}
             <div className="cvb-card">
               <div className="cvb-card-head">
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Education</div>
@@ -527,7 +477,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
-            {/* Certifications */}
             <div className="cvb-card">
               <div className="cvb-card-head">
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Certifications</div>
@@ -546,10 +495,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
-            {/* Publications — schema (PublicationSchema) and the Academic
-                template's preview already existed; this editing UI did not,
-                so the Academic template previously had no way to actually
-                populate this section. */}
             <div className="cvb-card">
               <div className="cvb-card-head">
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>Publications</div>
@@ -576,7 +521,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
               )}
             </div>
 
-            {/* Languages — NEW, previously had no UI at all */}
             <div className="cvb-card">
               <div style={sectionHead}>Languages</div>
               <input
@@ -590,9 +534,6 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
           </div>
         )}
 
-        {/* Preview panel — always visible on desktop; on mobile only shown
-            when the Preview tab is active, since the tab toggle previously
-            did nothing on narrow screens (both panels rendered regardless). */}
         <div className={`cvb-preview-col${activeTab === 'edit' ? ' cvb-preview-mobile-hidden' : ''}`}>
           <div className="cvb-preview-sticky">
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
@@ -631,7 +572,10 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
         .cvb-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 16px; }
         .cvb-grid[data-tab="preview"] { grid-template-columns: 1fr; }
         .cvb-edit-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-        .cvb-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; }
+        /* FIX: previously no shadow at all — every other card in the app
+           (Dashboard, GrowPath, Billing) now has consistent depth via
+           --shadow-sm. This was the one place still flat. */
+        .cvb-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-sm); }
         .cvb-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
         .cvb-add-btn { font-size: 12px; font-weight: 600; color: var(--teal); background: var(--teal-l); border: 1px solid var(--teal-mid); border-radius: 99px; padding: 5px 14px; cursor: pointer; font-family: var(--sans); }
         .cvb-remove-x { padding: 8px 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: var(--red); cursor: pointer; font-size: 14px; flex-shrink: 0; }

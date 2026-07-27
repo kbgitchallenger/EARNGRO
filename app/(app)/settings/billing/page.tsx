@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { getTransactionHistory, getFeatureLabel } from '@/services/credits.service'
 import CheckoutButton from '@/components/billing/CheckoutButton'
 import PaymentHistory from '@/components/billing/PaymentHistory'
+import PremiumHero from '@/components/ui/PremiumHero'
+import CountUpNumber from '@/components/shared/CountUpNumber'
 
 export const metadata = { title: 'Billing & Usage — EarnGro' }
 
@@ -92,8 +94,12 @@ export default async function BillingPage() {
         Everything about your plan, credits, and past activity — in one place.
       </p>
 
-      {/* Plan + usage card */}
-      <div style={{ background: 'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius: 'var(--r-xl)', padding: '24px 22px', marginBottom: 20 }}>
+      {/* Plan + usage card — now using the shared PremiumHero shell
+          instead of its own hand-rolled linear-gradient. Balance number
+          animates via CountUpNumber, with a format function so the
+          Indian-locale comma grouping (5,000 not 5000) survives the
+          animation instead of being lost. */}
+      <PremiumHero style={{ marginBottom: 20, flexDirection: 'column', alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
@@ -117,7 +123,9 @@ export default async function BillingPage() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
             <span>Credits this cycle</span>
-            <span style={{ fontWeight: 700 }}>{balance.toLocaleString('en-IN')} / {monthlyAllowance.toLocaleString('en-IN')} remaining</span>
+            <span style={{ fontWeight: 700 }}>
+              <CountUpNumber value={balance} format={n => n.toLocaleString('en-IN')} /> / {monthlyAllowance.toLocaleString('en-IN')} remaining
+            </span>
           </div>
           <div style={{ height: 9, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ height: '100%', background: isLow ? '#FBBF24' : '#fff', width: `${remainingPct}%`, borderRadius: 99, transition: 'width 0.6s ease' }} />
@@ -128,7 +136,7 @@ export default async function BillingPage() {
             </div>
           )}
         </div>
-      </div>
+      </PremiumHero>
 
       {/* Upgrade options — shown directly, not just linked out, so the
           next step is one click away rather than a navigation away. */}
@@ -139,7 +147,7 @@ export default async function BillingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${upgradesToShow.length}, 1fr)`, gap: 12 }}>
             {upgradesToShow.map(opt => (
-              <div key={opt.plan} style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '18px 16px' }}>
+              <div key={opt.plan} style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '18px 16px', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{opt.name}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                   <span style={{ fontSize: 12, color: 'var(--muted-l)', textDecoration: 'line-through' }}>{opt.originalPrice}</span>
@@ -164,15 +172,13 @@ export default async function BillingPage() {
         </div>
       )}
 
-      {/* Payment history — NEW. Separate from credit usage below: this is
-          "what did I actually pay, how much, by what method, did it
-          succeed" — real money transactions, not credit ledger movements. */}
+      {/* Payment history */}
       <div style={{ marginBottom: 20 }}>
         <PaymentHistory userId={user.id} />
       </div>
 
       {/* Usage history */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px' }}>
+      <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Usage history</div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>Last 20 activities</div>

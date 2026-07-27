@@ -10,10 +10,12 @@ export default function CountUpNumber({
   value,
   duration = 900,
   style,
+  format,
 }: {
   value: number
   duration?: number
   style?: React.CSSProperties
+  format?: (n: number) => string
 }) {
   const [display, setDisplay] = useState(0)
   const startRef = useRef<number | null>(null)
@@ -46,5 +48,5 @@ export default function CountUpNumber({
     return () => cancelAnimationFrame(raf)
   }, [value, duration])
 
-  return <span style={style}>{display}</span>
+  return <span style={style}>{format ? format(display) : display}</span>
 }
