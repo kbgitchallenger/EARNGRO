@@ -100,7 +100,7 @@ export async function callAIJSON<T extends ZodSchema>(
     try {
       const message = await anthropic.messages.create({
         model,
-        max_tokens: options.maxTokens ?? 1024,
+        max_tokens: options.maxTokens ?? 1800,
         system: 'You are a JSON API. Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no trailing commas. Start your response with { and end with }. Ensure all strings are properly escaped.',
         messages: [{ role: 'user', content: prompt }],
       })
@@ -136,11 +136,11 @@ export async function callAIText(
   prompt: string,
   options: AICallOptions = {}
 ): Promise<string> {
-  const model = options.model ?? 'claude-sonnet-4-5'
+  const model = options.model ?? 'claude-sonnet-4-6'
 
   const message = await anthropic.messages.create({
     model,
-    max_tokens: options.maxTokens ?? 1024,
+    max_tokens: options.maxTokens ?? 1800,
     messages: [{ role: 'user', content: prompt }],
   })
 

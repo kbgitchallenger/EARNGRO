@@ -293,7 +293,7 @@ Rules:
 - immediate_actions: each action must have a concrete timeline (e.g. "30 days", "6 weeks") and measurable impact (e.g. "₹2–3L hike")`
 
     const aiResult = await callAIJSON(prompt, GrowDNAResultSchema, {
-      maxTokens: 1600,
+      maxTokens: 1800,
       model: 'claude-sonnet-4-6',
       feature: 'growdna',
       userId: user.id,
