@@ -14,8 +14,7 @@ import {
   type CVFacts,
 } from '@/lib/growdna/cvConsistency'
 import LimitReachedCard from '@/components/shared/LimitReachedCard'
-import SkillRatingQuestion, { type SkillRatingAnswer } from '@/components/growdna/SkillRatingQuestion'
-import CertificationSearchQuestion, { type CertAnswer } from '@/components/growdna/CertificationSearchQuestion'
+import SkillRatingQuestion, { type SkillAnswerItem } from '@/components/growdna/SkillRatingQuestion'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {
@@ -85,7 +84,7 @@ interface AIResult {
 // Widened to include the two new answer shapes (arrays of objects) —
 // everything else about how Answers is used elsewhere stays valid since
 // this is purely additive to the union.
-type Answers = Record<string, string | string[] | number | SkillRatingAnswer[] | CertAnswer[]>
+type Answers = Record<string, string | string[] | number | SkillAnswerItem[]>
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmt(n: number) {
@@ -476,15 +475,13 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     if (q.type === 'salary')      return !!(a && Number(a) > 0)
     if (q.type === 'tapscale')    return a !== undefined && a !== null && a !== ''
     if (q.type === 'multiselect') return Array.isArray(a) && a.length > 0
-    // NEW: skill_rating requires at least minSelect items (0 for optional
-    // secondary skills, so an empty array correctly counts as answered).
+    // skill_rating handles all three (primary/secondary competencies,
+    // certifications) uniformly now — min=0 (certifications, secondary)
+    // correctly means an empty array already satisfies the requirement.
     if (q.type === 'skill_rating') {
-      const arr = (a as SkillRatingAnswer[] | undefined) ?? []
-      return arr.length >= (q.minSelect ?? 0)
+      const arr = (a as SkillAnswerItem[] | undefined) ?? []
+      return arr.length >= (q.min ?? 0)
     }
-    // NEW: certification_search is always optional — presence or absence
-    // of certifications is never a blocker to continue.
-    if (q.type === 'certification_search') return true
     if (!q.required) return true
     return !!a
   }
@@ -520,8 +517,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   function setTapScale(qid: string, val: number) { setAnswers(prev => ({ ...prev, [qid]: val })) }
   function setSalary(val: number) { setAnswers(prev => ({ ...prev, current_ctc: val })) }
   // NEW: setters for the two Phase 2 question types
-  function setSkillRating(qid: string, val: SkillRatingAnswer[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
-  function setCertifications(qid: string, val: CertAnswer[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
+  function setSkillAnswer(qid: string, val: SkillAnswerItem[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
 
   function goNext() { if (isLast) { handleSubmit(); return }; setCurrentIdx(i => Math.min(i + 1, totalQ - 1)) }
   function goBack() { setCurrentIdx(i => Math.max(i - 1, 0)) }
@@ -542,14 +538,13 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     setSubmitting(true)
     setError('')
     try {
-      // FIX: calculateScores (from questions.ts) was written for the
-      // original narrower answer shape and doesn't know about the two new
-      // Phase 2 answer types (arrays of objects, not strings/numbers).
-      // Explicitly excluding them here — rather than a blind type-cast —
-      // so this stays correct even if calculateScores' internals change
-      // later to iterate over all keys generically.
-      const { primary_competencies, secondary_competencies, certifications, ...scorableAnswers } = answers
-      const scores = calculateScores(scorableAnswers as Record<string, string | number | string[]>)
+      // FIX: previously excluded these three fields before calling
+      // calculateScores, since that function didn't know about them yet
+      // and would have hit a type error. Now that calculateScores has
+      // been fixed to actually use them (real skill_premium calculation,
+      // not the old hardcoded-20 bug), passing the full answers object
+      // through directly again.
+      const scores = calculateScores(answers)
       const res = await fetch('/api/growdna', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -712,24 +707,19 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
           <SalaryInput value={getAnswer('current_ctc') as number | undefined} onChange={setSalary} />
         )}
 
-        {/* NEW — Phase 2: Primary/Secondary Competencies, per the Skills
-            Intelligence Platform brief. Same component handles both tiers,
-            distinguished by minSelect/maxSelect on the question definition. */}
+        {/* Competencies + Certifications — one unified component now,
+            per the reconciled schema: all three (primary/secondary
+            competencies, certifications) are 'skill_rating' type,
+            distinguished by searchTarget (which table to search) and
+            ratingRequired (whether a proficiency picker shows at all). */}
         {current?.type === 'skill_rating' && (
           <SkillRatingQuestion
-            tier={current.tier ?? 'primary'}
-            minSelect={current.minSelect ?? 0}
-            maxSelect={current.maxSelect ?? 4}
-            value={(getAnswer(current.id) as SkillRatingAnswer[] | undefined) ?? []}
-            onChange={v => setSkillRating(current.id, v)}
-          />
-        )}
-
-        {/* NEW — Phase 2: Certifications */}
-        {current?.type === 'certification_search' && (
-          <CertificationSearchQuestion
-            value={(getAnswer(current.id) as CertAnswer[] | undefined) ?? []}
-            onChange={v => setCertifications(current.id, v)}
+            min={current.min ?? 0}
+            max={current.max ?? 4}
+            ratingRequired={current.ratingRequired ?? false}
+            searchTarget={current.searchTarget ?? 'competency'}
+            value={(getAnswer(current.id) as SkillAnswerItem[] | undefined) ?? []}
+            onChange={v => setSkillAnswer(current.id, v)}
           />
         )}
 

@@ -1,4 +1,4 @@
-export type QuestionType = 'mcq' | 'multiselect' | 'tapscale' | 'salary' | 'skill_rating' | 'certification_search'
+export type QuestionType = 'mcq' | 'multiselect' | 'tapscale' | 'salary' | 'skill_rating'
 export type SeniorityLevel = 'fresher' | 'junior' | 'mid' | 'senior' | 'leadership'
 
 export interface Option {
@@ -25,10 +25,6 @@ export interface Question {
   ratingRequired?: boolean                          // primary requires a rating, secondary/certs don't
   searchTarget?: 'competency' | 'certification'      // which table the picker searches — genuinely different tables
   required: boolean
-  tier?: 'primary' | 'secondary'   // for skill_rating: which competency tier this collects
-  minSelect?: number
-  maxSelect?: number
-  optional?: boolean               // true = can submit with zero selections (secondary skills)
   branch?: SeniorityLevel[]
   columns?: 2 | 3 | 4        // grid columns hint
   grouped?: boolean           // show group headers
@@ -386,41 +382,50 @@ export const MODULE_B_LEADERSHIP: Question[] = [
   },
 ]
 
-// ── MODULE C — Psychometric (everyone) ───────────────────────────
+// ── MODULE C — Psychometric + Competencies (everyone) ─────────────
 
 export const MODULE_C: Question[] = [
-
+  // Reconciled to the unified schema: one 'skill_rating' type for all
+  // three (primary/secondary competencies, certifications), distinguished
+  // by searchTarget (which table to search) rather than a separate
+  // 'certification_search' type. min/max/ratingRequired replace the
+  // earlier tier/minSelect/maxSelect naming.
   {
-  id: 'primary_competencies',
-  type: 'skill_rating',
-  module: 'C',
-  title: 'What are your primary professional skills?',
-  subtitle: 'Select 3–4 skills you use most, and rate your proficiency in each.',
-  tier: 'primary',
-  minSelect: 3,
-  maxSelect: 4,
-  required: true,
-},
-{
-  id: 'secondary_competencies',
-  type: 'skill_rating',
-  module: 'C',
-  title: 'Any secondary skills worth mentioning?',
-  subtitle: 'Optional — 2–3 more skills you use occasionally.',
-  tier: 'secondary',
-  minSelect: 0,
-  maxSelect: 3,
-  required: false,
-},
-
-{
-  id: 'certifications',
-  type: 'certification_search',
-  module: 'C',
-  title: 'Any certifications or professional licenses?',
-  subtitle: 'Search and add — optional, but strengthens your profile.',
-  required: false,
-},
+    id: 'primary_competencies',
+    type: 'skill_rating',
+    module: 'C',
+    title: 'What are your primary professional skills?',
+    subtitle: 'Select 2–3 skills you use most, and rate your proficiency in each.',
+    min: 2,
+    max: 3,
+    ratingRequired: true,
+    searchTarget: 'competency',
+    required: true,
+  },
+  {
+    id: 'secondary_competencies',
+    type: 'skill_rating',
+    module: 'C',
+    title: 'Any secondary skills worth mentioning?',
+    subtitle: 'Optional — 2–3 more skills you use occasionally.',
+    min: 0,
+    max: 3,
+    ratingRequired: false,
+    searchTarget: 'competency',
+    required: false,
+  },
+  {
+    id: 'certifications_search',
+    type: 'skill_rating',
+    module: 'C',
+    title: 'Any certifications or professional licenses?',
+    subtitle: 'Search and add — optional, but strengthens your profile.',
+    min: 0,
+    max: 6,
+    ratingRequired: false,
+    searchTarget: 'certification',
+    required: false,
+  },
   {
     id: 'negotiation_history',
     module: 'C',
@@ -606,7 +611,7 @@ export interface DimensionScores {
   hrs: number
 }
 
-export function calculateScores(answers: Record<string, string | string[] | number>): DimensionScores {
+export function calculateScores(answers: Record<string, string | string[] | number | { rating?: number }[]>): DimensionScores {
   const getScore = (qid: string, val: string): number => {
     const all = [...MODULE_A, ...MODULE_B_FRESHER, ...MODULE_B_MID, ...MODULE_B_SENIOR, ...MODULE_B_LEADERSHIP, ...MODULE_C]
     return all.find(q => q.id === qid)?.options?.find(o => o.value === val)?.score ?? 5
@@ -616,9 +621,24 @@ export function calculateScores(answers: Record<string, string | string[] | numb
   const cityScore     = getScore('city', answers.city as string)
   const market_alignment = Math.round(((industryScore + cityScore) / 20) * 100)
 
-  const skillArrays = [answers.premium_skills, answers.certifications_fresher, answers.internship_quality].filter(Boolean)
-  const totalSkillItems = (skillArrays.flat() as string[]).filter(v => v !== 'none' && v !== 'none_cert' && v !== 'no_premium').length
-  const skill_premium = Math.min(100, 20 + totalSkillItems * 14)
+  // FIX: previously read from premium_skills/certifications_fresher/
+  // internship_quality — three legacy field names no current question
+  // writes to. That meant skill_premium was ALWAYS a flat 20/100 for
+  // every real user, regardless of what they actually entered. Now uses
+  // the real Primary/Secondary Competencies + Certifications answers:
+  // primary skills weighted most heavily (both count and self-rating),
+  // secondary skills lightly, certifications as a real credential signal.
+  const primary = (answers.primary_competencies as { rating?: number }[] | undefined) ?? []
+  const secondary = (answers.secondary_competencies as { rating?: number }[] | undefined) ?? []
+  const certs = (answers.certifications_search as { rating?: number }[] | undefined) ?? []
+
+  const avgPrimaryRating = primary.length > 0
+    ? primary.reduce((sum, s) => sum + (s.rating ?? 3), 0) / primary.length
+    : 0
+  const primaryScore = primary.length > 0 ? Math.min(60, primary.length * 12 + avgPrimaryRating * 4) : 0
+  const secondaryScore = Math.min(20, secondary.length * 5)
+  const certScore = Math.min(20, certs.length * 10)
+  const skill_premium = Math.min(100, Math.round(primaryScore + secondaryScore + certScore))
 
   const visItems = Array.isArray(answers.external_visibility)
     ? (answers.external_visibility as string[]).filter(v => v !== 'no_visibility').length : 0
