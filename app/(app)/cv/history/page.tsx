@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import CVHistoryRow from '@/components/cv/CVHistoryRow'
 
 export default async function CVHistoryPage() {
   const supabase = await createClient()
@@ -26,41 +27,24 @@ export default async function CVHistoryPage() {
         </Link>
       </div>
 
+      {/* FIX: previously each row declared transition:'border-color 0.15s'
+          with no hover state to ever trigger it, and no shadow at all —
+          same two gaps found and fixed on Settings and CV Builder earlier.
+          CVHistoryRow is a small client component with real hover state. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {versions.map(v => {
-          const score = v.market_score
-          const scoreColor = score >= 70 ? 'var(--teal)' : score >= 45 ? 'var(--amber)' : 'var(--red)'
-          return (
-            <Link
-              key={v.id}
-              href={`/cv/analysis/${v.id}`}
-              style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14, background: 'var(--paper)', border: `1px solid ${v.is_primary ? 'var(--teal-mid)' : 'var(--border)'}`, borderRadius: 'var(--r-lg)', padding: '16px 18px', transition: 'border-color 0.15s' }}
-            >
-              <div style={{ width: 44, height: 44, borderRadius: 'var(--r-md)', background: v.source === 'upload' ? 'var(--teal-l)' : 'var(--amber-l)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                {v.source === 'upload' ? '📄' : '🛠️'}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{v.name ?? `Resume v${v.version_number}`}</span>
-                  {v.is_primary && <span style={{ fontSize: 10, background: 'var(--teal)', color: '#fff', padding: '1px 7px', borderRadius: 99, fontWeight: 700 }}>PRIMARY</span>}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {v.file_name ?? v.source} · {new Date(v.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                {score ? (
-                  <>
-                    <div style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 700, color: scoreColor, lineHeight: 1 }}>{score}</div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)' }}>score</div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 11, color: 'var(--muted)', background: 'var(--paper-2)', border: '1px solid var(--border)', borderRadius: 99, padding: '3px 10px' }}>Analyse →</div>
-                )}
-              </div>
-            </Link>
-          )
-        })}
+        {versions.map(v => (
+          <CVHistoryRow
+            key={v.id}
+            id={v.id}
+            name={v.name}
+            versionNumber={v.version_number}
+            isPrimary={v.is_primary}
+            source={v.source}
+            fileName={v.file_name}
+            createdAt={v.created_at}
+            score={v.market_score}
+          />
+        ))}
       </div>
     </div>
   )

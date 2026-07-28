@@ -8,6 +8,8 @@ import { getAllQuestions, type Question } from '@/lib/growdna/questions'
 import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 import { upsertCompetency, upsertCertification } from '@/services/skillsProfile.service'
 import { calculateMonthsToClose } from '@/lib/growdna/monthsToClose'
+import { calculateAIReadiness } from '@/lib/growdna/aiReadiness'
+import { getMatchedAITools } from '@/services/skillsProfile.service'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
   high_skill_low_market:  { name: 'The Hidden Gem',          desc: 'Strong skills, underexposed to market. One strategic move changes everything.' },
@@ -36,6 +38,12 @@ const GrowDNAResultSchema = z.object({
       timeline: z.string(),
     })
   ),
+  ai_tool_recommendations: z.array(
+    z.object({
+      tool_name: z.string(),
+      reason: z.string(),
+    })
+  ).optional(),
 })
 
 function detectArchetype(answers: Record<string, unknown>, scores: Record<string, number>): string {
@@ -197,6 +205,20 @@ export async function POST(req: Request) {
       answers.industry as string | undefined
     )
 
+    // Real, curated tools only — the AI selects and personalizes FROM
+    // this list, it never invents a tool name. This is the same grounding
+    // discipline as top_strengths/critical_gaps, applied to prevent a
+    // recommendation for a tool that doesn't exist, is deprecated, or is
+    // wrong for the role.
+    const matchedTools = await getMatchedAITools(
+      (answers.role as string) ?? '',
+      (answers.industry as string) ?? '',
+      3
+    )
+    const toolsListText = matchedTools.length > 0
+      ? matchedTools.map(t => `- ${t.name}: ${t.description}`).join('\n')
+      : '(No matching tools in our catalog for this role/industry yet — omit ai_tool_recommendations entirely rather than inventing one.)'
+
     const prompt = `You are a senior compensation intelligence analyst for India and Southeast Asia, 2026–2027.
 
 CRITICAL RULES:
@@ -208,6 +230,7 @@ CRITICAL RULES:
 - CRITICAL: every string value must be valid JSON — any double-quote, backslash, or newline character WITHIN a string must be properly escaped (e.g. \\" not "). Malformed JSON here causes a hard failure with no fallback, so this is not optional.
 - CRITICAL — top_strengths and critical_gaps are PERSONAL claims about THIS person and must be directly traceable to a specific item in "WHAT THIS PERSON ACTUALLY ANSWERED" below. Do not name a specific skill, certification, or tool this person was never asked about and never told you they have or lack. If their answers don't clearly support 3 distinct strengths or 3 distinct gaps, return fewer rather than inventing generic, role-typical ones to fill the count.
 - market_insight and peer_comparison are the ONLY fields allowed to draw on general market/industry knowledge beyond this person's specific answers — because they are framed as market context, not a personal diagnosis.
+- CRITICAL — ai_tool_recommendations: tool_name must be an EXACT match to one of the tools listed in "AVAILABLE AI TOOLS" below. Never introduce a tool name that isn't in that list. If that list says no tools matched, omit ai_tool_recommendations entirely — do not invent one to fill it.
 
 SCORING RUBRIC FOR THIS PROFILE:
 - target_salary: realistic median market rate for this exact role + city + seniority combination in India/SEA 2026-2027, not aspirational
@@ -225,6 +248,9 @@ City: ${answers.city}
 Current Annual CTC: ₹${Number(answers.current_ctc).toLocaleString('en-IN')}
 Negotiation history: ${answers.negotiation_history}
 Growth investment level: ${answers.growth_investment ?? 0} out of 5
+
+AVAILABLE AI TOOLS (select from here only, if any are relevant to this person's role — never invent a tool not listed):
+${toolsListText}
 
 WHAT THIS PERSON ACTUALLY ANSWERED (the ONLY source for top_strengths and critical_gaps — do not go beyond this list for those two fields):
 ${answeredQuestionsSummary}
@@ -251,7 +277,10 @@ Return exactly this JSON object:
     { "action": <string>, "impact": <string>, "timeline": <string> },
     { "action": <string>, "impact": <string>, "timeline": <string> },
     { "action": <string>, "impact": <string>, "timeline": <string> }
-  ]
+  ]${matchedTools.length > 0 ? `,
+  "ai_tool_recommendations": [
+    { "tool_name": <string, EXACT match from AVAILABLE AI TOOLS above>, "reason": <string, one sentence on why this specific tool matters for THIS person's role/gaps> }
+  ]` : ''}
 }
 
 Rules:
@@ -284,6 +313,15 @@ Rules:
       prevHrsScore: previousAssessment?.hrs_score ?? null,
     })
 
+    // Real, grounded AI Readiness — computed directly from this
+    // submission's actual skill selections (in memory already, no extra
+    // DB round-trip needed), never AI-generated. Kept deliberately
+    // separate from the 5 HRS dimensions per the product decision that
+    // this measures future-readiness, not current market position.
+    const primarySkills = (answers.primary_competencies as { category?: string; rating?: number }[] | undefined) ?? []
+    const secondarySkills = (answers.secondary_competencies as { category?: string; rating?: number }[] | undefined) ?? []
+    const aiReadinessResult = calculateAIReadiness([...primarySkills, ...secondarySkills].map(s => ({ category: s.category ?? 'skill', rating: s.rating })))
+
     const { data: saved, error: saveError } = await supabase
       .from('grow_dna')
       .insert({
@@ -308,7 +346,7 @@ Rules:
         // Breakdown merged into the existing raw_ai_response jsonb column
         // rather than a new dedicated column — avoids a schema migration
         // for what's still one cohesive "how we got this result" blob.
-        raw_ai_response: { ...aiResult, months_breakdown: monthsResult },
+        raw_ai_response: { ...aiResult, months_breakdown: monthsResult, ai_readiness: aiReadinessResult },
         dimension_scores: {
           market_alignment: scores.market_alignment,
           skill_premium: scores.skill_premium,
@@ -368,11 +406,13 @@ Rules:
       salary_range_max: aiResult.salary_range_max,
       months_to_close: monthsResult.total,
       months_breakdown: monthsResult,
+      ai_readiness: aiReadinessResult,
       peer_comparison: aiResult.peer_comparison,
       market_insight: aiResult.market_insight,
       top_strengths: aiResult.top_strengths ?? [],
       critical_gaps: aiResult.critical_gaps ?? [],
       immediate_actions: aiResult.immediate_actions ?? [],
+      ai_tool_recommendations: aiResult.ai_tool_recommendations ?? [],
       scores: {
         market_alignment: scores.market_alignment,
         skill_premium: scores.skill_premium,

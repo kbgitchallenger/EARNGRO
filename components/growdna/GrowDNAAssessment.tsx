@@ -64,9 +64,11 @@ interface AIResult {
   target_salary: number
   months_to_close: number
   months_breakdown?: { total: number; prepMonths: number; searchMonths: number; explanation: string }
+  ai_readiness?: { score: number; level: string; aiSkillCount: number; avgRating: number; explanation: string }
   top_strengths: string[]
   critical_gaps: string[]
   immediate_actions: { action: string; impact: string; timeline: string }[]
+  ai_tool_recommendations?: { tool_name: string; reason: string }[]
   market_insight: string
   salary_range_min: number
   salary_range_max: number
@@ -346,6 +348,41 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         })}
       </div>
 
+      {/* AI Readiness — deliberately separate card, not a 6th dimension
+          bar. Violet accent instead of the teal/red/amber used everywhere
+          else in this panel, so it reads at a glance as measuring a
+          genuinely different thing (future-readiness) rather than
+          current market position. */}
+      {result.ai_readiness && (
+        <div className="dna-card" style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+              background: '#fff', border: '2px solid #A78BFA',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: '#6D28D9',
+            }}>
+              {result.ai_readiness.score}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#6D28D9', display: 'flex', alignItems: 'center', gap: 6 }}>
+                🤖 AI Readiness
+                <span style={{ fontSize: 10.5, fontWeight: 700, background: '#DDD6FE', color: '#6D28D9', padding: '2px 8px', borderRadius: 99 }}>
+                  {result.ai_readiness.level}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#7C3AED' }}>How prepared you are for where the market is heading — not where it already is</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.6, marginBottom: 10 }}>
+            {result.ai_readiness.explanation}
+          </div>
+          <div style={{ fontSize: 10.5, color: '#7C3AED', fontStyle: 'italic' }}>
+            Based on the AI-related skills you self-reported — not independently verified.
+          </div>
+        </div>
+      )}
+
       {(strengths.length > 0 || gaps.length > 0) && (
         <div className="dna-sg-grid">
           {strengths.length > 0 && (
@@ -382,6 +419,26 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
                 <div style={{ fontSize: 12, color: 'var(--teal)', marginBottom: 2 }}>Impact: {a.impact}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>Timeline: {a.timeline}</div>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* AI Tool Recommendations — real catalog tools only, selected and
+          personalized by the AI, never invented. Same violet accent as
+          AI Readiness so the two visually read as related. */}
+      {result.ai_tool_recommendations && result.ai_tool_recommendations.length > 0 && (
+        <div className="dna-card" style={{ border: '1px solid #DDD6FE' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#6D28D9', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            🤖 Recommended AI tools for your role
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>
+            Selected from a real, curated catalog — not AI-generated suggestions
+          </div>
+          {result.ai_tool_recommendations.map((t, i) => (
+            <div key={i} style={{ padding: '10px 14px', background: '#F5F3FF', border: '1px solid #EDE9FE', borderRadius: 'var(--r-md)', marginBottom: i < result.ai_tool_recommendations!.length - 1 ? 8 : 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#6D28D9', marginBottom: 3 }}>{t.tool_name}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.5 }}>{t.reason}</div>
             </div>
           ))}
         </div>
@@ -635,9 +692,11 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
       target_salary:        existingResult.target_salary ?? 0,
       months_to_close:      existingResult.months_to_close ?? 0,
       months_breakdown:     (ai as { months_breakdown?: AIResult['months_breakdown'] }).months_breakdown,
+      ai_readiness:         (ai as { ai_readiness?: AIResult['ai_readiness'] }).ai_readiness,
       top_strengths:        ai.top_strengths ?? [],
       critical_gaps:        existingResult.gap_reasons ?? [],
       immediate_actions:    ai.immediate_actions ?? normActions,
+      ai_tool_recommendations: (ai as { ai_tool_recommendations?: AIResult['ai_tool_recommendations'] }).ai_tool_recommendations,
       market_insight:       ai.market_insight ?? '',
       salary_range_min:     existingResult.salary_range_min ?? 0,
       salary_range_max:     existingResult.salary_range_max ?? 0,
