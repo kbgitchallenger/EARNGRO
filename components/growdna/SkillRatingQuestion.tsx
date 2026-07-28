@@ -60,15 +60,24 @@ export default function SkillRatingQuestion({ tier, minSelect, maxSelect, value,
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
 
-  async function submitMissingSkillRequest() {
+  async function addMissingSkill() {
+    if (value.length >= maxSelect) return
     setRequestStatus('submitting')
     try {
-      await fetch('/api/competencies/request', {
+      const res = await fetch('/api/competencies/create-pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: query, type: 'competency' }),
+        body: JSON.stringify({ name: query }),
       })
-      setRequestStatus('submitted')
+      if (!res.ok) throw new Error('Failed to add skill')
+      const { result } = await res.json()
+      onChange([...value, {
+        competencyId: result.id, name: result.name, category: result.category,
+        rating: 3, yearsExperience: undefined, currentlyUsing: true,
+      }])
+      setQuery('')
+      setResults([])
+      setRequestStatus('idle')
     } catch {
       setRequestStatus('idle')
     }
@@ -132,28 +141,20 @@ export default function SkillRatingQuestion({ tier, minSelect, maxSelect, value,
               ))}
               {!loading && results.length === 0 && query.length >= 2 && (
                 <div style={{ padding: '10px 14px' }}>
-                  {requestStatus === 'submitted' ? (
-                    <div style={{ fontSize: 12.5, color: 'var(--teal-d)' }}>
-                      ✓ Thanks — we'll review "{query}" for the skills list.
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 8 }}>
-                        No matches for "{query}".
-                      </div>
-                      <button
-                        onClick={submitMissingSkillRequest}
-                        disabled={requestStatus === 'submitting'}
-                        style={{
-                          fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--teal)',
-                          border: 'none', borderRadius: 99, padding: '6px 14px', cursor: 'pointer',
-                          fontFamily: 'var(--sans)', opacity: requestStatus === 'submitting' ? 0.7 : 1,
-                        }}
-                      >
-                        {requestStatus === 'submitting' ? 'Submitting…' : `Request "${query}" be added →`}
-                      </button>
-                    </>
-                  )}
+                  <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 8 }}>
+                    No matches for "{query}".
+                  </div>
+                  <button
+                    onClick={addMissingSkill}
+                    disabled={requestStatus === 'submitting'}
+                    style={{
+                      fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--teal)',
+                      border: 'none', borderRadius: 99, padding: '6px 14px', cursor: 'pointer',
+                      fontFamily: 'var(--sans)', opacity: requestStatus === 'submitting' ? 0.7 : 1,
+                    }}
+                  >
+                    {requestStatus === 'submitting' ? 'Adding…' : `Add "${query}" as a skill →`}
+                  </button>
                 </div>
               )}
             </div>

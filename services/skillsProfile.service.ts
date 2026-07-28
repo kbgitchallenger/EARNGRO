@@ -217,6 +217,68 @@ export async function requestMissingCompetency(
   if (error) console.error('requestMissingCompetency failed (non-fatal):', error)
 }
 
+// FIX: previously the only path for a missing skill was submitting a
+// request and waiting for manual admin review — meaning a user with a
+// genuine, real skill simply not yet in the taxonomy had no way to
+// actually represent it in their OWN assessment. No taxonomy will ever
+// cover every real-world skill/tool, so blocking on that is a real
+// dead-end, not a minor gap.
+//
+// This creates the row immediately with is_active=false — it won't
+// surface in searchCompetencies() for OTHER users (that query filters
+// on is_active=true) until an admin reviews and activates it, but THIS
+// user can select/rate it right now since their own reference is a
+// direct foreign key, unaffected by the active flag. Also logs the
+// request for the same admin-review queue as before, so nothing about
+// the taxonomy's curation process is lost — just no longer a blocker.
+export async function createPendingCompetencyAndSelect(
+  userId: string,
+  name: string,
+  category: string = 'skill'
+): Promise<{ id: string; name: string; category: string }> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('competency_taxonomy')
+    .insert({ name, category, is_active: false })
+    .select('id, name, category')
+    .single()
+
+  if (error) {
+    console.error('createPendingCompetencyAndSelect failed:', error)
+    throw new Error('Failed to add skill')
+  }
+
+  // Non-fatal — the review-queue record is a nice-to-have for admin
+  // visibility, but the competency row itself already exists and is
+  // already usable regardless of whether this succeeds.
+  await requestMissingCompetency(userId, name, 'competency', 'Auto-created via assessment — pending review').catch(() => {})
+
+  return data
+}
+
+export async function createPendingCertificationAndSelect(
+  userId: string,
+  name: string
+): Promise<{ id: string; name: string; issuer: string | null }> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('certifications_taxonomy')
+    .insert({ name, is_active: false })
+    .select('id, name, issuer')
+    .single()
+
+  if (error) {
+    console.error('createPendingCertificationAndSelect failed:', error)
+    throw new Error('Failed to add certification')
+  }
+
+  await requestMissingCompetency(userId, name, 'certification', 'Auto-created via assessment — pending review').catch(() => {})
+
+  return data
+}
+
 // ── AI Tools matching — grounded recommendations only ───────────────
 
 export interface MatchedAITool {
