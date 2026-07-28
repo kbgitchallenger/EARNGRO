@@ -239,22 +239,16 @@ export async function createPendingCompetencyAndSelect(
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('competency_taxonomy')
-    .insert({ name, category, is_active: false })
-    .select('id, name, category')
-    .single()
+    .rpc('create_pending_competency', { p_name: name, p_category: category })
 
-  if (error) {
+  if (error || !data?.[0]) {
     console.error('createPendingCompetencyAndSelect failed:', error)
     throw new Error('Failed to add skill')
   }
 
-  // Non-fatal — the review-queue record is a nice-to-have for admin
-  // visibility, but the competency row itself already exists and is
-  // already usable regardless of whether this succeeds.
   await requestMissingCompetency(userId, name, 'competency', 'Auto-created via assessment — pending review').catch(() => {})
 
-  return data
+  return data[0]
 }
 
 export async function createPendingCertificationAndSelect(
@@ -264,19 +258,16 @@ export async function createPendingCertificationAndSelect(
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('certifications_taxonomy')
-    .insert({ name, is_active: false })
-    .select('id, name, issuer')
-    .single()
+    .rpc('create_pending_certification', { p_name: name })
 
-  if (error) {
+  if (error || !data?.[0]) {
     console.error('createPendingCertificationAndSelect failed:', error)
     throw new Error('Failed to add certification')
   }
 
   await requestMissingCompetency(userId, name, 'certification', 'Auto-created via assessment — pending review').catch(() => {})
 
-  return data
+  return data[0]
 }
 
 // ── AI Tools matching — grounded recommendations only ───────────────
