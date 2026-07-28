@@ -1,21 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import CVPreview, { type CVTemplate } from './CVPreview'
 import LimitReachedCard from '@/components/shared/LimitReachedCard'
 import type { ParsedResume } from '@/lib/ai/validators/resume.validator'
 
-const TEMPLATE_OPTIONS: { id: CVTemplate; label: string; desc: string; atsRisk: 'safe' | 'moderate' }[] = [
-  { id: 'classic', label: 'Classic', desc: 'Serif, traditional', atsRisk: 'safe' },
-  { id: 'modern', label: 'Modern', desc: 'Clean, teal accents', atsRisk: 'safe' },
-  { id: 'minimal', label: 'Minimal', desc: 'Neutral, conservative', atsRisk: 'safe' },
-  { id: 'sidebar', label: 'Sidebar', desc: 'Two-column, visual', atsRisk: 'moderate' },
-  { id: 'fresher', label: 'Fresher', desc: 'Education first', atsRisk: 'safe' },
-  { id: 'technical', label: 'Technical', desc: 'Categorized skills', atsRisk: 'safe' },
-  { id: 'sales', label: 'Sales/Business', desc: 'Metrics highlighted', atsRisk: 'safe' },
-  { id: 'executive', label: 'Executive', desc: 'Concise, senior tone', atsRisk: 'safe' },
-  { id: 'academic', label: 'Academic', desc: 'Research-focused', atsRisk: 'safe' },
+const TEMPLATE_OPTIONS: { id: CVTemplate; label: string; desc: string; atsRisk: 'safe' | 'moderate'; swatchLayout: 'single' | 'sidebar'; accent: string }[] = [
+  { id: 'classic', label: 'Classic', desc: 'Serif, traditional', atsRisk: 'safe', swatchLayout: 'single', accent: '#1a1a1a' },
+  { id: 'modern', label: 'Modern', desc: 'Clean, teal accents', atsRisk: 'safe', swatchLayout: 'single', accent: '#0e7a5a' },
+  { id: 'minimal', label: 'Minimal', desc: 'Neutral, conservative', atsRisk: 'safe', swatchLayout: 'single', accent: '#6b6b64' },
+  { id: 'sidebar', label: 'Sidebar', desc: 'Two-column, visual', atsRisk: 'moderate', swatchLayout: 'sidebar', accent: '#0e7a5a' },
+  { id: 'fresher', label: 'Fresher', desc: 'Education first', atsRisk: 'safe', swatchLayout: 'single', accent: '#0891b2' },
+  { id: 'technical', label: 'Technical', desc: 'Categorized skills', atsRisk: 'safe', swatchLayout: 'single', accent: '#6366f1' },
+  { id: 'sales', label: 'Sales/Business', desc: 'Metrics highlighted', atsRisk: 'safe', swatchLayout: 'single', accent: '#e8922a' },
+  { id: 'executive', label: 'Executive', desc: 'Concise, senior tone', atsRisk: 'safe', swatchLayout: 'single', accent: '#1a1a1a' },
+  { id: 'academic', label: 'Academic', desc: 'Research-focused', atsRisk: 'safe', swatchLayout: 'single', accent: '#0e7a5a' },
 ]
 
 const EMPTY: ParsedResume = {
@@ -40,6 +40,73 @@ const sectionHead: React.CSSProperties = {
   fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600,
   color: 'var(--ink)', marginBottom: 14, paddingBottom: 8,
   borderBottom: '1px solid var(--border)',
+}
+
+// The B+D hybrid: auto-fits to container width by default (so it's never
+// clipped, same real bug fix as before) but adds genuine user-controlled
+// zoom on top — the first attempt only auto-shrank with no way to zoom
+// back in to actually read a two-column template, which is why it was
+// rejected. baseScale is the "fits perfectly" starting point, computed
+// once per template/content change; zoomMultiplier is purely the user's
+// own +/- control layered on top of that baseline. On desktop, baseScale
+// naturally computes to ~1 already (nothing to shrink), so the zoom UI
+// stays present but effectively inert there — no separate desktop design
+// needed.
+function ZoomablePreview({ children }: { children: React.ReactNode }) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [baseScale, setBaseScale] = useState(1)
+  const [zoomMultiplier, setZoomMultiplier] = useState(1)
+  const [scaledHeight, setScaledHeight] = useState<number | undefined>(undefined)
+
+  const finalScale = baseScale * zoomMultiplier
+
+  useEffect(() => {
+    function computeBaseScale() {
+      if (!outerRef.current || !innerRef.current) return
+      const containerWidth = outerRef.current.offsetWidth
+      const naturalWidth = innerRef.current.scrollWidth
+      const fit = naturalWidth > containerWidth ? containerWidth / naturalWidth : 1
+      setBaseScale(fit)
+    }
+    computeBaseScale()
+    const ro = new ResizeObserver(computeBaseScale)
+    if (outerRef.current) ro.observe(outerRef.current)
+    return () => ro.disconnect()
+  }, [children])
+
+  useEffect(() => {
+    if (!innerRef.current) return
+    setScaledHeight(innerRef.current.scrollHeight * finalScale)
+  }, [finalScale, children])
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 2px' }}>
+        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+          {zoomMultiplier === 1 ? 'Fits your screen' : 'Zoomed'}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--paper-2)', border: '1px solid var(--border)', borderRadius: 99, padding: 3 }}>
+          <button
+            onClick={() => setZoomMultiplier(z => Math.max(0.6, Math.round((z - 0.15) * 100) / 100))}
+            style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 14, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            aria-label="Zoom out"
+          >−</button>
+          <span style={{ fontSize: 10.5, color: 'var(--muted)', minWidth: 34, textAlign: 'center' }}>{Math.round(zoomMultiplier * 100)}%</span>
+          <button
+            onClick={() => setZoomMultiplier(z => Math.min(2, Math.round((z + 0.15) * 100) / 100))}
+            style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 14, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            aria-label="Zoom in"
+          >+</button>
+        </div>
+      </div>
+      <div ref={outerRef} style={{ width: '100%', overflow: finalScale > baseScale ? 'auto' : 'hidden', height: scaledHeight, border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
+        <div ref={innerRef} style={{ transform: `scale(${finalScale})`, transformOrigin: 'top left', width: 800 }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 interface CVBuilderProps {
@@ -268,26 +335,42 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
   return (
     <div className="cvb-page">
 
-      <div className="cvb-template-picker">
+      <div className="cvb-template-strip">
         {TEMPLATE_OPTIONS.map(opt => (
           <button
             key={opt.id}
             onClick={() => setTemplate(opt.id)}
-            className={`cvb-template-btn${template === opt.id ? ' active' : ''}`}
+            className={`cvb-template-chip${template === opt.id ? ' active' : ''}`}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontWeight: 600 }}>{opt.label}</span>
-              <span style={{
-                fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 99,
-                background: opt.atsRisk === 'safe'
-                  ? (template === opt.id ? 'rgba(255,255,255,0.2)' : 'var(--teal-l)')
-                  : (template === opt.id ? 'rgba(255,255,255,0.2)' : 'var(--amber-l, #FEF3C7)'),
-                color: template === opt.id ? '#fff' : (opt.atsRisk === 'safe' ? 'var(--teal-d)' : 'var(--amber)'),
-              }}>
-                {opt.atsRisk === 'safe' ? 'ATS-safe' : 'Visual'}
-              </span>
+            {/* Simplified shape swatch — single-column templates show a
+                stacked-lines shape, Sidebar shows a genuine two-column
+                split, since that's the one structurally different
+                template worth communicating visually. Accent color hints
+                at each template's actual look without needing to render
+                the real thing. */}
+            <div className="cvb-swatch">
+              {opt.swatchLayout === 'sidebar' ? (
+                <div style={{ display: 'flex', gap: 3, height: '100%' }}>
+                  <div style={{ width: '38%', background: opt.accent, borderRadius: 2 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, paddingTop: 2 }}>
+                    <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, width: '90%' }} />
+                    <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, width: '75%' }} />
+                    <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, width: '85%' }} />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '3px 4px', height: '100%' }}>
+                  <div style={{ height: 4, background: opt.accent, borderRadius: 2, width: '55%', marginBottom: 2 }} />
+                  <div style={{ height: 2.5, background: 'var(--border)', borderRadius: 2, width: '90%' }} />
+                  <div style={{ height: 2.5, background: 'var(--border)', borderRadius: 2, width: '80%' }} />
+                  <div style={{ height: 2.5, background: 'var(--border)', borderRadius: 2, width: '85%' }} />
+                </div>
+              )}
+            </div>
+            <span className="cvb-chip-label">{opt.label}</span>
+            <span className={`cvb-chip-badge${opt.atsRisk === 'moderate' ? ' visual' : ''}`}>
+              {opt.atsRisk === 'safe' ? 'ATS-safe' : 'Visual'}
             </span>
-            <span style={{ fontSize: 11, color: template === opt.id ? 'rgba(255,255,255,0.75)' : 'var(--muted)' }}>{opt.desc}</span>
           </button>
         ))}
       </div>
@@ -468,8 +551,10 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                 <div key={i} className="cvb-edu-row">
                   <div><label style={lbl}>Degree</label><input style={inp} value={edu.degree} onChange={e => setEdu(i, 'degree', e.target.value)} placeholder="B.Tech Computer Science" /></div>
                   <div><label style={lbl}>Institution</label><input style={inp} value={edu.institution} onChange={e => setEdu(i, 'institution', e.target.value)} placeholder="IIT Delhi" /></div>
-                  <div><label style={lbl}>Year</label><input style={inp} value={edu.year ?? ''} onChange={e => setEdu(i, 'year', e.target.value)} placeholder="2019" /></div>
-                  <button onClick={() => removeEdu(i)} className="cvb-remove-x" style={{ alignSelf: 'end' }}>×</button>
+                  <div className="cvb-edu-year-group">
+                    <div style={{ flex: 1 }}><label style={lbl}>Year</label><input style={inp} value={edu.year ?? ''} onChange={e => setEdu(i, 'year', e.target.value)} placeholder="2019" /></div>
+                    <button onClick={() => removeEdu(i)} className="cvb-remove-x" style={{ alignSelf: 'end' }}>×</button>
+                  </div>
                 </div>
               ))}
               {(data.education ?? []).length === 0 && (
@@ -486,8 +571,10 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
                 <div key={i} className="cvb-edu-row">
                   <div><label style={lbl}>Certification</label><input style={inp} value={cert.name} onChange={e => setCert(i, 'name', e.target.value)} placeholder="AWS Solutions Architect" /></div>
                   <div><label style={lbl}>Issuer</label><input style={inp} value={cert.issuer ?? ''} onChange={e => setCert(i, 'issuer', e.target.value)} placeholder="Amazon Web Services" /></div>
-                  <div><label style={lbl}>Year</label><input style={inp} value={cert.year ?? ''} onChange={e => setCert(i, 'year', e.target.value)} placeholder="2023" /></div>
-                  <button onClick={() => removeCert(i)} className="cvb-remove-x" style={{ alignSelf: 'end' }}>×</button>
+                  <div className="cvb-edu-year-group">
+                    <div style={{ flex: 1 }}><label style={lbl}>Year</label><input style={inp} value={cert.year ?? ''} onChange={e => setCert(i, 'year', e.target.value)} placeholder="2023" /></div>
+                    <button onClick={() => removeCert(i)} className="cvb-remove-x" style={{ alignSelf: 'end' }}>×</button>
+                  </div>
                 </div>
               ))}
               {(data.certifications ?? []).length === 0 && (
@@ -539,21 +626,26 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
               Live Preview
             </div>
-            <CVPreview data={data} template={template} />
+            <ZoomablePreview>
+              <CVPreview data={data} template={template} />
+            </ZoomablePreview>
           </div>
         </div>
 
       </div>
 
       <style>{`
-        .cvb-template-picker { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-        .cvb-template-btn {
-          display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-          padding: 8px 16px; border-radius: var(--r-md); border: 1.5px solid var(--border);
-          background: var(--paper); color: var(--ink); cursor: pointer; font-family: var(--sans);
-          font-size: 13px; transition: all 0.15s;
+        .cvb-template-strip { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+        .cvb-template-chip {
+          flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
+          width: 92px; padding: 8px; border-radius: var(--r-md); border: 1.5px solid var(--border);
+          background: var(--paper); cursor: pointer; font-family: var(--sans); transition: all 0.15s;
         }
-        .cvb-template-btn.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+        .cvb-template-chip.active { border-color: var(--teal); background: var(--teal-l); box-shadow: 0 0 0 1px var(--teal); }
+        .cvb-swatch { width: 100%; height: 46px; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+        .cvb-chip-label { font-size: 11px; font-weight: 600; color: var(--ink); text-align: center; line-height: 1.2; }
+        .cvb-chip-badge { font-size: 8.5px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: var(--teal-l); color: var(--teal-d); }
+        .cvb-chip-badge.visual { background: var(--amber-l, #FEF3C7); color: var(--amber); }
         .cvb-page { max-width: 1100px; margin: 0 auto; }
         .cvb-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
         .cvb-tabs { display: flex; background: var(--paper-2); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
@@ -582,7 +674,8 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
 
         .cvb-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .cvb-exp-row { margin-bottom: 16px; padding: 14px; background: var(--paper-2); border-radius: var(--r-md); border: 1px solid var(--border-l); }
-        .cvb-edu-row { display: grid; grid-template-columns: 1fr 1fr 80px auto; gap: 8px; margin-bottom: 8px; align-items: end; }
+        .cvb-edu-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: end; }
+        .cvb-edu-year-group { display: flex; gap: 8px; align-items: end; min-width: 140px; }
 
         .cvb-preview-col { min-width: 0; }
         .cvb-preview-sticky { position: sticky; top: 70px; }
