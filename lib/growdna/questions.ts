@@ -1,4 +1,4 @@
-export type QuestionType = 'mcq' | 'multiselect' | 'tapscale' | 'salary'
+export type QuestionType = 'mcq' | 'multiselect' | 'tapscale' | 'salary' | 'skill_rating' | 'certification_search'
 export type SeniorityLevel = 'fresher' | 'junior' | 'mid' | 'senior' | 'leadership'
 
 export interface Option {
@@ -22,7 +22,13 @@ export interface Question {
   scaleInsight?: string[]
   min?: number
   max?: number
+  ratingRequired?: boolean                          // primary requires a rating, secondary/certs don't
+  searchTarget?: 'competency' | 'certification'      // which table the picker searches — genuinely different tables
   required: boolean
+  tier?: 'primary' | 'secondary'   // for skill_rating: which competency tier this collects
+  minSelect?: number
+  maxSelect?: number
+  optional?: boolean               // true = can submit with zero selections (secondary skills)
   branch?: SeniorityLevel[]
   columns?: 2 | 3 | 4        // grid columns hint
   grouped?: boolean           // show group headers
@@ -383,6 +389,38 @@ export const MODULE_B_LEADERSHIP: Question[] = [
 // ── MODULE C — Psychometric (everyone) ───────────────────────────
 
 export const MODULE_C: Question[] = [
+
+  {
+  id: 'primary_competencies',
+  type: 'skill_rating',
+  module: 'C',
+  title: 'What are your primary professional skills?',
+  subtitle: 'Select 3–4 skills you use most, and rate your proficiency in each.',
+  tier: 'primary',
+  minSelect: 3,
+  maxSelect: 4,
+  required: true,
+},
+{
+  id: 'secondary_competencies',
+  type: 'skill_rating',
+  module: 'C',
+  title: 'Any secondary skills worth mentioning?',
+  subtitle: 'Optional — 2–3 more skills you use occasionally.',
+  tier: 'secondary',
+  minSelect: 0,
+  maxSelect: 3,
+  required: false,
+},
+
+{
+  id: 'certifications',
+  type: 'certification_search',
+  module: 'C',
+  title: 'Any certifications or professional licenses?',
+  subtitle: 'Search and add — optional, but strengthens your profile.',
+  required: false,
+},
   {
     id: 'negotiation_history',
     module: 'C',

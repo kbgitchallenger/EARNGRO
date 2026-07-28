@@ -14,6 +14,8 @@ import {
   type CVFacts,
 } from '@/lib/growdna/cvConsistency'
 import LimitReachedCard from '@/components/shared/LimitReachedCard'
+import SkillRatingQuestion, { type SkillRatingAnswer } from '@/components/growdna/SkillRatingQuestion'
+import CertificationSearchQuestion, { type CertAnswer } from '@/components/growdna/CertificationSearchQuestion'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface Props {
@@ -80,7 +82,10 @@ interface AIResult {
   }
 }
 
-type Answers = Record<string, string | string[] | number>
+// Widened to include the two new answer shapes (arrays of objects) —
+// everything else about how Answers is used elsewhere stays valid since
+// this is purely additive to the union.
+type Answers = Record<string, string | string[] | number | SkillRatingAnswer[] | CertAnswer[]>
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmt(n: number) {
@@ -157,13 +162,6 @@ function TapScale({ question, value, onChange }: {
 }
 
 // ── Salary Input ──────────────────────────────────────────────────
-// FIX: previously relied on external CSS classes (.salary-input-wrap,
-// .salary-sym, .salary-input) that I've never seen the definition of —
-// the reported "rupee sign overlaps the typed number" bug almost
-// certainly meant the input's left padding wasn't sized to clear the
-// absolutely-positioned ₹ symbol. Rewritten with fully self-contained
-// inline styles so this is guaranteed correct regardless of what that
-// external stylesheet does, rather than guessing at an unseen file.
 function SalaryInput({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) {
   const [raw, setRaw] = useState(value ? String(value) : '')
 
@@ -189,10 +187,6 @@ function SalaryInput({ value, onChange }: { value: number | undefined; onChange:
           min={0}
           style={{
             width: '100%',
-            // Left padding sized to clear the ₹ symbol's actual width +
-            // spacing (16px offset + ~14px glyph + 10px breathing room) —
-            // this is the exact fix for the overlap, guaranteed to apply
-            // since it's inline, not dependent on an external class.
             padding: '14px 16px 14px 42px',
             fontSize: 18, fontWeight: 600, color: 'var(--ink)',
             border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)',
@@ -482,6 +476,15 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     if (q.type === 'salary')      return !!(a && Number(a) > 0)
     if (q.type === 'tapscale')    return a !== undefined && a !== null && a !== ''
     if (q.type === 'multiselect') return Array.isArray(a) && a.length > 0
+    // NEW: skill_rating requires at least minSelect items (0 for optional
+    // secondary skills, so an empty array correctly counts as answered).
+    if (q.type === 'skill_rating') {
+      const arr = (a as SkillRatingAnswer[] | undefined) ?? []
+      return arr.length >= (q.minSelect ?? 0)
+    }
+    // NEW: certification_search is always optional — presence or absence
+    // of certifications is never a blocker to continue.
+    if (q.type === 'certification_search') return true
     if (!q.required) return true
     return !!a
   }
@@ -516,6 +519,10 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
 
   function setTapScale(qid: string, val: number) { setAnswers(prev => ({ ...prev, [qid]: val })) }
   function setSalary(val: number) { setAnswers(prev => ({ ...prev, current_ctc: val })) }
+  // NEW: setters for the two Phase 2 question types
+  function setSkillRating(qid: string, val: SkillRatingAnswer[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
+  function setCertifications(qid: string, val: CertAnswer[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
+
   function goNext() { if (isLast) { handleSubmit(); return }; setCurrentIdx(i => Math.min(i + 1, totalQ - 1)) }
   function goBack() { setCurrentIdx(i => Math.max(i - 1, 0)) }
 
@@ -535,7 +542,14 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     setSubmitting(true)
     setError('')
     try {
-      const scores = calculateScores(answers)
+      // FIX: calculateScores (from questions.ts) was written for the
+      // original narrower answer shape and doesn't know about the two new
+      // Phase 2 answer types (arrays of objects, not strings/numbers).
+      // Explicitly excluding them here — rather than a blind type-cast —
+      // so this stays correct even if calculateScores' internals change
+      // later to iterate over all keys generically.
+      const { primary_competencies, secondary_competencies, certifications, ...scorableAnswers } = answers
+      const scores = calculateScores(scorableAnswers as Record<string, string | number | string[]>)
       const res = await fetch('/api/growdna', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -553,20 +567,12 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
       }
 
       if (!res.ok) {
-        // FIX: previously threw a hardcoded 'Submission failed' regardless
-        // of what the server actually said, so a specific, useful server
-        // message (e.g. "Analysis failed — your credit has been refunded
-        // automatically") was silently discarded and the user only ever
-        // saw a generic line. Now surfaces the real message when present.
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || body.message || `Server returned ${res.status}`)
       }
       const data: AIResult = await res.json()
       setResult(data)
     } catch (err) {
-      // FIX: previously always overwrote whatever was caught with a fixed
-      // generic string, even when the error carried a real, specific
-      // message (from the fix above, or a genuine network failure detail).
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setSubmitting(false)
     }
@@ -705,6 +711,28 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         {current?.type === 'salary' && (
           <SalaryInput value={getAnswer('current_ctc') as number | undefined} onChange={setSalary} />
         )}
+
+        {/* NEW — Phase 2: Primary/Secondary Competencies, per the Skills
+            Intelligence Platform brief. Same component handles both tiers,
+            distinguished by minSelect/maxSelect on the question definition. */}
+        {current?.type === 'skill_rating' && (
+          <SkillRatingQuestion
+            tier={current.tier ?? 'primary'}
+            minSelect={current.minSelect ?? 0}
+            maxSelect={current.maxSelect ?? 4}
+            value={(getAnswer(current.id) as SkillRatingAnswer[] | undefined) ?? []}
+            onChange={v => setSkillRating(current.id, v)}
+          />
+        )}
+
+        {/* NEW — Phase 2: Certifications */}
+        {current?.type === 'certification_search' && (
+          <CertificationSearchQuestion
+            value={(getAnswer(current.id) as CertAnswer[] | undefined) ?? []}
+            onChange={v => setCertifications(current.id, v)}
+          />
+        )}
+
         {nudge && (
           <div className="dna-nudge">
             <span className="dna-nudge-icon">💡</span>
@@ -724,13 +752,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         {error && <div className="dna-error">{error}</div>}
       </div>
 
-      {/* FIX: previously sat at the natural end of the content flow, so a
-          question with many options pushed Back/Continue far down the
-          page, forcing a scroll just to advance — the exact "takes more
-          time for scrolling" complaint. Now sticky to the viewport
-          bottom, always reachable regardless of option count. The
-          .dna-assessment wrapper above got matching paddingBottom so this
-          fixed bar never covers the last option. */}
       <div
         className="dna-footer"
         style={{
