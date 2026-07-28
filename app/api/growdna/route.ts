@@ -7,6 +7,7 @@ import { recordStreakActivity } from '@/services/streaks.service'
 import { getAllQuestions, type Question } from '@/lib/growdna/questions'
 import { getDimensionExplanations } from '@/lib/growdna/getDimensionExplanations'
 import { upsertCompetency, upsertCertification } from '@/services/skillsProfile.service'
+import { calculateMonthsToClose } from '@/lib/growdna/monthsToClose'
 
 const ARCHETYPES: Record<string, { name: string; desc: string }> = {
   high_skill_low_market:  { name: 'The Hidden Gem',          desc: 'Strong skills, underexposed to market. One strategic move changes everything.' },
@@ -24,7 +25,6 @@ const GrowDNAResultSchema = z.object({
   salary_range_min: z.number(),
   salary_range_max: z.number(),
   earning_gap_estimate: z.number(),
-  months_to_close: z.number(),
   peer_comparison: z.string(),
   market_insight: z.string(),
   top_strengths: z.array(z.string()),
@@ -174,6 +174,19 @@ export async function POST(req: Request) {
   try {
     const { answers, scores } = await req.json()
 
+    // Real trajectory input for months_to_close — previously no submission
+    // ever looked at prior assessments at all, so the AI's free-form guess
+    // had no way to reflect genuine improvement (or lack of it) since last
+    // time, which was the actual source of "why did my number go up when
+    // I'm doing better?" confusion.
+    const { data: previousAssessment } = await supabase
+      .from('grow_dna')
+      .select('hrs_score')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
     const archetypeKey = detectArchetype(answers, scores)
     const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.default
     const dimensionExplanations = getDimensionExplanations(answers)
@@ -198,7 +211,6 @@ CRITICAL RULES:
 
 SCORING RUBRIC FOR THIS PROFILE:
 - target_salary: realistic median market rate for this exact role + city + seniority combination in India/SEA 2026-2027, not aspirational
-- months_to_close: 4-36 range, derived from gap size and dimension scores — a large gap with low scores = longer timeline, not a fixed number
 - top_strengths: each one must name the specific answered question/option it comes from (e.g. grounded in "Documented, quantified track record of results" from differentiated_expertise, not a generic "strong track record" claim)
 - critical_gaps: each one must be traceable the same way — either a specific low-scoring answer, or a specific "none of the above" / "none yet" style answer that reveals an actual stated gap
 - immediate_actions: each must have a specific, measurable outcome tied to this person's actual profile
@@ -231,7 +243,6 @@ Return exactly this JSON object:
   "salary_range_min": <number, 25th percentile in INR>,
   "salary_range_max": <number, 90th percentile in INR>,
   "earning_gap_estimate": <number, target_salary minus current CTC, minimum 0>,
-  "months_to_close": <number, 4 to 36>,
   "peer_comparison": <string, one sharp sentence benchmarking this person against verified peers in same role+city>,
   "market_insight": <string, one actionable sentence about this specific market right now>,
   "top_strengths": [<string>, <string>, <string>],
@@ -259,6 +270,20 @@ Rules:
       userId: user.id,
     })
 
+    // Real, deterministic months_to_close — replaces the AI's free-form
+    // guess (previously the model could produce a different number for
+    // the same profile with no way to explain why, and had no visibility
+    // into whether this person was actually improving vs last time).
+    const currentCtc = Number(answers.current_ctc)
+    const gapPercentage = currentCtc > 0
+      ? Math.max(0, ((aiResult.target_salary - currentCtc) / currentCtc) * 100)
+      : 0
+    const monthsResult = calculateMonthsToClose({
+      gapPercentage,
+      hrsScore: scores.hrs,
+      prevHrsScore: previousAssessment?.hrs_score ?? null,
+    })
+
     const { data: saved, error: saveError } = await supabase
       .from('grow_dna')
       .insert({
@@ -275,12 +300,15 @@ Rules:
         earning_gap: aiResult.earning_gap_estimate,
         target_salary: aiResult.target_salary,
         hrs_score: scores.hrs,
-        months_to_close: aiResult.months_to_close,
+        months_to_close: monthsResult.total,
         gap_reasons: aiResult.critical_gaps,
         close_actions: aiResult.immediate_actions,
         salary_range_min: aiResult.salary_range_min,
         salary_range_max: aiResult.salary_range_max,
-        raw_ai_response: aiResult,
+        // Breakdown merged into the existing raw_ai_response jsonb column
+        // rather than a new dedicated column — avoids a schema migration
+        // for what's still one cohesive "how we got this result" blob.
+        raw_ai_response: { ...aiResult, months_breakdown: monthsResult },
         dimension_scores: {
           market_alignment: scores.market_alignment,
           skill_premium: scores.skill_premium,
@@ -338,7 +366,8 @@ Rules:
       target_salary: aiResult.target_salary,
       salary_range_min: aiResult.salary_range_min,
       salary_range_max: aiResult.salary_range_max,
-      months_to_close: aiResult.months_to_close,
+      months_to_close: monthsResult.total,
+      months_breakdown: monthsResult,
       peer_comparison: aiResult.peer_comparison,
       market_insight: aiResult.market_insight,
       top_strengths: aiResult.top_strengths ?? [],

@@ -63,6 +63,7 @@ interface AIResult {
   earning_gap_estimate: number
   target_salary: number
   months_to_close: number
+  months_breakdown?: { total: number; prepMonths: number; searchMonths: number; explanation: string }
   top_strengths: string[]
   critical_gaps: string[]
   immediate_actions: { action: string; impact: string; timeline: string }[]
@@ -226,6 +227,7 @@ function ProgressBar({ current, total, module }: { current: number; total: numbe
 // ── Result Panel ──────────────────────────────────────────────────
 function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => void }) {
   const router = useRouter()
+  const [showBreakdown, setShowBreakdown] = useState(false)
   const emoji = ARCHETYPE_EMOJI[result.career_archetype] ?? '🎯'
 
   const raw = result as unknown as Record<string, number | Record<string, string[]>>
@@ -284,9 +286,32 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
             <div className="dna-stat-label">Market Value</div>
             <div className="dna-stat-val" style={{ color: 'var(--teal)' }}>{fmt(targetSalary)}</div>
           </div>
-          <div className="dna-stat">
-            <div className="dna-stat-label">Months to close</div>
+          <div className="dna-stat" style={{ position: 'relative' }}>
+            <div className="dna-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              Months to close
+              {result.months_breakdown && (
+                <button
+                  onClick={() => setShowBreakdown(v => !v)}
+                  aria-label="Why this number?"
+                  style={{
+                    width: 14, height: 14, borderRadius: '50%', border: '1px solid var(--muted)',
+                    background: 'none', color: 'var(--muted)', fontSize: 9, fontWeight: 700,
+                    cursor: 'pointer', padding: 0, lineHeight: '12px', flexShrink: 0,
+                  }}
+                >?</button>
+              )}
+            </div>
             <div className="dna-stat-val" style={{ color: 'var(--ink)' }}>{monthsToClose}</div>
+            {showBreakdown && result.months_breakdown && (
+              <div style={{
+                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                marginTop: 8, width: 220, background: 'var(--ink)', color: '#fff', fontSize: 11.5,
+                lineHeight: 1.5, padding: '10px 12px', borderRadius: 'var(--r-md)', zIndex: 10,
+                boxShadow: 'var(--shadow-md)', textAlign: 'left',
+              }}>
+                {result.months_breakdown.explanation}
+              </div>
+            )}
           </div>
         </div>
         {peerComp && (
@@ -609,6 +634,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
       earning_gap_estimate: existingResult.earning_gap ?? 0,
       target_salary:        existingResult.target_salary ?? 0,
       months_to_close:      existingResult.months_to_close ?? 0,
+      months_breakdown:     (ai as { months_breakdown?: AIResult['months_breakdown'] }).months_breakdown,
       top_strengths:        ai.top_strengths ?? [],
       critical_gaps:        existingResult.gap_reasons ?? [],
       immediate_actions:    ai.immediate_actions ?? normActions,
