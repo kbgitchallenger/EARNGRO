@@ -5,16 +5,10 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { getChangeNarrative, type ChangeNarrative } from '@/lib/growdna/changeNarrative'
 import ChangeNarrativeCard from '@/components/shared/ChangeNarrativeCard'
+import RadarChart from '@/components/shared/RadarChart'
+import { DIMENSION_KEYS as DIMENSION_LABELS, DIMENSION_DISPLAY, type DimensionScores } from '@/lib/growdna/dimensionConfig'
 
 // ── Types ────────────────────────────────────────────────────────
-interface DimensionScores {
-  market_alignment: number
-  skill_premium: number
-  visibility: number
-  mobility: number
-  negotiation: number
-}
-
 interface Attempt {
   id: string
   attempt_number: number
@@ -82,17 +76,6 @@ const ARCHETYPE_META: Record<string, { emoji: string; color: string; bg: string 
   'The Fast Starter':       { emoji: '⚡', color: '#0891b2', bg: '#ecfeff' },
   'The Late Bloomer':       { emoji: '🌱', color: '#65a30d', bg: '#f7fee7' },
   'The Growth Professional':{ emoji: '📈', color: '#0e7a5a', bg: '#f0faf5' },
-}
-
-const DIMENSION_LABELS: (keyof DimensionScores)[] = [
-  'market_alignment', 'skill_premium', 'visibility', 'mobility', 'negotiation'
-]
-const DIMENSION_DISPLAY: Record<string, { label: string; color: string; tip: string }> = {
-  market_alignment: { label: 'Market Alignment', color: '#e8922a', tip: 'How well your industry + city + role match high-paying market segments' },
-  skill_premium:    { label: 'Skill Premium',    color: '#0e7a5a', tip: 'Premium skills, certifications, and credentials that command above-market pay' },
-  visibility:       { label: 'Visibility',       color: '#6366f1', tip: 'External presence — thought leadership, LinkedIn, speaking, publications' },
-  mobility:         { label: 'Career Mobility',  color: '#0891b2', tip: 'Promotion velocity and trajectory vs peers in your field' },
-  negotiation:      { label: 'Negotiation',      color: '#dc2626', tip: 'Frequency and effectiveness of salary negotiation behaviour' },
 }
 
 const HRS_LEVELS = [
@@ -171,94 +154,6 @@ function CelebrationCard({
         `}</style>
       )}
     </div>
-  )
-}
-
-// ── Radar Chart (pure SVG — no library needed) ───────────────────
-function RadarChart({ scores, prev }: { scores: DimensionScores; prev?: DimensionScores }) {
-  const size = 220
-  const cx = size / 2
-  const cy = size / 2
-  const r = 80
-  const keys = DIMENSION_LABELS
-  const n = keys.length
-
-  function point(value: number, index: number) {
-    const angle = (Math.PI * 2 * index) / n - Math.PI / 2
-    const radius = (value / 100) * r
-    return {
-      x: cx + radius * Math.cos(angle),
-      y: cy + radius * Math.sin(angle),
-    }
-  }
-
-  function labelPoint(index: number) {
-    const angle = (Math.PI * 2 * index) / n - Math.PI / 2
-    const radius = r + 22
-    return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) }
-  }
-
-  const currentPoints = keys.map((k, i) => point(scores[k] ?? 0, i))
-  const prevPoints = prev ? keys.map((k, i) => point(prev[k] ?? 0, i)) : null
-
-  const toPath = (pts: { x: number; y: number }[]) =>
-    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + 'Z'
-
-  // Grid rings
-  const rings = [20, 40, 60, 80, 100]
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-      {/* Grid rings */}
-      {rings.map(ring => {
-        const pts = keys.map((_, i) => point(ring, i))
-        return (
-          <polygon
-            key={ring}
-            points={pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
-            fill="none" stroke="var(--border)" strokeWidth="1"
-          />
-        )
-      })}
-
-      {/* Axis lines */}
-      {keys.map((_, i) => {
-        const p = point(100, i)
-        return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--border)" strokeWidth="1" />
-      })}
-
-      {/* Previous attempt (ghost) */}
-      {prevPoints && (
-        <path d={toPath(prevPoints)} fill="rgba(14,122,90,0.06)" stroke="rgba(14,122,90,0.25)" strokeWidth="1.5" strokeDasharray="4 3" />
-      )}
-
-      {/* Current attempt */}
-      <path d={toPath(currentPoints)} fill="rgba(14,122,90,0.15)" stroke="var(--teal)" strokeWidth="2" />
-
-      {/* Dots */}
-      {currentPoints.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={4} fill="var(--teal)" stroke="white" strokeWidth="1.5" />
-      ))}
-
-      {/* Labels */}
-      {keys.map((k, i) => {
-        const lp = labelPoint(i)
-        const d = DIMENSION_DISPLAY[k]
-        return (
-          <text
-            key={k}
-            x={lp.x} y={lp.y}
-            textAnchor="middle" dominantBaseline="middle"
-            fontSize="9" fill="var(--muted)" fontFamily="var(--sans)"
-            style={{ userSelect: 'none' }}
-          >
-            {d.label.split(' ').map((word, wi) => (
-              <tspan key={wi} x={lp.x} dy={wi === 0 ? '0' : '10'}>{word}</tspan>
-            ))}
-          </text>
-        )
-      })}
-    </svg>
   )
 }
 

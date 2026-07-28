@@ -55,6 +55,14 @@ Return exactly this JSON structure:
       "year": "year or omit"
     }
   ],
+  "publications": [
+    {
+      "title": "string — publication or paper title",
+      "venue": "string — journal, conference, or publisher, or omit",
+      "year": "string or omit",
+      "authors": "string — author list as it appears on the resume, or omit"
+    }
+  ],
   "total_experience_years": number
 }
 
@@ -66,6 +74,7 @@ Rules:
 - Preserve bullet points as individual array items
 - total_experience_years should be a realistic number based on dates
 - certifications is an array of objects, never strings
+- publications: only extract if the resume genuinely lists papers, research publications, or similar authored works (common on academic/research resumes) — return an empty array if none are present, never invent one to fill it
 - If a field is not found, omit it entirely rather than returning null (primary_role and seniority_level are the only fields that must always be present)
 `
 

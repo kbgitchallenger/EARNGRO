@@ -254,10 +254,10 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
 
   const dims = dna?.dimension_scores ?? {}
   const lowestDim = Object.entries(dims).sort((a, b) => (a[1] ?? 100) - (b[1] ?? 100))[0]?.[0]
-  const skillGapItems: { text: string; priority: 'High' | 'Medium' }[] = [
-    ...(cvAnalysis?.critical_issues ?? []).slice(0, 2).map(t => ({ text: t, priority: 'High' as const })),
-    ...(cvAnalysis?.keyword_gaps ?? []).slice(0, 2).map(t => ({ text: t, priority: 'Medium' as const })),
-    ...(dna?.gap_reasons ?? []).slice(0, 2).map(t => ({ text: t, priority: 'Medium' as const })),
+  const skillGapItems: { text: string; priority: 'High' | 'Medium'; source: 'resume' | 'growdna' }[] = [
+    ...(cvAnalysis?.critical_issues ?? []).slice(0, 2).map(t => ({ text: t, priority: 'High' as const, source: 'resume' as const })),
+    ...(cvAnalysis?.keyword_gaps ?? []).slice(0, 2).map(t => ({ text: t, priority: 'Medium' as const, source: 'resume' as const })),
+    ...(dna?.gap_reasons ?? []).slice(0, 2).map(t => ({ text: t, priority: 'Medium' as const, source: 'growdna' as const })),
   ].slice(0, 4)
   const resumeScore = cvAnalysis?.market_alignment ?? cvAnalysis?.ats_score
   const visibilityScore = dims.visibility
@@ -346,12 +346,29 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
 
       <div className="gp-insight-row">
         <div className="gp-card">
-          <div className="gp-card-title-row"><span className="gp-card-title">Top Skill Gaps</span></div>
+          <div className="gp-card-title-row">
+            <span className="gp-card-title">Top Skill Gaps</span>
+          </div>
+          {/* FIX: previously merged CV-based gaps (real, resume-parsed
+              evidence) and GrowDNA-based gaps (grounded in self-reported
+              answers, but self-reported nonetheless) into one
+              undifferentiated list — a claim traced to an actual uploaded
+              resume is a stronger evidence tier than a self-reported
+              answer, and the user should be able to tell which is which. */}
           {skillGapItems.length > 0 ? skillGapItems.map((g, i) => (
             <div key={i} className="gp-gap-row">
               <span aria-hidden style={{ color: g.priority === 'High' ? 'var(--red)' : 'var(--amber)', flexShrink: 0 }}>⚠</span>
               <span className="gp-gap-text">{g.text}</span>
-              <span className={`gp-priority-pill gp-priority-${g.priority.toLowerCase()}`}>{g.priority}</span>
+              <span className="gp-gap-badges">
+                <span style={{
+                  fontSize: 9.5, fontWeight: 600, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap', flexShrink: 0,
+                  background: g.source === 'resume' ? '#EAF1FE' : 'var(--teal-l)',
+                  color: g.source === 'resume' ? '#2563EB' : 'var(--teal-d)',
+                }}>
+                  {g.source === 'resume' ? '📄 From resume' : '🧬 From GrowDNA'}
+                </span>
+                <span className={`gp-priority-pill gp-priority-${g.priority.toLowerCase()}`}>{g.priority}</span>
+              </span>
             </div>
           )) : <div className="gp-empty-note">Upload a CV to see specific skill gaps.</div>}
         </div>
@@ -523,8 +540,9 @@ const growPathStyles = `
   .gp-card-title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
   .gp-empty-note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
 
-  .gp-gap-row { display: flex; align-items: flex-start; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border-l); font-size: 12.5px; color: var(--ink); }
+  .gp-gap-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border-l); font-size: 12.5px; color: var(--ink); }
   .gp-gap-row:last-child { border-bottom: none; }
+  .gp-gap-badges { display: flex; gap: 6px; flex-shrink: 0; flex-basis: 100%; margin-top: 6px; }
   .gp-gap-text { flex: 1; line-height: 1.45; }
   .gp-priority-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; height: fit-content; }
   .gp-priority-high { background: #FEE2E2; color: #B91C1C; }

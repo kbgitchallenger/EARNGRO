@@ -109,7 +109,7 @@ export async function POST(request: Request) {
         maxTurns: input.maxTurns,
       }),
       FirstQuestionSchema,
-      { feature: 'interview_turn', userId: user.id }
+      { feature: 'interview_session_start', userId: user.id }
     )
 
     // Create session
