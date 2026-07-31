@@ -36,6 +36,18 @@ const SCORE_COLOR = (s: number) =>
 const SCORE_LABEL = (s: number) =>
   s >= 80 ? 'Strong' : s >= 60 ? 'Good' : s >= 40 ? 'Developing' : 'Needs work'
 
+// Consistent section header — same icon-pill + title pattern as the
+// dashboard and CV Analysis page.
+const SectionHead = ({ icon, iconColor, iconBg, title, sub }: { icon: string; iconColor: string; iconBg: string; title: string; sub?: string }) => (
+  <div style={{ marginBottom: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontSize: 13, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor, background: iconBg }}>{icon}</span>
+      <span style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>{title}</span>
+    </div>
+    {sub && <p style={{ fontSize: 12, color: 'var(--muted)', margin: '4px 0 0 38px' }}>{sub}</p>}
+  </div>
+)
+
 export default function InterviewReport({ session, turns }: Props) {
   const persona = INTERVIEWER_PERSONAS.find(p => p.id === session.persona) ?? INTERVIEWER_PERSONAS[0]
   const answeredTurns = turns.filter(t => t.user_answer)
@@ -74,74 +86,23 @@ export default function InterviewReport({ session, turns }: Props) {
     : null
 
   return (
-    <>
-      <style>{`
-        .ir-score-hero {
-          display: flex;
-          align-items: center;
-          gap: 24px;
-          flex-wrap: wrap;
-        }
-        .ir-score-num {
-          font-family: var(--serif);
-          font-size: 56px;
-          font-weight: 700;
-          line-height: 1;
-        }
-        .ir-dim-label { width: 72px; flex-shrink: 0; font-size: 11px; color: var(--muted); }
-        .ir-answer-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-        .ir-question-text {
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--ink);
-          margin-bottom: 12px;
-          line-height: 1.5;
-        }
-        @media (max-width: 540px) {
-          .ir-score-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
-          .ir-score-num  { font-size: 40px; }
-          .ir-dim-label  { width: 60px; }
-          .ir-answer-grid {
-            grid-template-columns: 1fr;
-          }
-          .ir-question-text { font-size: 12px; }
-        }
-      `}</style>
+    <div className="ir-page">
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 80px' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(20px,3vw,28px)', fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
-              Interview Report
-            </h1>
-            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
-              {session.mode.charAt(0).toUpperCase() + session.mode.slice(1)} · {session.role} · with {persona.name} ·{' '}
-              {new Date(session.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </p>
-          </div>
-          <Link href="/interview" style={{
-            fontSize: 13, color: 'var(--teal)', textDecoration: 'none',
-            border: '1px solid var(--teal-mid)', padding: '8px 16px',
-            borderRadius: 99, background: 'var(--teal-l)', whiteSpace: 'nowrap',
-          }}>
-            Practice again →
-          </Link>
+      {/* Header */}
+      <div className="ir-header">
+        <div>
+          <h1 className="ir-title">Interview Report</h1>
+          <p className="ir-meta">
+            {session.mode.charAt(0).toUpperCase() + session.mode.slice(1)} · {session.role} · with {persona.name} ·{' '}
+            {new Date(session.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
         </div>
+        <Link href="/interview" className="ir-practice-link">Practice again →</Link>
+      </div>
 
-        {/* Overall score hero — now using the shared PremiumHero shell.
-            className="ir-score-hero" is preserved so this file's own
-            mobile media query (stacks to column at 540px) still applies —
-            alignItems/gap are explicitly undefined here so that external
-            class, not PremiumHero's own inline defaults, controls those
-            two properties responsively. */}
-        <PremiumHero className="ir-score-hero" style={{ marginBottom: 16, alignItems: undefined, gap: undefined }}>
-          {/* Score circle */}
+      {/* Overall score hero */}
+      <div className="ir-section" style={{ padding: 0, border: 'none', boxShadow: 'none', background: 'transparent' }}>
+        <PremiumHero className="ir-score-hero" style={{ alignItems: undefined, gap: undefined }}>
           <div style={{ textAlign: 'center', minWidth: 90 }}>
             <div className="ir-score-num" style={{ color: '#fff' }}>
               <CountUpNumber value={overallScore} style={{ fontFamily: 'var(--serif)', fontWeight: 700 }} />
@@ -158,7 +119,6 @@ export default function InterviewReport({ session, turns }: Props) {
             </div>
           </div>
 
-          {/* Dimension bars */}
           <div style={{ flex: 1, minWidth: 180 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 10 }}>
               {persona.name}&apos;s assessment
@@ -191,113 +151,111 @@ export default function InterviewReport({ session, turns }: Props) {
             )}
           </div>
         </PremiumHero>
+      </div>
 
-        {/* Worst answer improved */}
-        {worstTurn?.improved_answer && (
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
-              ✏️ Your weakest answer — improved
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
-              Same question, rewritten using the right framework and specific language. Study this before your next real interview.
-            </div>
+      {/* Worst answer improved */}
+      {worstTurn?.improved_answer && (
+        <div className="ir-section">
+          <SectionHead icon="✏️" iconColor="var(--red)" iconBg="var(--red-l)" title="Your weakest answer — improved"
+            sub="Same question, rewritten using the right framework and specific language. Study this before your next real interview." />
 
-            {/* Question — removed uppercase, normal sentence case */}
-            <div style={{
-              fontSize: 12, fontWeight: 600, color: 'var(--teal-d)',
-              background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)',
-              borderRadius: 'var(--r-md)', padding: '10px 14px', marginBottom: 14,
-              lineHeight: 1.5,
-            }}>
-              Q: {worstTurn.question}
-            </div>
+          <div style={{
+            fontSize: 12, fontWeight: 600, color: 'var(--teal-d)',
+            background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)',
+            borderRadius: 'var(--r-md)', padding: '10px 14px', marginBottom: 14,
+            lineHeight: 1.5,
+          }}>
+            Q: {worstTurn.question}
+          </div>
 
-            {/* Answer comparison — stacks to single column on mobile */}
-            <div className="ir-answer-grid">
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Your answer
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>
-                  {worstTurn.user_answer}
-                </div>
+          <div className="ir-answer-grid">
+            <div style={{ background: 'var(--red-l)', border: '1px solid var(--red-mid)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Your answer
               </div>
-              <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Improved answer
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>
-                  {worstTurn.improved_answer}
-                </div>
+              <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>
+                {worstTurn.user_answer}
+              </div>
+            </div>
+            <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Improved answer
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>
+                {worstTurn.improved_answer}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Best answer */}
-        {bestTurn && bestTurn.turn_index !== worstTurn?.turn_index && (
-          <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-d)', marginBottom: 10 }}>
-              ⭐ Your strongest answer
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 6, lineHeight: 1.5 }}>
-              Q: {bestTurn.question}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>{bestTurn.user_answer}</div>
-            {bestTurn.feedback && (
-              <div style={{ fontSize: 12, color: 'var(--teal-d)', marginTop: 10, fontStyle: 'italic', lineHeight: 1.5 }}>
-                💬 {bestTurn.feedback}
-              </div>
-            )}
+      {/* Best answer */}
+      {bestTurn && bestTurn.turn_index !== worstTurn?.turn_index && (
+        <div className="ir-section" style={{ background: 'var(--teal-xl)', borderColor: 'var(--teal-mid)' }}>
+          <SectionHead icon="⭐" iconColor="var(--teal-d)" iconBg="#fff" title="Your strongest answer" />
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 6, lineHeight: 1.5 }}>
+            Q: {bestTurn.question}
           </div>
-        )}
+          <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.65 }}>{bestTurn.user_answer}</div>
+          {bestTurn.feedback && (
+            <div style={{ fontSize: 12, color: 'var(--teal-d)', marginTop: 10, fontStyle: 'italic', lineHeight: 1.5 }}>
+              💬 {bestTurn.feedback}
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Full breakdown */}
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Full breakdown</div>
-          <ShowMoreList
-            items={answeredTurns}
-            defaultCount={3}
-            itemLabel="question"
-            renderItem={(t, i) => {
-              const avg = t.sub_scores
-                ? Math.round((t.sub_scores.structure + t.sub_scores.specificity + t.sub_scores.confidence + t.sub_scores.relevance) / 4)
-                : null
-              return (
-                <div key={t.turn_index} style={{
-                  paddingBottom: i < answeredTurns.length - 1 ? 16 : 0,
-                  marginBottom: i < answeredTurns.length - 1 ? 16 : 0,
-                  borderBottom: i < answeredTurns.length - 1 ? '1px solid var(--border-l)' : 'none',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Question {t.turn_index + 1}
-                    </div>
-                    {avg !== null && (
-                      <div style={{
-                        fontSize: 12, fontWeight: 700, color: SCORE_COLOR(avg),
-                        background: `${SCORE_COLOR(avg)}12`,
-                        border: `1px solid ${SCORE_COLOR(avg)}25`,
-                        padding: '2px 10px', borderRadius: 99, flexShrink: 0,
-                      }}>
-                        {avg}/100
-                      </div>
-                    )}
+      {/* Full breakdown */}
+      <div className="ir-section">
+        <SectionHead icon="📋" iconColor="var(--blue)" iconBg="var(--blue-l)" title="Full breakdown" />
+        <ShowMoreList
+          items={answeredTurns}
+          defaultCount={3}
+          itemLabel="question"
+          renderItem={(t, i) => {
+            const avg = t.sub_scores
+              ? Math.round((t.sub_scores.structure + t.sub_scores.specificity + t.sub_scores.confidence + t.sub_scores.relevance) / 4)
+              : null
+            return (
+              <div key={t.turn_index} style={{
+                paddingBottom: i < answeredTurns.length - 1 ? 16 : 0,
+                marginBottom: i < answeredTurns.length - 1 ? 16 : 0,
+                borderBottom: i < answeredTurns.length - 1 ? '1px solid var(--border-l)' : 'none',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Question {t.turn_index + 1}
                   </div>
-                  <div className="ir-question-text">{t.question}</div>
-                  {t.feedback && (
-                    <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, fontStyle: 'italic', marginTop: 4 }}>
-                      💬 {t.feedback}
+                  {avg !== null && (
+                    <div style={{
+                      fontSize: 12, fontWeight: 700, color: SCORE_COLOR(avg),
+                      background: `${SCORE_COLOR(avg)}12`,
+                      border: `1px solid ${SCORE_COLOR(avg)}25`,
+                      padding: '2px 10px', borderRadius: 99, flexShrink: 0,
+                    }}>
+                      {avg}/100
                     </div>
                   )}
                 </div>
-              )
-            }}
-          />
-        </div>
+                <div className="ir-question-text">{t.question}</div>
+                {t.feedback && (
+                  <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, fontStyle: 'italic', marginTop: 4 }}>
+                    💬 {t.feedback}
+                  </div>
+                )}
+              </div>
+            )
+          }}
+        />
+      </div>
 
-        {/* Practice again CTA */}
-        <div style={{ background: 'linear-gradient(135deg, var(--teal-d), var(--teal))', borderRadius: 'var(--r-xl)', padding: '28px 22px', textAlign: 'center' }}>
+      {/* Practice again CTA — now the shared PremiumHero shell instead of
+          a third hand-rolled gradient div (there were three near-identical
+          gradient blocks across this file's original + the CV Analysis
+          page before this pass; now every hero-style CTA in the app
+          renders through one component). */}
+      <div className="ir-section" style={{ padding: 0, border: 'none', boxShadow: 'none', background: 'transparent', textAlign: 'center' }}>
+        <PremiumHero>
           <div style={{ fontSize: 36, marginBottom: 10 }}>🎤</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(16px,3vw,20px)', fontWeight: 600, color: '#fff', marginBottom: 8 }}>
             Ready to improve?
@@ -310,13 +268,38 @@ export default function InterviewReport({ session, turns }: Props) {
             background: '#fff', color: 'var(--teal-d)',
             fontSize: 14, fontWeight: 700, padding: '12px 26px',
             borderRadius: 99, textDecoration: 'none',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            boxShadow: 'var(--shadow-md)',
           }}>
             Practice again →
           </Link>
-        </div>
-
+        </PremiumHero>
       </div>
-    </>
+
+      <style>{`
+        .ir-page { max-width: 860px; margin: 0 auto; padding: 0 0 60px; background: #ffffff !important; }
+        .ir-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .ir-title { font-family: var(--serif); font-size: clamp(20px,3vw,28px); font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+        .ir-meta { font-size: 13px; color: var(--muted); line-height: 1.5; }
+        .ir-practice-link { font-size: 13px; color: var(--teal); text-decoration: none; border: 1px solid var(--teal-mid); padding: 8px 16px; border-radius: 99px; background: var(--teal-l); white-space: nowrap; transition: background 0.15s ease; }
+        .ir-practice-link:hover { background: var(--teal-mid); }
+
+        .ir-section { background: #fff; border: 1px solid var(--border); border-radius: var(--r-xl); padding: 24px 26px; box-shadow: var(--shadow-sm); margin-bottom: 18px; }
+        .ir-section:last-child { margin-bottom: 0; }
+
+        .ir-score-hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+        .ir-score-num { font-family: var(--serif); font-size: 56px; font-weight: 700; line-height: 1; }
+        .ir-dim-label { width: 72px; flex-shrink: 0; font-size: 11px; color: var(--muted); }
+        .ir-answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .ir-question-text { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 12px; line-height: 1.5; }
+
+        @media (max-width: 540px) {
+          .ir-score-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+          .ir-score-num  { font-size: 40px; }
+          .ir-dim-label  { width: 60px; }
+          .ir-answer-grid { grid-template-columns: 1fr; }
+          .ir-question-text { font-size: 12px; }
+        }
+      `}</style>
+    </div>
   )
 }

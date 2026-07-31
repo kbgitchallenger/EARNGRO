@@ -9,9 +9,6 @@
 // usage (`<InterviewMockup />` with no props) renders byte-identical to
 // before.
 
-// Mirrors the real personas in lib/interview/personas.ts (name, emoji,
-// color, signature phrase) — not reinvented here, just the subset needed
-// to render this preview without importing the full persona catalog.
 const PERSONA_BY_DIMENSION: Record<string, { name: string; title: string; emoji: string; color: string; phrase: string }> = {
   negotiation: {
     name: 'Sneha Kapoor', title: 'Talent Partner', emoji: '🧑‍💼', color: '#0e7a5a',
@@ -50,8 +47,6 @@ export default function InterviewMockup({
   return (
     <div className="iv-card">
       <div>
-        {/* Session header — persona now matched to this user's real
-            weakest dimension, role shown when known */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: `${persona.color}20`, border: `1.5px solid ${persona.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{persona.emoji}</div>
@@ -63,7 +58,6 @@ export default function InterviewMockup({
           <span style={{ fontSize: 11, color: 'var(--muted)' }}>Question 3 of 5</span>
         </div>
 
-        {/* Progress dots */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 18 }}>
           {[1, 1, 0, -1, -1].map((state, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -81,8 +75,6 @@ export default function InterviewMockup({
           ))}
         </div>
 
-        {/* Question + answer — persona's real signature phrase used as the
-            follow-up, so the persona swap is visible, not just cosmetic */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <div style={{ width: 24, height: 24, borderRadius: '50%', background: `${persona.color}20`, border: `1.5px solid ${persona.color}`, flexShrink: 0 }} />
           <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: '14px 14px 14px 4px', padding: '10px 13px', fontSize: 12.5, color: 'var(--ink)', maxWidth: '80%', lineHeight: 1.5 }}>
@@ -101,7 +93,6 @@ export default function InterviewMockup({
           </div>
         </div>
 
-        {/* Live feedback */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {[['Structure', 72, 'var(--teal)'], ['Specificity', 48, 'var(--amber)'], ['Confidence', 65, 'var(--teal)']].map(([label, val, color], i) => (
             <div key={i} style={{ flex: '1 1 28%', background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-md)', padding: '8px 10px' }}>
@@ -112,8 +103,6 @@ export default function InterviewMockup({
         </div>
       </div>
 
-      {/* Session overview — real content, matching the actual product's
-          session summary panel */}
       <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>Session overview</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -126,14 +115,16 @@ export default function InterviewMockup({
         </div>
       </div>
 
+      {/* FIX: background var(--paper) (cream) + box-shadow: var(--sh-md)
+          (doesn't exist — no shadow was rendering). Now white + real token. */}
       <style>{`
         .iv-card {
-          background: var(--paper);
+          background: #ffffff;
           border: 1px solid var(--border);
           border-radius: var(--r-xl);
           padding: 22px;
-          box-shadow: var(--sh-md);
-          height: 560px;
+          box-shadow: var(--shadow-md);
+          min-height: 560px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -141,7 +132,7 @@ export default function InterviewMockup({
         }
         .iv-card:hover {
           transform: translateY(-6px);
-          box-shadow: var(--sh-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
+          box-shadow: var(--shadow-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
           border-color: var(--teal-mid);
         }
       `}</style>

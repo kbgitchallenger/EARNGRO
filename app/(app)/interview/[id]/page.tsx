@@ -1,3 +1,4 @@
+//app/(app)/interview/[id]/page.tsx
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'

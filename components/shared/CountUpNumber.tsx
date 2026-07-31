@@ -10,23 +10,25 @@ export default function CountUpNumber({
   value,
   duration = 900,
   style,
-  format,
+  locale,
 }: {
   value: number
   duration?: number
   style?: React.CSSProperties
-  format?: (n: number) => string
+  // FIX: previously took `format?: (n: number) => string` — a raw
+  // function prop. That's invalid whenever this component is rendered
+  // from a Server Component (the Billing page, an async function with
+  // no 'use client'): functions can't be serialized across the server→
+  // client boundary in Next.js App Router, only plain data can. `locale`
+  // is a plain string, safe to pass from anywhere, and the formatting
+  // now happens internally via .toLocaleString() instead of an
+  // externally-supplied function.
+  locale?: string
 }) {
   const [display, setDisplay] = useState(0)
   const startRef = useRef<number | null>(null)
 
   useEffect(() => {
-    // FIX: previously animated unconditionally regardless of the user's
-    // OS-level motion preference. matchMedia check is read once per
-    // mount rather than subscribed to changes — acceptable here since a
-    // user changing this OS setting mid-session and expecting an
-    // already-mounted number to instantly change behavior is a very
-    // unlikely edge case, not worth the added complexity of a listener.
     const prefersReducedMotion = typeof window !== 'undefined'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -48,5 +50,5 @@ export default function CountUpNumber({
     return () => cancelAnimationFrame(raf)
   }, [value, duration])
 
-  return <span style={style}>{format ? format(display) : display}</span>
+  return <span style={style}>{locale ? display.toLocaleString(locale) : display}</span>
 }

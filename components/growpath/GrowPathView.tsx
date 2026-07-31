@@ -347,7 +347,7 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
       <div className="gp-insight-row">
         <div className="gp-card">
           <div className="gp-card-title-row">
-            <span className="gp-card-title">Top Skill Gaps</span>
+            <span className="gp-card-title">🔍 Top Skill Gaps</span>
           </div>
           {/* FIX: previously merged CV-based gaps (real, resume-parsed
               evidence) and GrowDNA-based gaps (grounded in self-reported
@@ -374,7 +374,7 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
         </div>
 
         <div className="gp-card">
-          <div className="gp-card-title-row"><span className="gp-card-title">Market Positioning</span></div>
+          <div className="gp-card-title-row"><span className="gp-card-title">📊 Market Positioning</span></div>
           {resumeScore != null && (
             <div className="gp-position-row">
               <div className="gp-position-top"><span>Resume Score</span><span style={{ fontWeight: 700 }}>{resumeScore}/100</span></div>
@@ -399,7 +399,7 @@ export default function GrowPathView({ userId, plan, phases, companies, dna, car
         </div>
 
         <div className="gp-card">
-          <div className="gp-card-title-row"><span className="gp-card-title">Plan Highlights</span></div>
+          <div className="gp-card-title-row"><span className="gp-card-title">✨ Plan Highlights</span></div>
           <div className="gp-highlight-row"><span aria-hidden>📅</span><div><div className="gp-highlight-val"><CountUpNumber value={monthsTotal ?? 0} /> Months</div><div className="gp-highlight-sub">Duration</div></div></div>
           <div className="gp-highlight-row"><span aria-hidden>🧭</span><div><div className="gp-highlight-val">{displayPhases.length} Phases</div><div className="gp-highlight-sub">{displayPhases.map(p => p.title).join(' → ')}</div></div></div>
           <div className="gp-highlight-row"><span aria-hidden>✅</span><div><div className="gp-highlight-val"><CountUpNumber value={totalMilestones} /> Milestones</div><div className="gp-highlight-sub">Actionable steps</div></div></div>
@@ -513,7 +513,7 @@ const growPathStyles = `
   .gp-btn-onhero { background: #fff; color: var(--teal-d); box-shadow: none; margin-top: 14px; }
   .gp-btn-secondary { display: inline-flex; align-items: center; background: var(--paper); color: var(--teal-d); font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 99px; border: 1px solid var(--teal-mid); cursor: pointer; text-decoration: none; font-family: var(--sans); white-space: nowrap; }
   .gp-btn-outline { background: var(--teal); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: 99px; border: none; cursor: pointer; font-family: var(--sans); }
-  .gp-error { background: var(--red-l); border: 1px solid #F5CCCC; border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 14px; }
+  .gp-error { background: var(--red-l); border: 1px solid var(--red-mid); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 14px; }
 
   .gp-cv-nudge { display: flex; align-items: center; gap: 12px; background: var(--amber-l); border: 1px solid var(--amber-mid); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 20px; flex-wrap: wrap; }
 
@@ -528,14 +528,14 @@ const growPathStyles = `
   .gp-next-month { font-size: 12px; color: rgba(255,255,255,0.75); }
 
   .gp-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .gp-stat-cell { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .gp-stat-cell { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow-sm); }
   .gp-stat-gauge { display: flex; flex-direction: column; align-items: center; }
   .gp-stat-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .gp-stat-val { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--ink); }
   .gp-stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   .gp-insight-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; align-items: start; }
-  .gp-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .gp-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-sm); }
   .gp-card-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .gp-card-title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
   .gp-empty-note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
@@ -568,14 +568,14 @@ const growPathStyles = `
   .gp-view-disabled { color: var(--muted); cursor: not-allowed; }
 
   .gp-phase-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
-  .gp-phase-card { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .gp-phase-card { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-sm); }
   .gp-phase-icon { width: 40px; height: 40px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
   .gp-phase-card-title { font-size: 15px; font-weight: 700; color: var(--ink); font-family: var(--serif); }
   .gp-phase-card-range { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
   .gp-phase-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
   .gp-phase-card-count { font-size: 12px; font-weight: 600; color: var(--teal-d); margin-bottom: 12px; }
 
-  .gp-upcoming { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .gp-upcoming { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
   .gp-upcoming-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .gp-upcoming-title { font-size: 13.5px; font-weight: 600; color: var(--ink); }
   .gp-upcoming-due { font-size: 12px; color: var(--teal-d); font-weight: 600; white-space: nowrap; }
@@ -583,7 +583,7 @@ const growPathStyles = `
   .gp-companies { margin-bottom: 24px; }
   .gp-companies-title-row { margin-bottom: 14px; }
   .gp-companies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-  .gp-company-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); cursor: default; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .gp-company-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); cursor: default; box-shadow: var(--shadow-sm); }
   .gp-company-more { cursor: pointer; }
   .gp-company-mono { width: 40px; height: 40px; border-radius: 50%; background: var(--teal-l); color: var(--teal-d); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
   .gp-company-name { font-size: 11.5px; font-weight: 600; color: var(--ink); text-align: center; }
@@ -593,8 +593,8 @@ const growPathStyles = `
   .gp-phase-title { font-size: 16px; font-weight: 700; color: var(--ink); font-family: var(--serif); }
   .gp-phase-range { font-size: 12px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 
-  .gp-milestone { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: box-shadow 0.15s ease, border-color 0.15s ease; overflow: hidden; }
-  .gp-milestone:hover { border-color: var(--teal-mid); box-shadow: var(--sh-sm); }
+  .gp-milestone { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 10px; box-shadow: var(--shadow-sm); transition: box-shadow 0.15s ease, border-color 0.15s ease; overflow: hidden; }
+  .gp-milestone:hover { border-color: var(--teal-mid); box-shadow: var(--shadow-sm); }
   .gp-milestone-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; }
   .gp-milestone-check { width: 24px; height: 24px; min-width: 24px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 1px; }
   .gp-milestone-body { flex: 1; min-width: 0; }

@@ -16,16 +16,21 @@ export default function JourneyCard() {
   const [arcGo,  setArcGo]  = useState(false)
   const [bars,   setBars]   = useState([0,0,0])
   const [vis,    setVis]    = useState(true)
+  const [paused, setPaused] = useState(false)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
-  
+
   /* arc + bars fire on mount */
   useEffect(() => {
     const t = setTimeout(() => { setArcGo(true); setBars(PROFILES[0].bars) }, 700)
     return () => clearTimeout(t)
   }, [])
 
-  /* cycle profiles */
+  /* cycle profiles — pauses on hover/focus, same accessibility pattern
+     already applied to the ticker (WCAG 2.2.2: continuously-changing
+     content needs a way to pause it). This card auto-rotates a name,
+     role, and set of numbers every 4.5s with no prior way to stop it. */
   useEffect(() => {
+    if (paused) return
     timer.current = setInterval(() => {
       setVis(false)
       setTimeout(() => {
@@ -34,24 +39,37 @@ export default function JourneyCard() {
       }, 280)
     }, 4500)
     return () => {
-  if (timer.current) {
-    clearInterval(timer.current)
-  }
-}
-  }, [idx])
+      if (timer.current) {
+        clearInterval(timer.current)
+      }
+    }
+  }, [idx, paused])
 
   const amberOff = arcGo ? 160 : 251
   const tealOff  = arcGo ? 60  : 251
   const fade     = { opacity: vis ? 1 : 0, transition: 'opacity 0.25s' } as React.CSSProperties
 
   return (
-    <div style={{
-      background: 'var(--paper)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-xl)', padding: '26px 26px 22px',
-      maxWidth: 500, margin: '0 auto 40px',
-      boxShadow: 'var(--sh-lg)', position: 'relative',
-      overflow: 'hidden', textAlign: 'left',
-    }}>
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      tabIndex={0}
+      aria-label="Example career journey — cycles through sample profiles, pauses on hover or focus"
+      style={{
+        // FIX: background was var(--paper) (cream) with
+        // boxShadow: 'var(--sh-lg)' — a token that doesn't exist anywhere
+        // in the design system (only --shadow-lg does), so this, the
+        // very first card a visitor sees on the homepage, was rendering
+        // with zero shadow. Now white (per the new "more white, clean"
+        // direction) with the real token.
+        background: '#ffffff', border: '1px solid var(--border)',
+        borderRadius: 'var(--r-xl)', padding: '26px 26px 22px',
+        maxWidth: 500, margin: '0 auto 40px',
+        boxShadow: 'var(--shadow-lg)', position: 'relative',
+        overflow: 'hidden', textAlign: 'left',
+      }}>
       {/* top accent line — amber → teal */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(90deg,var(--amber),var(--teal),#1AA574)', borderRadius:'var(--r-xl) var(--r-xl) 0 0' }} />
 
@@ -85,45 +103,51 @@ export default function JourneyCard() {
             style={{ strokeDashoffset: tealOff, transition:'stroke-dashoffset 2s cubic-bezier(0.4,0,0.2,1) 0.4s' }}
             d="M18 100 A82 82 0 0 1 182 100" />
         </svg>
-        <div style={{ position:'absolute', top:'52%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center' }}>
-          <br></br>
+        {/* FIX: removed a stray empty <br /> that served no purpose —
+            leftover markup from an earlier edit. */}
+        {/* FIX: top:'52%' centered this text block too close to the
+            arc's peak — the arc's highest stroke point sits right at
+            the top-center of the semicircle, and 52% didn't leave
+            enough clearance below it, so "Projected CTC" visually
+            overlapped the teal stroke. Nudged down to clear it. */}
+        <div style={{ position:'absolute', top:'62%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center' }}>
           <div
-  style={{
-    fontSize: 9,color: 'var(--muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: 4,
-    whiteSpace: 'nowrap',
-  }}
->
-  Projected CTC
-</div>
+            style={{
+              fontSize: 9, color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: 4,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Projected CTC
+          </div>
 
-<div
-  style={{
-    fontFamily: 'var(--serif)',
-    fontSize: 28,
-    fontWeight: 600,
-    color: 'var(--teal-d)',
-    lineHeight: 1,
-    letterSpacing: '-0.5px',
-    ...fade,
-  }}
->
-  {prof.target}
-</div>
+          <div
+            style={{
+              fontFamily: 'var(--serif)',
+              fontSize: 28,
+              fontWeight: 600,
+              color: 'var(--teal-d)',
+              lineHeight: 1,
+              letterSpacing: '-0.5px',
+              ...fade,
+            }}
+          >
+            {prof.target}
+          </div>
 
-<div
-  style={{
-    fontSize: 11,
-    color: 'var(--teal)',
-    fontWeight: 500,
-    marginTop: 4,
-    ...fade,
-  }}
->
-  ↑ {prof.uplift}
-</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: 'var(--teal)',
+              fontWeight: 500,
+              marginTop: 4,
+              ...fade,
+            }}
+          >
+            ↑ {prof.uplift}
+          </div>
         </div>
       </div>
 
@@ -161,7 +185,7 @@ export default function JourneyCard() {
         <div style={{ fontSize:12, color:'var(--muted)', ...fade }}>
           Closes in {' '}<strong style={{ color:'var(--teal-d)' }}>{prof.months} months</strong>
         </div>
-        <a href="#calculator" style={{ background:'var(--teal)', color:'#fff', fontSize:12, fontWeight:600, padding:'8px 18px', borderRadius:99, textDecoration:'none', boxShadow:'0 2px 8px rgba(14,122,90,0.2)', whiteSpace:'nowrap' }}>
+        <a href="#calculator" style={{ background:'var(--teal)', color:'#fff', fontSize:12, fontWeight:600, padding:'8px 18px', borderRadius:99, textDecoration:'none', boxShadow:'var(--shadow-teal)', whiteSpace:'nowrap' }}>
           Find my gap →
         </a>
       </div>

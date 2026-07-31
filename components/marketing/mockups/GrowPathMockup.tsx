@@ -14,10 +14,6 @@ function fmt(n: number) {
   return '₹' + n.toLocaleString('en-IN')
 }
 
-// Maps a real weakest-dimension to an honest, dimension-appropriate action
-// phrase. Not a fabricated specific milestone (no invented company names or
-// exact numbers) — just a genuinely tailored type of action, same category
-// logic already used elsewhere in the real GrowPath generation code.
 const DIMENSION_ACTION: Record<string, { text: string; label: string }> = {
   visibility:        { text: 'Publish 2 posts to build your professional brand', label: 'Visibility' },
   negotiation:       { text: 'Practice countering an offer with real market data', label: 'Negotiation' },
@@ -40,8 +36,6 @@ export default function GrowPathMockup({
   weakestDimension = 'visibility',
 }: GrowPathMockupProps = {}) {
   const totalMonths = monthsToClose && monthsToClose > 0 ? monthsToClose : 14
-  // Same 3-phase proportional split the real generator uses, scaled to
-  // this user's actual timeline instead of a fixed 1–3/4–8/9+ example.
   const phaseBounds = [
     { start: 0, end: Math.round(totalMonths / 3) },
     { start: Math.round(totalMonths / 3), end: Math.round((totalMonths * 2) / 3) },
@@ -65,7 +59,6 @@ export default function GrowPathMockup({
   return (
     <div className="gp-card">
       <div>
-        {/* Salary strip — real numbers when provided */}
         {(currentSalary || targetSalary) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, fontSize: 12 }}>
             {currentSalary && (
@@ -84,7 +77,6 @@ export default function GrowPathMockup({
           </div>
         )}
 
-        {/* Next action hero — now dimension-aware */}
         <div style={{ background: 'linear-gradient(135deg,var(--teal-d),var(--teal))', borderRadius: 'var(--r-lg)', padding: '16px 18px', marginBottom: 18 }}>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>
             🎯 Your next action
@@ -95,7 +87,6 @@ export default function GrowPathMockup({
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 6 }}>{action.label} · Foundation · Month {phaseBounds[0].end}</div>
         </div>
 
-        {/* Phase progress — ranges now reflect this user's real timeline */}
         {phases.map((p, i) => (
           <div key={i} style={{ marginBottom: i < phases.length - 1 ? 12 : 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -109,11 +100,6 @@ export default function GrowPathMockup({
         ))}
       </div>
 
-      {/* Target companies — kept illustrative on purpose. A real user's
-          actual growpath_target_companies don't exist yet (they have no
-          active plan, that's the whole reason this is the locked preview),
-          so fabricating "personalized" company names here would be
-          dishonest rather than a genuine preview. */}
       <div>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>🏢 Target companies</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -126,14 +112,16 @@ export default function GrowPathMockup({
         </div>
       </div>
 
+      {/* FIX: background var(--paper) (cream) + box-shadow: var(--sh-md)
+          (doesn't exist — no shadow was rendering). Now white + real token. */}
       <style>{`
         .gp-card {
-          background: var(--paper);
+          background: #ffffff;
           border: 1px solid var(--border);
           border-radius: var(--r-xl);
           padding: 22px;
-          box-shadow: var(--sh-md);
-          height: 560px;
+          box-shadow: var(--shadow-md);
+          min-height: 560px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -141,7 +129,7 @@ export default function GrowPathMockup({
         }
         .gp-card:hover {
           transform: translateY(-6px);
-          box-shadow: var(--sh-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
+          box-shadow: var(--shadow-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
           border-color: var(--teal-mid);
         }
       `}</style>

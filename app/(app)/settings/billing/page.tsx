@@ -57,8 +57,6 @@ export default async function BillingPage() {
     .eq('plan', currentPlan)
     .single()
 
-  // Real subscription record, if one exists yet — will be null until
-  // Razorpay is actually wired in and a payment has gone through.
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('status, current_period_end, gateway_plan_id')
@@ -94,11 +92,6 @@ export default async function BillingPage() {
         Everything about your plan, credits, and past activity — in one place.
       </p>
 
-      {/* Plan + usage card — now using the shared PremiumHero shell
-          instead of its own hand-rolled linear-gradient. Balance number
-          animates via CountUpNumber, with a format function so the
-          Indian-locale comma grouping (5,000 not 5000) survives the
-          animation instead of being lost. */}
       <PremiumHero style={{ marginBottom: 20, flexDirection: 'column', alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
           <div>
@@ -124,7 +117,12 @@ export default async function BillingPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
             <span>Credits this cycle</span>
             <span style={{ fontWeight: 700 }}>
-              <CountUpNumber value={balance} format={n => n.toLocaleString('en-IN')} /> / {monthlyAllowance.toLocaleString('en-IN')} remaining
+              {/* FIX: was format={n => n.toLocaleString('en-IN')} — a raw
+                  function passed from this Server Component into a
+                  Client Component, which Next.js cannot serialize. Now
+                  a plain string prop; formatting happens inside
+                  CountUpNumber itself. */}
+              <CountUpNumber value={balance} locale="en-IN" /> / {monthlyAllowance.toLocaleString('en-IN')} remaining
             </span>
           </div>
           <div style={{ height: 9, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
@@ -138,8 +136,6 @@ export default async function BillingPage() {
         </div>
       </PremiumHero>
 
-      {/* Upgrade options — shown directly, not just linked out, so the
-          next step is one click away rather than a navigation away. */}
       {upgradesToShow.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>
@@ -172,12 +168,10 @@ export default async function BillingPage() {
         </div>
       )}
 
-      {/* Payment history */}
       <div style={{ marginBottom: 20 }}>
         <PaymentHistory userId={user.id} />
       </div>
 
-      {/* Usage history */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Usage history</div>
@@ -191,7 +185,6 @@ export default async function BillingPage() {
         )}
 
         {history.map((tx, i) => {
-          const isCredit = tx.credits_used < 0 ? false : true // positive = added (reset/purchase), negative = spent
           const isSpend = tx.credits_used < 0
           return (
             <div

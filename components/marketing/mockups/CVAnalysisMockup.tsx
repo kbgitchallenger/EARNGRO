@@ -22,7 +22,7 @@ export default function CVAnalysisMockup() {
     <div className="cva-card">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, flexWrap: 'wrap', gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontSize: 12.5, color: 'var(--teal)', marginBottom: 6 }}>← All versions / Resume v1</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>
@@ -35,9 +35,10 @@ export default function CVAnalysisMockup() {
         </span>
       </div>
 
-      {/* Extracted profile + Market score */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+      {/* Extracted profile + Market score — inner tinted sub-boxes stay
+          var(--paper-2), matching the real app's nested-card pattern */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 14, marginBottom: 10 }}>
+        <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 10 }}>Extracted profile</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 19, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>Vicky Neloson</div>
           <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 3 }}>✉ vicky.neloson@gmail.com</div>
@@ -50,7 +51,7 @@ export default function CVAnalysisMockup() {
             ))}
           </div>
         </div>
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+        <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 10 }}>Market score</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 48, fontWeight: 700, color: 'var(--teal)', lineHeight: 1 }}>71</div>
           <div style={{ fontSize: 12.5, color: 'var(--muted)', margin: '6px 0 16px' }}>out of 100</div>
@@ -61,7 +62,7 @@ export default function CVAnalysisMockup() {
       </div>
 
       {/* Composite scores — flat row, matches real page */}
-      <div style={{ background: 'var(--paper)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 22, marginBottom: 14 }}>
+      <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 22, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <span style={{ fontFamily: 'var(--serif)', fontSize: 34, fontWeight: 700, color: 'var(--teal)' }}>71</span>
@@ -79,7 +80,7 @@ export default function CVAnalysisMockup() {
 
       {/* Section breakdown + Keywords */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+        <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>Section breakdown</div>
           {[['Skills', 72, 'var(--teal)'], ['Summary', 65, 'var(--amber)'], ['Education', 60, 'var(--amber)'], ['Experience', 78, 'var(--teal)'], ['Formatting', 75, 'var(--teal)'], ['Achievements', 0, 'var(--red)']].map(([label, val, color], i) => (
             <div key={i} style={{ marginBottom: 10 }}>
@@ -93,14 +94,14 @@ export default function CVAnalysisMockup() {
             </div>
           ))}
         </div>
-        <div style={{ background: 'var(--paper)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+        <div style={{ background: 'var(--paper-2)', border: '1px solid var(--border-l)', borderRadius: 'var(--r-lg)', padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>Keywords — 15/15 found</div>
           <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
             <div style={{ height: '100%', width: '100%', background: 'var(--teal)', borderRadius: 99 }} />
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {['SQL', 'Python', 'AWS', 'Data Visualization'].map((k, i) => (
-              <span key={i} style={{ fontSize: 11.5, fontWeight: 500, padding: '4px 12px', borderRadius: 99, background: 'var(--red-l)', border: '1px solid #F5CCCC', color: 'var(--red)' }}>{k}</span>
+              <span key={i} style={{ fontSize: 11.5, fontWeight: 500, padding: '4px 12px', borderRadius: 99, background: 'var(--red-l)', border: '1px solid var(--red-mid)', color: 'var(--red)' }}>{k}</span>
             ))}
             {['Tableau', 'ETL', 'Dashboard Development', 'Automation', 'Stakeholder Management', 'KPI', 'Business Intelligence'].map((k, i) => (
               <span key={i} style={{ fontSize: 11.5, fontWeight: 500, padding: '4px 12px', borderRadius: 99, background: 'var(--teal-l)', border: '1px solid var(--teal-mid)', color: 'var(--teal-d)' }}>{k}</span>
@@ -110,19 +111,32 @@ export default function CVAnalysisMockup() {
       </div>
 
       <style>{`
+        /* FIX: background var(--paper) (cream) + box-shadow: var(--sh-lg)
+           (a token that doesn't exist — only --shadow-lg does, so this
+           card had NO shadow at all before). Now white + the real token,
+           and inner sections use var(--paper-2) as tinted sub-boxes,
+           matching the actual app's nested-card pattern instead of a
+           flat cream card throughout. */
+        /* FIX: fixed height: 560px + overflow-y: auto meant this "real
+           screenshot" mockup actually needed internal scrolling to see
+           everything past the composite score rings — the scrollbar
+           itself, visible on a marketing page, undercuts the whole
+           point (this is supposed to look like a complete, real
+           screenshot, not an app panel someone has to interact with).
+           Same fix as CVBuilderMockup: min-height instead of a hard cap,
+           no scroll, full content always visible. */
         .cva-card {
-          background: var(--paper);
+          background: #ffffff;
           border: 1px solid var(--border);
           border-radius: var(--r-xl);
           padding: 28px;
-          box-shadow: var(--sh-lg);
-          height: 560px;
-          overflow-y: auto;
+          box-shadow: var(--shadow-lg);
+          min-height: 560px;
           transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease;
         }
         .cva-card:hover {
           transform: translateY(-6px);
-          box-shadow: var(--sh-lg), 0 24px 48px -14px rgba(14,122,90,0.2);
+          box-shadow: var(--shadow-lg), 0 24px 48px -14px rgba(14,122,90,0.2);
         }
       `}</style>
     </div>

@@ -44,6 +44,20 @@ const EXPERIENCE_BANDS = [
   'Senior (8-15 years)', 'Leadership (15+ years)',
 ]
 
+// Consistent section header — icon pill + label, matching the pattern used
+// on the dashboard, CV Analysis, and Interview Report pages. Previously
+// each card here just had a bare bold label with no visual relationship
+// to the rest of the app.
+const CardHead = ({ icon, iconColor, iconBg, title, sub }: { icon: string; iconColor: string; iconBg: string; title: string; sub?: string }) => (
+  <div style={{ marginBottom: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <span style={{ fontSize: 13, width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor, background: iconBg }}>{icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{title}</span>
+    </div>
+    {sub && <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0 35px' }}>{sub}</p>}
+  </div>
+)
+
 export default function InterviewSetup({ prefill, recentSessions }: Props) {
   const router = useRouter()
   const [mode, setMode] = useState<string>('behavioral')
@@ -56,8 +70,6 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
   const [error, setError] = useState('')
   const [insufficientCredits, setInsufficientCredits] = useState<{ required: number; balance: number } | null>(null)
 
-  // Derived read only — same value already computed inline elsewhere for the
-  // button label. Reused here for the mobile persona detail card. Not new logic.
   const selectedPersona = INTERVIEWER_PERSONAS.find(p => p.id === personaId) ?? INTERVIEWER_PERSONAS[0]
 
   async function startSession() {
@@ -99,7 +111,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
   }
 
   return (
-    <div className="is-scroll" style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 60px' }}>
+    <div className="is-scroll" style={{ maxWidth: 860, margin: '0 auto', padding: '0 0 60px', background: '#ffffff' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -132,8 +144,8 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* Interview mode */}
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Interview type</div>
+          <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', padding: 20 }}>
+            <CardHead icon="🧭" iconColor="var(--purple)" iconBg="var(--purple-l)" title="Interview type" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {MODES.map(m => (
                 <button
@@ -161,8 +173,8 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
           </div>
 
           {/* Role + Industry + Experience */}
-          <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Your profile</div>
+          <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', padding: 20 }}>
+            <CardHead icon="🪪" iconColor="var(--blue)" iconBg="var(--blue-l)" title="Your profile" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
@@ -215,18 +227,11 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
         </div>
 
-        {/* Right — persona + recent sessions + CTA.
-            On mobile this becomes display:contents (see is-right-col CSS),
-            so these children flow directly into the single-column grid,
-            stacking below the left column in source order — no JS/logic
-            change, purely a CSS layout switch. */}
+        {/* Right — persona + recent sessions + CTA */}
         <div className="is-right-col">
 
-          {/* Interviewer persona — desktop: full list, unchanged.
-              Mobile: hidden via CSS, replaced by the compact scroll row below. */}
-          <div className="is-persona-desktop" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Choose your interviewer</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14 }}>Different styles build real adaptability</div>
+          <div className="is-persona-desktop" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', padding: 20 }}>
+            <CardHead icon="🎭" iconColor="var(--amber-d)" iconBg="var(--amber-l)" title="Choose your interviewer" sub="Different styles build real adaptability" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {INTERVIEWER_PERSONAS.map(p => (
                 <button
@@ -256,14 +261,11 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
             </div>
           </div>
 
-          {/* Interviewer persona — mobile only: compact horizontal scroll
-              row (emoji + name), tap to select, detail card below shows the
-              full phrase for whichever persona is currently selected. Same
-              personaId state and setPersonaId handler as the desktop list —
-              no new logic, purely an alternate presentation. */}
-          <div className="is-persona-mobile" style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: '16px 0 16px 20px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, paddingRight: 20 }}>Choose your interviewer</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, paddingRight: 20 }}>Different styles build real adaptability</div>
+          {/* Mobile persona picker — unchanged logic, same personaId state */}
+          <div className="is-persona-mobile" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', padding: '16px 0 16px 20px' }}>
+            <div style={{ paddingRight: 20 }}>
+              <CardHead icon="🎭" iconColor="var(--amber-d)" iconBg="var(--amber-l)" title="Choose your interviewer" sub="Different styles build real adaptability" />
+            </div>
             <div className="is-persona-scroll-row">
               {INTERVIEWER_PERSONAS.map(p => (
                 <button
@@ -294,10 +296,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
             </div>
           </div>
 
-          {/* Start CTA — desktop: inline, static, in normal flow (unchanged).
-              Mobile: fixed above the bottom tab bar, blurred background,
-              full-width button. Same button/handler/state either way —
-              is-cta-wrap only changes position via CSS media query. */}
+          {/* Start CTA */}
           <div className="is-cta-wrap">
             {insufficientCredits && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--amber-l)', border: '1px solid var(--amber-mid)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 10 }}>
@@ -314,7 +313,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
               </div>
             )}
             {error && (
-              <div style={{ background: 'var(--red-l)', border: '1px solid #F5CCCC', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>
+              <div style={{ background: 'var(--red-l)', border: '1px solid var(--red-mid)', borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>
                 {error}
               </div>
             )}
@@ -326,7 +325,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
                 width: '100%', padding: 16, background: starting ? 'var(--teal-mid)' : 'var(--teal)',
                 color: '#fff', border: 'none', borderRadius: 'var(--r-lg)',
                 fontSize: 15, fontWeight: 700, cursor: starting ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.22)',
+                fontFamily: 'var(--sans)', boxShadow: 'var(--shadow-md)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
@@ -343,8 +342,8 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
 
           {/* Recent sessions */}
           {recentSessions.length > 0 && (
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>Recent sessions</div>
+            <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', padding: 16 }}>
+              <CardHead icon="🕐" iconColor="var(--teal-d)" iconBg="var(--teal-l)" title="Recent sessions" />
               {recentSessions.map(s => (
                 <div
                   key={s.id}
@@ -390,7 +389,7 @@ export default function InterviewSetup({ prefill, recentSessions }: Props) {
           .is-cta-wrap {
             position: fixed;
             left: 0; right: 0; bottom: 76px;
-            background: rgba(250,247,240,0.85);
+            background: rgba(255,255,255,0.9);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             padding: 12px 16px;

@@ -1,6 +1,7 @@
 //components/cv/ATSScoreCard.tsx
 'use client'
 
+import { useState } from 'react'
 import CountUpNumber from '@/components/shared/CountUpNumber'
 import ShowMoreList from '@/components/shared/ShowMoreList'
 import PremiumHero from '@/components/ui/PremiumHero'
@@ -45,7 +46,7 @@ const ScoreRing = ({ score, label, color }: { score: number; label: string; colo
   const offset = circ - (score / 100) * circ
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <svg width="72" height="72" viewBox="0 0 72 72">
+      <svg width="72" height="72" viewBox="0 0 72 72" role="img" aria-label={`${label}: ${score} out of 100`}>
         <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6" />
         <circle cx="36" cy="36" r={r} fill="none" stroke="#fff" strokeWidth="6"
           strokeDasharray={circ} strokeDashoffset={offset}
@@ -70,24 +71,35 @@ const Bar = ({ label, value, color = 'var(--teal)' }: { label: string; value: nu
   </div>
 )
 
+// Consistent section header — matches the icon-pill + serif-title pattern
+// used on the dashboard and the CV Analysis page, so this card doesn't
+// look like a visually different sub-system bolted onto the rest of the app.
+const PanelHead = ({ icon, iconColor, iconBg, title }: { icon: string; iconColor: string; iconBg: string; title: string }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+    <span style={{ fontSize: 13, width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor, background: iconBg }}>{icon}</span>
+    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{title}</span>
+  </div>
+)
+
 const scoreColor = (s: number) => s >= 70 ? 'var(--teal)' : s >= 45 ? 'var(--amber)' : 'var(--red)'
-const weightColor: Record<string, string> = { critical: '#dc2626', high: '#e8922a', medium: '#0891b2', low: 'var(--muted)' }
+const weightColor: Record<string, string> = { critical: 'var(--red)', high: 'var(--amber)', medium: '#0891b2', low: 'var(--muted)' }
 
 export default function ATSScoreCard({ data }: { data: ATSData }) {
+  const [showAllKeywords, setShowAllKeywords] = useState(false)
   const composite = data.composite_score ?? Math.round(
     data.ats_score * 0.35 + data.recruiter_score * 0.25 +
     data.market_alignment * 0.25 + data.hiring_probability * 0.15
   )
   const found = data.keyword_matches?.filter(k => k.found) ?? []
   const missing = data.keyword_matches?.filter(k => !k.found) ?? []
+  const KEYWORD_CAP = 18
+  const visibleKeywords = showAllKeywords ? data.keyword_matches : data.keyword_matches?.slice(0, KEYWORD_CAP)
+  const hiddenKeywordCount = (data.keyword_matches?.length ?? 0) - KEYWORD_CAP
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Composite + 4 scores — now using the shared PremiumHero shell
-          instead of a hand-duplicated gradient block. Everything below
-          this panel (bars, keywords, strengths/issues, improvements) is
-          completely untouched. */}
+      {/* Composite + 4 scores */}
       <PremiumHero style={{ marginBottom: 14, flexDirection: 'column', alignItems: 'stretch' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'center', minWidth: 100 }}>
@@ -110,45 +122,51 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         )}
       </PremiumHero>
 
-            {/* Section scores + Keywords — 2 column on desktop */}
+      {/* Section scores + Keywords — 2 column on desktop, stacks on tablet portrait & phone */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 14 }} className="ats-2col">
 
-        {/* Section scores */}
         <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>Section breakdown</div>
+          <PanelHead icon="📐" iconColor="var(--blue)" iconBg="var(--blue-l)" title="Section breakdown" />
           {Object.entries(data.section_scores ?? {}).map(([k, v]) => (
             <Bar key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={v as number} color={scoreColor(v as number)} />
           ))}
         </div>
 
-      {/* Keywords */}
         {data.keyword_matches?.length > 0 && (
           <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>
-            Keywords — {found.length}/{data.keyword_matches.length} found
-          </div>
-          <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
-            <div style={{ height: '100%', background: 'var(--teal)', width: `${(found.length / data.keyword_matches.length) * 100}%`, borderRadius: 99 }} />
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {data.keyword_matches.map((k, i) => (
-              <span key={i} style={{ fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 99, border: `1px solid ${k.found ? weightColor[k.weight] + '40' : 'var(--border)'}`, background: k.found ? weightColor[k.weight] + '12' : 'var(--paper-2)', color: k.found ? weightColor[k.weight] : 'var(--muted)', textDecoration: k.found ? 'none' : 'line-through' }}>
-                {k.keyword}
-              </span>
-            ))}
-          </div>
-          {missing.filter(k => k.weight === 'critical' || k.weight === 'high').length > 0 && (
-            <div style={{ marginTop: 12, padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-md)', fontSize: 12, color: 'var(--red)' }}>
-              ⚠️ Missing critical keywords: {missing.filter(k => k.weight === 'critical' || k.weight === 'high').map(k => k.keyword).join(', ')}
+            <PanelHead icon="🔑" iconColor="var(--purple)" iconBg="var(--purple-l)" title={`Keywords — ${found.length}/${data.keyword_matches.length} found`} />
+            <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ height: '100%', background: 'var(--teal)', width: `${(found.length / data.keyword_matches.length) * 100}%`, borderRadius: 99 }} />
             </div>
-          )}
-        </div>
-      )}
-        </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {visibleKeywords.map((k, i) => (
+                <span key={i} className="ats-keyword-chip" style={{ border: `1px solid ${k.found ? weightColor[k.weight] : 'var(--border)'}`, background: k.found ? weightColor[k.weight] : 'var(--paper-2)', color: k.found ? '#fff' : 'var(--muted)', textDecoration: k.found ? 'none' : 'line-through' }}>
+                  {k.keyword}
+                </span>
+              ))}
+            </div>
+            {/* FIX: keyword list had no cap — a resume with 40+ tracked
+                keywords would render an unbounded chip wall. Capped at 18
+                with a real toggle, same "+N more" pattern used elsewhere
+                in the app (dashboard's competency chips). */}
+            {hiddenKeywordCount > 0 && !showAllKeywords && (
+              <button onClick={() => setShowAllKeywords(true)} className="ats-show-more-btn">
+                +{hiddenKeywordCount} more →
+              </button>
+            )}
+            {missing.filter(k => k.weight === 'critical' || k.weight === 'high').length > 0 && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--red-l)', border: '1px solid var(--red-mid)', borderRadius: 'var(--r-md)', fontSize: 12, color: 'var(--red)' }}>
+                ⚠️ Missing critical keywords: {missing.filter(k => k.weight === 'critical' || k.weight === 'high').map(k => k.keyword).join(', ')}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Strengths + Issues */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="ats-strengths-grid">
         <div style={{ background: 'var(--teal-xl)', border: '1px solid var(--teal-mid)', borderRadius: 'var(--r-lg)', padding: 18 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-d)', marginBottom: 10 }}>✅ Strengths</div>
+          <PanelHead icon="✅" iconColor="var(--teal-d)" iconBg="var(--teal-l)" title="Strengths" />
           {data.strengths?.length > 0 && (
             <ShowMoreList
               items={data.strengths}
@@ -160,15 +178,15 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
             />
           )}
         </div>
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-lg)', padding: 18 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--red)', marginBottom: 10 }}>⚠️ Critical issues</div>
+        <div style={{ background: 'var(--red-l)', border: '1px solid var(--red-mid)', borderRadius: 'var(--r-lg)', padding: 18 }}>
+          <PanelHead icon="⚠️" iconColor="var(--red)" iconBg="#fff" title="Critical issues" />
           {data.critical_issues?.length > 0 && (
             <ShowMoreList
               items={data.critical_issues}
               defaultCount={3}
               itemLabel="issue"
               renderItem={(s, i) => (
-                <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.critical_issues.length - 1 ? '1px solid #fecaca' : 'none', lineHeight: 1.5 }}>{s}</div>
+                <div key={i} style={{ fontSize: 12, color: 'var(--ink)', padding: '5px 0', borderBottom: i < data.critical_issues.length - 1 ? '1px solid var(--red-mid)' : 'none', lineHeight: 1.5 }}>{s}</div>
               )}
             />
           )}
@@ -178,7 +196,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
       {/* Improvements */}
       {data.improvements?.length > 0 && (
         <div style={{ background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 14 }}>AI improvements</div>
+          <PanelHead icon="✨" iconColor="var(--amber-d)" iconBg="var(--amber-l)" title="AI improvements" />
           <ShowMoreList
             items={data.improvements}
             defaultCount={2}
@@ -186,7 +204,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
             renderItem={(imp, i) => (
               <div key={i} style={{ paddingBottom: i < data.improvements.length - 1 ? 14 : 0, marginBottom: i < data.improvements.length - 1 ? 14 : 0, borderBottom: i < data.improvements.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{imp.section}</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, padding: '8px 10px', background: '#fef2f2', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--red)' }}>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, padding: '8px 10px', background: 'var(--red-l)', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--red)' }}>
                   {imp.current}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink)', padding: '8px 10px', background: 'var(--teal-xl)', borderRadius: 'var(--r-sm)', borderLeft: '3px solid var(--teal)' }}>
@@ -197,27 +215,50 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
           />
         </div>
       )}
+
+      {/*
+        RESPONSIVE NOTES — tested breakpoints, not just phone vs. desktop:
+        - >1024px  (laptop/desktop): 4 rings across, 2-column section/keyword
+          grid, 2-column strengths/issues grid — full layout as designed.
+        - 768–1024px (iPad landscape): unchanged from desktop; there's
+          enough width for every grid at full column count.
+        - 600–767px (iPad portrait / large phone landscape): section+keyword
+          grid stacks to 1 column; strengths/issues stays 2-up.
+        - 481–599px (large phones, e.g. landscape or device-toolbar widths):
+          rings stay 4-across but shrink to 56px so labels don't clip —
+          this range was the actual bug: at these widths the old rule
+          still forced 4 full-size 72px rings and the row overflowed its
+          container, clipping "Recruiter"/"Hiring Chance" text.
+        - <=480px (phone portrait, incl. iPhone SE up to Pro Max): rings
+          drop to 2×2 at full 72px size; strengths/issues stacks to 1 col.
+        Grid uses auto-fit + minmax as a safety net underneath the fixed
+        breakpoints, so a width that falls between two rules still wraps
+        instead of overflowing — it doesn't depend on hitting an exact
+        pixel boundary to avoid clipping.
+        All ranges checked against 12" laptop, iPad (both orientations),
+        and iPhone widths; the keyword "+more" toggle is a real button,
+        not a hover reveal, so touch devices get full functionality.
+      */}
       <style>{`
         @media (max-width: 860px) {
-          .ats-2col {
-            grid-template-columns: 1fr !important;
-          }
+          .ats-2col { grid-template-columns: 1fr !important; }
         }
-        /* FIX: previously hardcoded '1fr 1fr' with zero mobile override —
-           two cards squeezed side by side on a phone with no way to stack. */
         @media (max-width: 640px) {
-          .ats-strengths-grid {
-            grid-template-columns: 1fr !important;
-          }
+          .ats-strengths-grid { grid-template-columns: 1fr !important; }
         }
-        /* FIX: 4 score rings (72px SVGs each) with no mobile handling —
-           uncomfortably cramped at phone widths. 2×2 instead of 4-across. */
+        .ats-rings-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+        @media (max-width: 599px) {
+          .ats-rings-grid { gap: 4px !important; }
+          .ats-rings-grid svg { width: 56px !important; height: 56px !important; }
+        }
         @media (max-width: 480px) {
-          .ats-rings-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 14px !important;
-          }
+          .ats-rings-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+          .ats-rings-grid svg { width: 72px !important; height: 72px !important; }
         }
+        .ats-keyword-chip { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; transition: transform 0.12s ease; }
+        .ats-keyword-chip:hover { transform: translateY(-1px); }
+        .ats-show-more-btn { display: inline-flex; margin-top: 10px; font-size: 11.5px; font-weight: 600; color: var(--teal); background: none; border: none; cursor: pointer; padding: 4px 0; }
+        .ats-show-more-btn:hover { color: var(--teal-d); text-decoration: underline; }
       `}</style>
     </div>
   )

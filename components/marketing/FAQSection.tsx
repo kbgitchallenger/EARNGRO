@@ -55,7 +55,6 @@ const FAQS = [
     q: 'Can EarnGro recommend skills to learn?',
     a: 'Yes. Based on your career goals and market demand, EarnGro identifies high-impact technical and soft skills that can significantly improve your employability and earning potential.'
   },
-  
   {
     q: 'Who should use EarnGro?',
     a: 'EarnGro is designed for working professionals, managers, senior leaders, career switchers, freelancers, and anyone looking to accelerate career growth and increase their income.'
@@ -80,19 +79,22 @@ const FAQS = [
     q: 'Will recruiters see my profile?',
     a: 'No. Your profile remains private unless you explicitly choose to share your resume or career profile with recruiters or potential employers.'
   },
-    {
+  {
     q: 'Does EarnGro guarantee a salary increase or job offer?',
     a: 'No. EarnGro provides AI-powered guidance, recommendations, and career insights to maximize your chances of career growth. Final hiring decisions and salary outcomes depend on employers, your performance, and market conditions.'
   },
-  
 ]
 
 export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section style={{ padding: '72px 24px', maxWidth: 760, margin: '0 auto' }}>
-      <h2 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(26px,3.5vw,36px)', fontWeight: 600, color: 'var(--ink)', textAlign: 'center', marginBottom: 36 }}>
+    // FIX: was 72px vertical padding, tight for a 20-item accordion sitting
+    // right before the closing waitlist section — bumped for a cleaner
+    // visual break, and each row now gets a subtle hover tint + more
+    // generous padding so the whole list breathes better.
+    <section style={{ padding: '96px 24px', maxWidth: 760, margin: '0 auto' }}>
+      <h2 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(26px,3.5vw,36px)', fontWeight: 600, color: 'var(--ink)', textAlign: 'center', marginBottom: 44 }}>
         Frequently asked questions
       </h2>
       <div>
@@ -103,18 +105,22 @@ export default function FAQSection() {
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
                 aria-expanded={isOpen}
-                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '18px 4px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                className="faq-btn"
+                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '20px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--r-md)' }}
               >
                 <span style={{ fontSize: 15, fontWeight: 600, color: isOpen ? 'var(--teal-d)' : 'var(--ink)' }}>{item.q}</span>
                 <span style={{ fontSize: 18, color: 'var(--muted)', transform: isOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>+</span>
               </button>
               {isOpen && (
-                <p style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.7, padding: '0 4px 18px', margin: 0 }}>{item.a}</p>
+                <p style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.7, padding: '0 12px 20px', margin: 0 }}>{item.a}</p>
               )}
             </div>
           )
         })}
       </div>
+      <style>{`
+        .faq-btn:hover { background: var(--paper-2); }
+      `}</style>
     </section>
   )
 }

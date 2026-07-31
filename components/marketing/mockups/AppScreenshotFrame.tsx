@@ -23,7 +23,9 @@ export default function AppScreenshotFrame({
   children: React.ReactNode
 }) {
   return (
-    <div style={{ display: 'flex', background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', boxShadow: 'var(--sh-lg)', fontSize: 10 }}>
+    // FIX: box-shadow: var(--sh-lg) — that token doesn't exist (only
+    // --shadow-lg does), so this frame rendered with no shadow at all.
+    <div style={{ display: 'flex', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', fontSize: 10 }}>
 
       {/* Sidebar */}
       <div style={{ width: 108, background: '#0f1613', flexShrink: 0, padding: '14px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>

@@ -53,6 +53,17 @@ export default function CVBuilderMockup() {
         ))}
       </div>
 
+      {/* FIX: box-shadow used var(--sh-md)/var(--sh-lg) — neither token
+          exists (only --shadow-md/--shadow-lg do), so this card rendered
+          with no shadow at rest and no shadow change on hover. */}
+      {/* FIX: fixed height: 560px + overflow: hidden was clipping real
+          content — a header, summary, 2 jobs, education, certifications,
+          and skills genuinely needs more than 560px, and it was cutting
+          off mid-way through the Skills chips. Since this is meant to
+          look like an actual one-page resume (not a scrollable app
+          panel like the other mockups), a scrollbar would look wrong
+          here — the right fix is min-height instead of a hard cap, so
+          it sizes to its real content and nothing gets cut off. */}
       <style>{`
         .cvb-sheet {
           background: #fff;
@@ -60,14 +71,13 @@ export default function CVBuilderMockup() {
           border-radius: var(--r-md);
           padding: 32px 30px;
           font-family: Georgia, serif;
-          box-shadow: var(--sh-md);
-          height: 560px;
-          overflow: hidden;
+          box-shadow: var(--shadow-md);
+          min-height: 560px;
           transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease;
         }
         .cvb-sheet:hover {
           transform: translateY(-6px);
-          box-shadow: var(--sh-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
+          box-shadow: var(--shadow-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
           border-color: var(--teal-mid);
         }
       `}</style>

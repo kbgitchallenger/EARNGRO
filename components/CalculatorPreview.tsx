@@ -1,3 +1,4 @@
+//components/CalculatorPreview.tsx
 'use client'
 
 // Static, non-interactive preview of what the Earning Gap result looks like.

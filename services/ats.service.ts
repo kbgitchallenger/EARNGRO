@@ -69,7 +69,15 @@ export class ATSService {
       const result = await callAIJSON(
         ATS_SCORE_PROMPT(cappedResume, cappedJD ?? null, jobTitle),
         ATSResultSchema,
-        { maxTokens: 2000, feature: 'cv_analyze', userId }
+        // FIX: raised from 2000 — real production failures (Invalid JSON,
+        // "Expected ',' or ']' after array element") were landing near
+        // the tail of the improvements/critical_issues arrays on BOTH the
+        // first attempt and the retry, the same truncation signature
+        // fixed earlier in growdna/route.ts. ATSResult's improvements
+        // field carries paired current/improved text blocks per item —
+        // genuinely heavier than a simple string array — so 2000 was a
+        // tighter ceiling for more content than GrowDNA ever needed.
+        { maxTokens: 4096, feature: 'cv_analyze', userId }
       )
 
       const updated = await analysisRepository.update(analysis.id, {
@@ -115,7 +123,9 @@ export class ATSService {
     const result = await callAIJSON(
       ATS_SCORE_PROMPT(cappedResume, cappedJD),
       ATSResultSchema,
-      { maxTokens: 2000, feature: 'cv_analyze', userId }
+      // FIX: same truncation issue as score() above — this is the exact
+      // function in the reported stack trace (ats.service.ts:115).
+      { maxTokens: 4096, feature: 'cv_analyze', userId }
     )
 
     const compositeScore = Math.round(

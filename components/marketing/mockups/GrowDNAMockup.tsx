@@ -56,14 +56,16 @@ export default function GrowDNAMockup() {
         ))}
       </div>
 
+      {/* FIX: background var(--paper) (cream) + box-shadow: var(--sh-md)
+          (doesn't exist — no shadow was rendering). Now white + real token. */}
       <style>{`
         .dna-card {
-          background: var(--paper);
+          background: #ffffff;
           border: 1px solid var(--border);
           border-radius: var(--r-xl);
           padding: 22px;
-          box-shadow: var(--sh-md);
-          height: 560px;
+          box-shadow: var(--shadow-md);
+          min-height: 560px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -71,7 +73,7 @@ export default function GrowDNAMockup() {
         }
         .dna-card:hover {
           transform: translateY(-6px);
-          box-shadow: var(--sh-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
+          box-shadow: var(--shadow-lg), 0 20px 40px -12px rgba(14,122,90,0.18);
           border-color: var(--teal-mid);
         }
       `}</style>

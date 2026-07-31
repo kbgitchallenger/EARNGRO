@@ -31,9 +31,15 @@ export default function Navbar() {
 
   return (
     <>
+      {/* FIX: this component's own inline styles are what actually render
+          on the page — it doesn't use the .nav className from globals.css
+          at all, so whitening that class earlier had zero visible effect
+          here. Backgrounds were rgba(253,252,248,...) — the cream token's
+          RGB values hardcoded directly — now white per the "more white,
+          clean" direction. */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: scrolled || open ? 'rgba(253,252,248,0.97)' : 'rgba(253,252,248,0.92)',
+        background: scrolled || open ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${scrolled || open ? 'var(--border)' : 'var(--border-l)'}`,
@@ -62,17 +68,16 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop nav links */}
+          {/* Desktop nav links — FIX: hover state previously mutated
+              e.target.style directly inside onMouseEnter/onMouseLeave
+              handlers. It worked, but it's an imperative DOM-write
+              pattern that bypasses React and doesn't survive things like
+              fast re-renders resetting inline styles mid-hover. Replaced
+              with a plain CSS class + :hover, same visual result, no
+              behavioral change. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="nav-desktop">
             {NAV_LINKS.map(item => (
-              <Link key={item.href} href={item.href} style={{
-                fontSize: 13, fontWeight: 500, color: 'var(--muted)',
-                textDecoration: 'none', padding: '7px 14px', borderRadius: 99,
-                transition: 'color 0.15s, background 0.15s',
-              }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--ink)'; (e.target as HTMLElement).style.background = 'var(--paper-3)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
-              >
+              <Link key={item.href} href={item.href} className="navbar-link">
                 {item.label}
               </Link>
             ))}
@@ -90,7 +95,7 @@ export default function Navbar() {
               fontSize: 13, fontWeight: 700, color: '#fff',
               background: 'var(--teal)', textDecoration: 'none',
               padding: '9px 20px', borderRadius: 99,
-              boxShadow: '0 2px 8px rgba(14,122,90,0.25)',
+              boxShadow: 'var(--shadow-teal)',
               display: 'inline-block',
             }}>
               Get started free
@@ -133,11 +138,11 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — FIX: same cream background as the navbar itself */}
       {open && (
         <div style={{
           position: 'fixed', inset: '60px 0 0 0', zIndex: 99,
-          background: 'rgba(253,252,248,0.98)',
+          background: 'rgba(255,255,255,0.98)',
           backdropFilter: 'blur(16px)',
           borderTop: '1px solid var(--border-l)',
           display: 'flex', flexDirection: 'column',
@@ -163,7 +168,7 @@ export default function Navbar() {
             background: 'var(--teal)', color: '#fff',
             fontSize: 16, fontWeight: 700, padding: '15px',
             borderRadius: 99, textDecoration: 'none',
-            boxShadow: '0 4px 16px rgba(14,122,90,0.25)',
+            boxShadow: 'var(--shadow-teal)',
           }}>
             Get started free →
           </Link>
@@ -182,6 +187,12 @@ export default function Navbar() {
           from { opacity: 0; transform: translateY(-8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        .navbar-link {
+          font-size: 13px; font-weight: 500; color: var(--muted);
+          text-decoration: none; padding: 7px 14px; border-radius: 99px;
+          transition: color 0.15s, background 0.15s;
+        }
+        .navbar-link:hover { color: var(--ink); background: var(--paper-2); }
       `}</style>
     </>
   )

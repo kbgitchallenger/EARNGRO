@@ -89,13 +89,13 @@ function ZoomablePreview({ children }: { children: React.ReactNode }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--paper-2)', border: '1px solid var(--border)', borderRadius: 99, padding: 3 }}>
           <button
             onClick={() => setZoomMultiplier(z => Math.max(0.6, Math.round((z - 0.15) * 100) / 100))}
-            style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 14, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 16, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             aria-label="Zoom out"
           >−</button>
           <span style={{ fontSize: 10.5, color: 'var(--muted)', minWidth: 34, textAlign: 'center' }}>{Math.round(zoomMultiplier * 100)}%</span>
           <button
             onClick={() => setZoomMultiplier(z => Math.min(2, Math.round((z + 0.15) * 100) / 100))}
-            style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 14, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: '1px solid var(--border)', fontSize: 16, fontWeight: 700, color: 'var(--teal-d)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             aria-label="Zoom in"
           >+</button>
         </div>
@@ -635,11 +635,12 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
       </div>
 
       <style>{`
-        .cvb-template-strip { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+        .cvb-template-strip { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; scroll-padding-left: 2px; }
         .cvb-template-chip {
           flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
           width: 92px; padding: 8px; border-radius: var(--r-md); border: 1.5px solid var(--border);
           background: var(--paper); cursor: pointer; font-family: var(--sans); transition: all 0.15s;
+          scroll-snap-align: start;
         }
         .cvb-template-chip.active { border-color: var(--teal); background: var(--teal-l); box-shadow: 0 0 0 1px var(--teal); }
         .cvb-swatch { width: 100%; height: 46px; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
@@ -659,7 +660,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
         .cvb-watermark-note { font-size: 12px; color: var(--amber); background: var(--amber-l); border: 1px solid var(--amber-mid); border-radius: var(--r-md); padding: 8px 14px; margin-bottom: 14px; }
         .cvb-watermark-note a { color: var(--teal-d); font-weight: 600; }
         .cvb-length-note { font-size: 12px; margin-bottom: 14px; }
-        .cvb-error { font-size: 13px; color: var(--red); background: var(--red-l); border: 1px solid #F5CCCC; border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 14px; }
+        .cvb-error { font-size: 13px; color: var(--red); background: var(--red-l); border: 1px solid var(--red-mid); border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 14px; }
 
         .cvb-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 16px; }
         .cvb-grid[data-tab="preview"] { grid-template-columns: 1fr; }
@@ -670,7 +671,7 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
         .cvb-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-sm); }
         .cvb-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
         .cvb-add-btn { font-size: 12px; font-weight: 600; color: var(--teal); background: var(--teal-l); border: 1px solid var(--teal-mid); border-radius: 99px; padding: 5px 14px; cursor: pointer; font-family: var(--sans); }
-        .cvb-remove-x { padding: 8px 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: var(--red); cursor: pointer; font-size: 14px; flex-shrink: 0; }
+        .cvb-remove-x { padding: 8px 10px; background: var(--red-l); border: 1px solid var(--red-mid); border-radius: 6px; color: var(--red); cursor: pointer; font-size: 14px; flex-shrink: 0; }
 
         .cvb-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .cvb-exp-row { margin-bottom: 16px; padding: 14px; background: var(--paper-2); border-radius: var(--r-md); border: 1px solid var(--border-l); }
@@ -689,8 +690,15 @@ export default function CVBuilder({ initialData, plan = 'free' }: CVBuilderProps
         @media (max-width: 480px) {
           .cvb-toolbar { flex-direction: column; align-items: stretch; }
           .cvb-tabs { justify-content: center; }
-          .cvb-actions { justify-content: stretch; }
+          /* FIX: previously the name input + both action buttons just
+             wrapped inline whenever they ran out of horizontal room —
+             on a real phone width these are the two most important
+             buttons in the whole builder (Save PDF, Save & Analyse) and
+             deserve full-width, unambiguous tap targets rather than
+             being squeezed next to a shrinking text field. */
+          .cvb-actions { flex-direction: column; align-items: stretch; }
           .cvb-name-input { flex: 1; width: auto !important; }
+          .cvb-btn-outline, .cvb-btn-primary { width: 100%; justify-content: center; padding: 12px 16px; }
           .cvb-edu-row { grid-template-columns: 1fr; }
         }
       `}</style>

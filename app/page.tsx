@@ -2,7 +2,6 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import JourneyCard from '@/components/JourneyCard'
 import CalculatorPreview from '@/components/CalculatorPreview'
-import ScrollReveal from '@/components/ScrollReveal'
 import FeatureSpotlight from '@/components/marketing/FeatureSpotlight'
 import GrowDNAMockup from '@/components/marketing/mockups/GrowDNAMockup'
 import CVAnalysisMockup from '@/components/marketing/mockups/CVAnalysisMockup'
@@ -113,7 +112,6 @@ const TESTS = [
 export default function HomePage() {
   return (
     <>
-      <ScrollReveal />
       <Navbar />
 
       {/* ── HERO ── */}
@@ -240,7 +238,7 @@ export default function HomePage() {
           >
             <a
               href="#calculator"
-              style={{ background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, padding:'14px 30px', borderRadius:99, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(14,122,90,0.22)', transition:'all 0.22s' }}
+              style={{ background:'var(--teal)', color:'#fff', fontFamily:'var(--sans)', fontSize:15, fontWeight:600, padding:'14px 30px', borderRadius:99, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'var(--shadow-teal)', transition:'all 0.22s' }}
             >
               <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               See my Earning Gap — 2 min, no card
@@ -274,11 +272,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* ── TICKER ──
-          Accessibility fix: continuously-moving content must be pausable
-          (WCAG 2.2.2) — previously ran forever with no way to stop it.
-          Pauses on hover/focus, and respects prefers-reduced-motion by
-          not animating at all for users who've asked for that. */}
+      {/* ── TICKER ── */}
       <div
         className="ticker-wrap"
         tabIndex={0}
@@ -310,7 +304,7 @@ export default function HomePage() {
       </div>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ padding:'96px 24px', maxWidth:1120, margin:'0 auto', position:'relative', zIndex:1 }}>
+      <section id="how-it-works" style={{ padding:'112px 24px', maxWidth:1120, margin:'0 auto', position:'relative', zIndex:1 }}>
         <div className="reveal r1" style={{ textAlign:'center', maxWidth:600, margin:'0 auto 52px' }}>
           <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
             <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
@@ -339,6 +333,14 @@ export default function HomePage() {
         </div>
 
         <style>{`
+          /* FIX: this local block duplicates .hiw-grid/.hiw-card from
+             globals.css and — since component-level style blocks load
+             after the global stylesheet — WINS for every conflicting
+             property. That means whitening globals.css's .hiw-card alone
+             would not have changed anything on this actual page; fixing
+             it here is the one that counts. Same --sh-sm/--sh-md token
+             bug as globals.css (tokens that don't exist, so no shadow was
+             rendering at all), and same cream .hiw-card background. */
           .hiw-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -346,16 +348,16 @@ export default function HomePage() {
             background: var(--border);
             border-radius: var(--r-lg);
             overflow: hidden;
-            box-shadow: var(--sh-sm);
+            box-shadow: var(--shadow-sm);
           }
           .hiw-card {
-            background: var(--paper);
+            background: #ffffff;
             padding: 24px 20px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
           }
           .hiw-card:hover {
             transform: translateY(-3px);
-            box-shadow: var(--sh-md);
+            box-shadow: var(--shadow-md);
             position: relative;
             z-index: 1;
           }
@@ -406,13 +408,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FEATURE SPOTLIGHTS ──
-          Landing page previously sold only the Earning Gap calculator —
-          the other four real product features (GrowDNA, CV Analysis,
-          CV Builder, AI Interview, GrowPath) had no presence here at all.
-          Each spotlight is the same reusable component, alternating sides,
-          so a future geo-targeted page can reuse these with localized
-          copy instead of rebuilding this section per market. */}
+      {/* ── FEATURE SPOTLIGHTS ── */}
 
       <FeatureSpotlight
         eyebrow="GrowDNA Assessment"
@@ -438,7 +434,16 @@ export default function HomePage() {
         ctaHref="/signup"
         imageSide="left"
         visual={
-          <div style={{ width: 640, maxWidth: '100%', zoom: 0.72, margin: '0 auto' }}>
+          // FIX: CVAnalysisMockup has 3 stacked content panels (profile+
+          // score grid, composite scores, section breakdown+keywords) vs
+          // the other 4 mockups' 2 — since removing its clipped-content
+          // bug (min-height instead of a hard cap), its real height grew
+          // enough that 0.72 zoom left it taller than a real laptop
+          // viewport, needing a page scroll mid-section. Scaled down
+          // further here specifically, rather than compressing the
+          // content itself, which would hurt legibility on what's meant
+          // to read as a genuine screenshot.
+          <div style={{ width: 640, maxWidth: '100%', zoom: 0.58, margin: '0 auto' }}>
             <CVAnalysisMockup />
           </div>
         }
@@ -489,10 +494,15 @@ export default function HomePage() {
         }
       />
 
-      {/* ── CALCULATOR PREVIEW ── static, non-interactive, routes to signup ── */}
-      <div id="calculator" style={{ background:'var(--paper-2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1, overflow:'hidden' }}>
+      {/* ── CALCULATOR PREVIEW ──
+          FIX: was background: var(--paper-2), the same flat cream tone as
+          PricingTeaser right below it — two adjacent sections in the same
+          tint just blur together. Now white; the calc-card itself (already
+          whitened in globals.css) plus its border/shadow does the visual
+          separating instead of a colored background band. */}
+      <div id="calculator" style={{ background:'#ffffff', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1, overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
-        <div style={{ maxWidth:700, margin:'0 auto', padding:'88px 24px', position:'relative', zIndex:1 }}>
+        <div style={{ maxWidth:700, margin:'0 auto', padding:'104px 24px', position:'relative', zIndex:1 }}>
           <div className="reveal r1" style={{ textAlign:'center', marginBottom:40 }}>
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
               <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
@@ -512,9 +522,12 @@ export default function HomePage() {
       {/* ── PRICING TEASER ── */}
       <PricingTeaser />
 
-      {/* ── TESTIMONIALS ── */}
-      <div style={{ background:'var(--paper-3)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1 }}>
-        <div style={{ maxWidth:1120, margin:'0 auto', padding:'96px 24px' }}>
+      {/* ── TESTIMONIALS ──
+          FIX: was background: var(--paper-3), yet another cream band —
+          now white, with cards (already whitened in globals.css) carrying
+          all the visual weight via border + shadow. */}
+      <div style={{ background:'#ffffff', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', position:'relative', zIndex:1 }}>
+        <div style={{ maxWidth:1120, margin:'0 auto', padding:'112px 24px' }}>
           <div className="reveal r1">
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:11, fontWeight:600, color:'var(--teal)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>
               <span style={{ width:18, height:2, background:'var(--teal)', opacity:0.5, display:'inline-block', borderRadius:1 }} />
@@ -527,9 +540,9 @@ export default function HomePage() {
               Composite scenarios based on typical outcomes — not verified individual testimonials.
             </p>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(270px,1fr))', gap:16, marginTop:52 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(270px,1fr))', gap:20, marginTop:52 }}>
             {TESTS.map((t,i) => (
-              <div key={i} className={`reveal r${i+1}`} style={{ background:'var(--paper)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', padding:26, transition:'all 0.22s', position:'relative', overflow:'hidden' }}>
+              <div key={i} className={`reveal r${i+1}`} style={{ background:'#ffffff', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', padding:28, boxShadow: 'var(--shadow-sm)', transition:'all 0.22s', position:'relative', overflow:'hidden' }}>
                 <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(90deg,var(--amber),var(--teal))', opacity:0.6 }} />
                 <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:12, fontWeight:600, padding:'5px 12px', borderRadius:99, marginBottom:16 }}>{t.badge}</div>
                 <p style={{ fontFamily:'var(--serif)', fontSize:16, fontStyle:'italic', color:'var(--ink)', lineHeight:1.65, marginBottom:20, opacity:0.85 }}>&ldquo;{t.quote}&rdquo;</p>
@@ -550,7 +563,7 @@ export default function HomePage() {
       <FAQSection />
 
       {/* ── WAITLIST → SIGNUP ── */}
-      <section id="waitlist" style={{ padding:'100px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
+      <section id="waitlist" style={{ padding:'112px 24px', textAlign:'center', position:'relative', zIndex:1, overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'min(800px, 200vw)', height:500, background:'radial-gradient(ellipse,rgba(14,122,90,0.06) 0%,rgba(232,146,42,0.03) 40%,transparent 70%)', pointerEvents:'none' }} />
         <div className="reveal r1" style={{ maxWidth:540, margin:'0 auto', position:'relative', zIndex:1 }}>
           <div style={{ display:'inline-block', background:'var(--teal-l)', border:'1px solid var(--teal-mid)', color:'var(--teal-d)', fontSize:10, fontWeight:700, padding:'5px 16px', borderRadius:99, marginBottom:22, letterSpacing:'0.08em', textTransform:'uppercase' }}>
@@ -563,7 +576,7 @@ export default function HomePage() {
             Create your free account and get your personalised GrowPath — a month-by-month AI roadmap to your target salary.
           </p>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
-            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal)', color:'#fff', fontSize:15, fontWeight:600, padding:'14px 32px', borderRadius:99, textDecoration:'none', boxShadow:'0 4px 20px rgba(14,122,90,0.22)' }}>
+            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--teal)', color:'#fff', fontSize:15, fontWeight:600, padding:'14px 32px', borderRadius:99, textDecoration:'none', boxShadow:'var(--shadow-teal)' }}>
               Create free account →
             </Link>
             <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap', justifyContent:'center' }}>

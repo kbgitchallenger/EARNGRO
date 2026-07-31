@@ -1,6 +1,10 @@
+//app/pricing/page.tsx
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import CheckoutButton from '@/components/billing/CheckoutButton'
+import AppShell from '@/components/app/AppShell' // ← adjust path if this lives elsewhere in your repo
+import { getBalance } from '@/services/credits.service'
+import { getStreak } from '@/services/streaks.service'
 
 export const metadata = { title: 'Pricing — EarnGro' }
 
@@ -58,33 +62,24 @@ const PLANS = [
   },
 ]
 
-export default async function PricingPage() {
-  // This page is reachable both signed-out (from the marketing homepage)
-  // and signed-in (from Settings/Billing) — behavior branches accordingly
-  // per plan card below, since an anonymous visitor hitting the checkout
-  // API directly would just get a silent 401.
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  let currentPlan: string | null = null
-  if (user) {
-    const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-    currentPlan = profile?.plan ?? 'free'
-  }
-
+function PricingContent({ user, currentPlan }: { user: boolean; currentPlan: string | null }) {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: user ? '0' : '32px 24px 80px' }}>
 
-      {/* Back navigation — goes to dashboard if signed in, home if not */}
-      <Link
-        href={user ? '/dashboard' : '/'}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--muted)', textDecoration: 'none', marginBottom: 28 }}
-      >
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        {user ? 'Back to dashboard' : 'Back to home'}
-      </Link>
+      {/* Back navigation — only relevant when there's no sidebar to
+          navigate with (signed-out marketing visitor). Signed-in users
+          get here inside AppShell now, so the rail already covers this. */}
+      {!user && (
+        <Link
+          href="/"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--muted)', textDecoration: 'none', marginBottom: 28 }}
+        >
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to home
+        </Link>
+      )}
 
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(28px,4vw,40px)', fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>
@@ -104,9 +99,15 @@ export default async function PricingPage() {
             <div
               key={plan.name}
               style={{
-                background: plan.highlight ? 'linear-gradient(135deg, var(--teal-d), var(--teal))' : 'var(--paper)',
+                // FIX: non-highlighted cards used var(--paper) (cream)
+                // with no shadow — every other v2 page in the app now
+                // uses white cards + var(--shadow-sm), so this brought
+                // pricing in line with dashboard/CV Analysis/Interview/
+                // GrowPath rather than looking like a leftover surface.
+                background: plan.highlight ? 'linear-gradient(135deg, var(--teal-d), var(--teal))' : '#ffffff',
                 border: plan.highlight ? 'none' : '1px solid var(--border)',
                 borderRadius: 'var(--r-xl)',
+                boxShadow: plan.highlight ? 'var(--shadow-md)' : 'var(--shadow-sm)',
                 padding: '28px 24px',
                 position: 'relative',
                 display: 'flex',
@@ -163,7 +164,7 @@ export default async function PricingPage() {
                 ))}
               </div>
 
-              {/* ── CTA logic ──
+              {/* ── CTA logic ── unchanged from before, still fully honest:
                   1. Signed out + Free  → straight to signup
                   2. Signed out + paid  → signup, with intended plan carried
                      via query param so post-signup we know what to route to
@@ -213,5 +214,44 @@ export default async function PricingPage() {
         Credits reset every 30 days on paid plans and don't roll over. Free plan credits are one-time only.
       </div>
     </div>
+  )
+}
+
+export default async function PricingPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    // Signed-out visitor — no shell, full marketing-style page exactly
+    // as before.
+    return <PricingContent user={false} currentPlan={null} />
+  }
+
+  // FIX: this whole page previously rendered standalone with no sidebar
+  // for EVERY visitor, signed in or not — because it lives at
+  // app/pricing/page.tsx, outside the (app) route group that AppShell
+  // wraps. Moving it under (app) instead would force every anonymous
+  // marketing visitor through that layout's auth redirect, which breaks
+  // the "reachable signed-out" requirement noted in the original file.
+  // So instead: fetch the same props the (app) layout would have passed,
+  // and wrap this page's own content in AppShell only when a user exists.
+  const [{ data: profile }, creditsBalance, streak] = await Promise.all([
+    supabase.from('profiles').select('full_name, plan').eq('id', user.id).single(),
+    getBalance(user.id),
+    getStreak(user.id),
+  ])
+
+  const currentPlan = profile?.plan ?? 'free'
+
+  return (
+    <AppShell
+      name={profile?.full_name || user.email?.split('@')[0] || 'there'}
+      email={user.email ?? ''}
+      plan={currentPlan}
+      creditsBalance={creditsBalance}
+      currentStreak={streak.currentStreak}
+    >
+      <PricingContent user={true} currentPlan={currentPlan} />
+    </AppShell>
   )
 }

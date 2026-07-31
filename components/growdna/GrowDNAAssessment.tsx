@@ -84,9 +84,6 @@ interface AIResult {
   }
 }
 
-// Widened to include the two new answer shapes (arrays of objects) —
-// everything else about how Answers is used elsewhere stays valid since
-// this is purely additive to the union.
 type Answers = Record<string, string | string[] | number | SkillAnswerItem[]>
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -226,6 +223,21 @@ function ProgressBar({ current, total, module }: { current: number; total: numbe
   )
 }
 
+// Consistent section header — same icon-pill pattern used on the
+// dashboard, CV Analysis, and Interview Report. Previously every dna-card
+// here just had a bare bold label, making this onboarding result screen
+// look like a visually separate mini-app from the rest of EarnGro even
+// though it's the very first thing a new user sees.
+const SectionHead = ({ icon, iconColor, iconBg, title, sub }: { icon: string; iconColor: string; iconBg: string; title: string; sub?: string }) => (
+  <div style={{ marginBottom: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontSize: 13, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor, background: iconBg }}>{icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{title}</span>
+    </div>
+    {sub && <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0 38px' }}>{sub}</p>}
+  </div>
+)
+
 // ── Result Panel ──────────────────────────────────────────────────
 function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => void }) {
   const router = useRouter()
@@ -324,8 +336,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
       </div>
 
       <div className="dna-card">
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Your 5 earning dimensions</div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>Based directly on your answers below</div>
+        <SectionHead icon="📊" iconColor="var(--blue)" iconBg="var(--blue-l)" title="Your 5 earning dimensions" sub="Based directly on your answers below" />
         {dims.map(d => {
           const notes = explanations[d.key] ?? []
           return (
@@ -348,11 +359,9 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         })}
       </div>
 
-      {/* AI Readiness — deliberately separate card, not a 6th dimension
-          bar. Violet accent instead of the teal/red/amber used everywhere
-          else in this panel, so it reads at a glance as measuring a
-          genuinely different thing (future-readiness) rather than
-          current market position. */}
+      {/* AI Readiness — deliberately separate card, violet accent so it
+          reads as measuring a genuinely different thing (future-readiness)
+          rather than current market position. */}
       {result.ai_readiness && (
         <div className="dna-card" style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
@@ -396,11 +405,11 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
             </div>
           )}
           {gaps.length > 0 && (
-            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 'var(--r-lg)', padding: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C2410C', marginBottom: 12 }}>⚠️ Critical gaps</div>
+            <div style={{ background: 'var(--amber-l)', border: '1px solid var(--amber-mid)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber-d)', marginBottom: 12 }}>⚠️ Critical gaps</div>
               {gaps.map((g, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>
-                  <span style={{ color: '#EA580C', fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>{g}
+                  <span style={{ color: 'var(--amber-d)', fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>{g}
                 </div>
               ))}
             </div>
@@ -410,7 +419,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       {actions.length > 0 && (
         <div className="dna-card">
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 16 }}>Your {actions.length} immediate actions</div>
+          <SectionHead icon="✨" iconColor="var(--teal-d)" iconBg="var(--teal-l)" title={`Your ${actions.length} immediate actions`} />
           {actions.map((a, i) => (
             <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < actions.length - 1 ? 14 : 0, marginBottom: i < actions.length - 1 ? 14 : 0, borderBottom: i < actions.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
               <div style={{ width: 28, height: 28, minWidth: 28, borderRadius: '50%', background: 'var(--teal-l)', border: '1px solid var(--teal-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--teal-d)', marginTop: 2 }}>{i + 1}</div>
@@ -424,17 +433,11 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
         </div>
       )}
 
-      {/* AI Tool Recommendations — real catalog tools only, selected and
-          personalized by the AI, never invented. Same violet accent as
-          AI Readiness so the two visually read as related. */}
+      {/* AI Tool Recommendations — real catalog tools only, never invented.
+          Same violet accent as AI Readiness so the two visually read as related. */}
       {result.ai_tool_recommendations && result.ai_tool_recommendations.length > 0 && (
         <div className="dna-card" style={{ border: '1px solid #DDD6FE' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#6D28D9', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-            🤖 Recommended AI tools for your role
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16 }}>
-            Selected from a real, curated catalog — not AI-generated suggestions
-          </div>
+          <SectionHead icon="🤖" iconColor="#6D28D9" iconBg="#F5F3FF" title="Recommended AI tools for your role" sub="Selected from a real, curated catalog — not AI-generated suggestions" />
           {result.ai_tool_recommendations.map((t, i) => (
             <div key={i} style={{ padding: '10px 14px', background: '#F5F3FF', border: '1px solid #EDE9FE', borderRadius: 'var(--r-md)', marginBottom: i < result.ai_tool_recommendations!.length - 1 ? 8 : 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#6D28D9', marginBottom: 3 }}>{t.tool_name}</div>
@@ -453,7 +456,7 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <button onClick={() => router.push('/growpath')}
-          style={{ width: '100%', padding: 14, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(14,122,90,0.2)' }}>
+          style={{ width: '100%', padding: 14, background: 'var(--teal)', color: '#fff', border: 'none', borderRadius: 'var(--r-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sans)', boxShadow: 'var(--shadow-md)' }}>
           View my full GrowPath dashboard →
         </button>
         <button onClick={onRetake}
@@ -463,16 +466,15 @@ function ResultPanel({ result, onRetake }: { result: AIResult; onRetake: () => v
       </div>
 
       <style>{`
-        .dna-result-wrap { max-width: 620px; margin: 0 auto; padding: 0 0 60px; }
-        .dna-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; margin-bottom: 14px; }
+        .dna-result-wrap { max-width: 720px; margin: 0 auto; padding: 0 0 60px; background: #ffffff; }
+        .dna-card { background: #fff; border: 1px solid var(--border); border-radius: var(--r-xl); padding: 24px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
         .dna-hero { background: linear-gradient(135deg,var(--teal-d),var(--teal)); border-radius: var(--r-xl); padding: 32px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden; }
         .dna-hero-blob { position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; }
         .dna-hero-emoji { font-size: 52px; margin-bottom: 12px; position: relative; }
         .dna-hero-eyebrow { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; position: relative; }
         .dna-hero-title { font-family: var(--serif); font-size: clamp(22px,6vw,32px); font-weight: 600; color: #fff; margin-bottom: 12px; position: relative; line-height: 1.25; }
         .dna-hero-desc { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.65; max-width: 420px; margin: 0 auto 20px; position: relative; }
-        .dna-hero-hrs { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 99px; position: relative; }
-        .dna-hero-hrs strong { font-family: var(--serif); font-size: 16px; }
+        .dna-hero-hrs { position: relative; }
         .dna-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
         .dna-stat { text-align: center; }
         .dna-stat-mid { border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 0 12px; }
@@ -557,9 +559,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     if (q.type === 'salary')      return !!(a && Number(a) > 0)
     if (q.type === 'tapscale')    return a !== undefined && a !== null && a !== ''
     if (q.type === 'multiselect') return Array.isArray(a) && a.length > 0
-    // skill_rating handles all three (primary/secondary competencies,
-    // certifications) uniformly now — min=0 (certifications, secondary)
-    // correctly means an empty array already satisfies the requirement.
     if (q.type === 'skill_rating') {
       const arr = (a as SkillAnswerItem[] | undefined) ?? []
       return arr.length >= (q.min ?? 0)
@@ -598,7 +597,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
 
   function setTapScale(qid: string, val: number) { setAnswers(prev => ({ ...prev, [qid]: val })) }
   function setSalary(val: number) { setAnswers(prev => ({ ...prev, current_ctc: val })) }
-  // NEW: setters for the two Phase 2 question types
   function setSkillAnswer(qid: string, val: SkillAnswerItem[]) { setAnswers(prev => ({ ...prev, [qid]: val })) }
 
   function goNext() { if (isLast) { handleSubmit(); return }; setCurrentIdx(i => Math.min(i + 1, totalQ - 1)) }
@@ -620,12 +618,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
     setSubmitting(true)
     setError('')
     try {
-      // FIX: previously excluded these three fields before calling
-      // calculateScores, since that function didn't know about them yet
-      // and would have hit a type error. Now that calculateScores has
-      // been fixed to actually use them (real skill_premium calculation,
-      // not the old hardcoded-20 bug), passing the full answers object
-      // through directly again.
       const scores = calculateScores(answers)
       const res = await fetch('/api/growdna', {
         method: 'POST',
@@ -723,7 +715,7 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
   const cols = current?.columns || 3
 
   return (
-    <div className="dna-assessment" style={{ paddingBottom: 88 }}>
+    <div className="dna-assessment" style={{ paddingBottom: 88, background: '#ffffff' }}>
       <ProgressBar current={currentIdx + 1} total={totalQ} module={current?.module || 'A'} />
 
       {prefillApplied && (
@@ -792,11 +784,6 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
           <SalaryInput value={getAnswer('current_ctc') as number | undefined} onChange={setSalary} />
         )}
 
-        {/* Competencies + Certifications — one unified component now,
-            per the reconciled schema: all three (primary/secondary
-            competencies, certifications) are 'skill_rating' type,
-            distinguished by searchTarget (which table to search) and
-            ratingRequired (whether a proficiency picker shows at all). */}
         {current?.type === 'skill_rating' && (
           <SkillRatingQuestion
             min={current.min ?? 0}
@@ -827,11 +814,15 @@ export default function GrowDNAAssessment({ userId, existingResult, cvFacts, can
         {error && <div className="dna-error">{error}</div>}
       </div>
 
+      {/* FIX: fixed footer background was rgba(250,247,240,0.92) — a cream
+          tint left over from before the app-wide white-page decision.
+          This is the button a first-time user taps most often during
+          onboarding; it should match the white system everywhere else. */}
       <div
         className="dna-footer"
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40,
-          background: 'rgba(250,247,240,0.92)', backdropFilter: 'blur(6px)',
+          background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(6px)',
           borderTop: '1px solid var(--border)', padding: '14px 20px',
           display: 'flex', justifyContent: 'space-between', gap: 12,
         }}
