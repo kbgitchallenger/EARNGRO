@@ -31,9 +31,6 @@ function hrsLabel(score: number): string {
   return 'Needs work'
 }
 
-// Real interpretive label for each ring card — a bare number in a circle
-// doesn't explain itself; this is the direct fix for "rings aren't
-// informative."
 function scoreInterpretation(score: number, max: number): string {
   const pct = score / max
   if (pct >= 0.8) return 'Excellent'
@@ -69,9 +66,6 @@ function KPIRing({ score, max, color }: { score: number; max: number; color: str
   )
 }
 
-// Empty-state ring — shown instead of a missing KPI card so a first-time
-// user (who's only done GrowDNA) sees an inviting "go do this" slot
-// rather than the grid silently shrinking to 1-2 asymmetric cards.
 function EmptyRing({ label, cta, href, color }: { label: string; cta: string; href: string; color: string }) {
   return (
     <Link href={href} className="dash-kpi-card dash-kpi-empty" style={{ borderLeft: `3px solid var(--border)` }}>
@@ -89,10 +83,6 @@ function EmptyRing({ label, cta, href, color }: { label: string; cta: string; hr
   )
 }
 
-// Real trajectory chart — plots actual HRS scores across every GrowDNA
-// attempt on file (newest fetch = up to 6, real rows only, never
-// interpolated or padded). With only 2 points it draws a clean 2-node
-// line; with more history it becomes a genuine multi-point trend.
 function TrajectoryChart({ points }: { points: { score: number; date: string }[] }) {
   if (points.length < 2) return null
   const w = 560, h = 140, padX = 28, padY = 24
@@ -177,10 +167,6 @@ export default async function DashboardPage() {
     getStreak(user.id),
     getUserCompetencies(user.id),
     getRealActivity(user.id, supabase),
-    // FIX: growpath_plans fetched as its own real parallel entry this
-    // time, not nested inline inside another query — the earlier version
-    // of this query blocked on a sequential sub-await during array
-    // construction, which was flagged as a real inefficiency.
     supabase.from('growpath_plans').select('id').eq('user_id', user.id).maybeSingle(),
     supabase.from('cv_analyses').select('critical_issues, keyword_gaps').order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ])
@@ -215,7 +201,7 @@ export default async function DashboardPage() {
   const trajectoryPoints = (dnaAttempts ?? [])
     .filter(d => d.hrs_score != null)
     .map(d => ({ score: d.hrs_score as number, date: d.created_at as string }))
-    .reverse() // API order is newest-first; chart reads left→right chronologically
+    .reverse()
 
   const phaseProgress = (growpathPhases ?? []).map(p => {
     const ms = (p as unknown as { growpath_milestones: { status: string }[] }).growpath_milestones ?? []
@@ -244,11 +230,6 @@ export default async function DashboardPage() {
 
       {hasGap && (
         <>
-          {/* ── Today's Focus — moved to the top. The single action that
-              matters more than any score, since a score with no attached
-              action doesn't advance anyone's career. This is the first
-              thing seen, matching the daily-habit north star, not the
-              6th scroll stop it used to be. ── */}
           <div className="dash-section">
             <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--amber)', background: 'var(--amber-l)' }}>🎯</span><h2 className="dash-section-title">Today's Focus</h2></div></div>
             <Link href={nextMove.href} style={{ textDecoration: 'none', display: 'block' }}>
@@ -278,7 +259,6 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          {/* ── Your Current Standing ── */}
           <div className="dash-section">
             <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--blue)', background: 'var(--blue-l)' }}>📊</span><h2 className="dash-section-title">Your Current Standing</h2></div><p className="dash-section-sub">Measured honestly across every real signal we track</p></div>
             <div style={{ marginBottom: 18 }}><StreakCard currentStreak={streak.currentStreak} /></div>
@@ -296,7 +276,6 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Your Earning Potential ── */}
           <div className="dash-section">
             <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--teal-d)', background: 'var(--teal-l)' }}>💰</span><h2 className="dash-section-title">Your Earning Potential</h2></div><p className="dash-section-sub">Your real gap against verified market rate for your exact profile</p></div>
             <div className="dash-white-panel">
@@ -313,9 +292,6 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions — moved up here per UX pass: this is where a
-              user acts on the numbers they just saw above, not something
-              buried after five more read-only sections. */}
           <div className="dash-section">
             <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--purple)', background: 'var(--purple-l)' }}>⚡</span><h2 className="dash-section-title">Quick Actions</h2></div></div>
             <div className="dash-actions-row">
@@ -326,7 +302,6 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Your Growth Trajectory ── */}
           {changeNarrative && (
             <div className="dash-section">
               <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--teal)', background: 'var(--teal-l)' }}>📈</span><h2 className="dash-section-title">Your Growth Trajectory</h2></div><p className="dash-section-sub">Real trajectory since your last assessment, not just a snapshot</p></div>
@@ -344,7 +319,16 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* ── Skill Gaps to Close ── */}
+          {/* ── Skill Gaps to Close ──
+              FIX: badge and text were siblings in one flex row with
+              align-items:flex-start — a short paragraph looked fine
+              (badge level with the top of the text), but a long
+              AI-generated paragraph (common in practice) left the badge
+              pinned at the top with a large empty gap underneath it,
+              since the row's height was driven by the much-taller text
+              sibling. Restructured so the badge sits inside the same
+              column as its text, directly above it — always adjacent
+              regardless of how long the text runs. */}
           {skillGapItems.length > 0 && (
             <div className="dash-section">
               <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--amber)', background: 'var(--amber-l)' }}>🔍</span><h2 className="dash-section-title">Skill Gaps to Close</h2></div><p className="dash-section-sub">Real gaps, traced to exactly where they came from</p></div>
@@ -352,17 +336,18 @@ export default async function DashboardPage() {
                 {skillGapItems.map((g, i) => (
                   <div key={i} className="dash-gap-item" style={{ borderBottom: i < skillGapItems.length - 1 ? '1px solid var(--border-l)' : 'none' }}>
                     <span style={{ color: 'var(--amber)', flexShrink: 0 }}>⚠</span>
-                    <span style={{ flex: 1 }}>{g.text}</span>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, padding: '2px 8px', borderRadius: 99, flexShrink: 0, background: g.source === 'resume' ? 'var(--blue-l)' : 'var(--teal-l)', color: g.source === 'resume' ? 'var(--blue)' : 'var(--teal-d)' }}>
-                      {g.source === 'resume' ? '📄 Resume' : '🧬 GrowDNA'}
-                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span className="gap-source-badge" style={{ background: g.source === 'resume' ? 'var(--blue-l)' : 'var(--teal-l)', color: g.source === 'resume' ? 'var(--blue)' : 'var(--teal-d)' }}>
+                        {g.source === 'resume' ? '📄 Resume' : '🧬 GrowDNA'}
+                      </span>
+                      <div style={{ marginTop: 5 }}>{g.text}</div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Your Competency Profile — Pillar 1, supporting evidence for "what's holding me back" */}
           {competencies.length > 0 && (
             <div className="dash-section">
               <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--purple)', background: 'var(--purple-l)' }}>🧠</span><h2 className="dash-section-title">Your Competency Profile</h2></div><p className="dash-section-sub">A growing, verified record of what you actually know</p></div>
@@ -382,7 +367,6 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* ── Your Career Roadmap ── */}
           {phaseProgress.length > 0 && (
             <div className="dash-section">
               <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--teal-d)', background: 'var(--teal-l)' }}>🗺️</span><h2 className="dash-section-title">Your Career Roadmap</h2></div><p className="dash-section-sub">Your real, month-by-month roadmap to close the gap</p></div>
@@ -397,12 +381,6 @@ export default async function DashboardPage() {
             </div>
           )}
 
-
-          {/* ── Your AI Career Coach ──
-              Honest placeholder — no AI Coach exists yet. Clearly marked
-              as coming soon rather than a decorative chat box pretending
-              to work, matching the same no-fabrication discipline used
-              everywhere else in this build. */}
           <div className="dash-section">
             <div className="dash-section-head"><div className="dash-section-head-row"><span className="dash-section-icon" style={{ color: 'var(--purple)', background: 'var(--purple-l)' }}>🤖</span><h2 className="dash-section-title">Your AI Career Coach</h2></div></div>
             <div className="dash-white-panel" style={{ display: 'flex', alignItems: 'center', gap: 16, borderStyle: 'dashed' }}>
@@ -453,7 +431,8 @@ export default async function DashboardPage() {
         .dash-kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
         .kpi-label { font-size: 11px; color: var(--muted); }
         .kpi-sub { font-size: 10px; color: var(--muted-l); }
-        .dash-gap-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; font-size: 11.5px; }
+        .dash-gap-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 0; font-size: 11.5px; }
+        .gap-source-badge { display: inline-block; font-size: 9.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
         .comp-stats-row { display: flex; gap: 24px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-l); }
         .comp-stat-num { font-family: var(--serif); font-size: 26px; font-weight: 700; }
         .comp-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -474,7 +453,14 @@ export default async function DashboardPage() {
         .dash-section { animation: dashFadeUp 0.4s var(--ease-out-expo, ease) both; }
         @media (prefers-reduced-motion: reduce) { .dash-section { animation: none; } }
         @media (max-width: 860px) { .dash-actions-row { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .dash-kpi-row { grid-template-columns: 1fr 1fr; } .comp-stats-row { flex-wrap: wrap; gap: 16px; } }
+        /* FIX: this rule previously forced .dash-kpi-row to 2 columns
+           below 480px, overriding the base auto-fit rule that would
+           otherwise collapse to 1 column naturally. Each card needs a
+           76px ring plus label text — 2 columns don't fit on a real
+           phone width, causing the ring and text to overlap between
+           neighboring cards. Forcing 1 column here instead, matching the
+           "expand, don't squeeze" fix already applied to the mockups. */
+        @media (max-width: 480px) { .dash-kpi-row { grid-template-columns: 1fr; } .comp-stats-row { flex-wrap: wrap; gap: 16px; } }
       `}</style>
     </div>
   )
