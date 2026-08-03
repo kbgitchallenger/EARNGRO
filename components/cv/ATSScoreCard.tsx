@@ -71,9 +71,6 @@ const Bar = ({ label, value, color = 'var(--teal)' }: { label: string; value: nu
   </div>
 )
 
-// Consistent section header — matches the icon-pill + serif-title pattern
-// used on the dashboard and the CV Analysis page, so this card doesn't
-// look like a visually different sub-system bolted onto the rest of the app.
 const PanelHead = ({ icon, iconColor, iconBg, title }: { icon: string; iconColor: string; iconBg: string; title: string }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
     <span style={{ fontSize: 13, width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor, background: iconBg }}>{icon}</span>
@@ -145,10 +142,6 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
                 </span>
               ))}
             </div>
-            {/* FIX: keyword list had no cap — a resume with 40+ tracked
-                keywords would render an unbounded chip wall. Capped at 18
-                with a real toggle, same "+N more" pattern used elsewhere
-                in the app (dashboard's competency chips). */}
             {hiddenKeywordCount > 0 && !showAllKeywords && (
               <button onClick={() => setShowAllKeywords(true)} className="ats-show-more-btn">
                 +{hiddenKeywordCount} more →
@@ -216,29 +209,6 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         </div>
       )}
 
-      {/*
-        RESPONSIVE NOTES — tested breakpoints, not just phone vs. desktop:
-        - >1024px  (laptop/desktop): 4 rings across, 2-column section/keyword
-          grid, 2-column strengths/issues grid — full layout as designed.
-        - 768–1024px (iPad landscape): unchanged from desktop; there's
-          enough width for every grid at full column count.
-        - 600–767px (iPad portrait / large phone landscape): section+keyword
-          grid stacks to 1 column; strengths/issues stays 2-up.
-        - 481–599px (large phones, e.g. landscape or device-toolbar widths):
-          rings stay 4-across but shrink to 56px so labels don't clip —
-          this range was the actual bug: at these widths the old rule
-          still forced 4 full-size 72px rings and the row overflowed its
-          container, clipping "Recruiter"/"Hiring Chance" text.
-        - <=480px (phone portrait, incl. iPhone SE up to Pro Max): rings
-          drop to 2×2 at full 72px size; strengths/issues stacks to 1 col.
-        Grid uses auto-fit + minmax as a safety net underneath the fixed
-        breakpoints, so a width that falls between two rules still wraps
-        instead of overflowing — it doesn't depend on hitting an exact
-        pixel boundary to avoid clipping.
-        All ranges checked against 12" laptop, iPad (both orientations),
-        and iPhone widths; the keyword "+more" toggle is a real button,
-        not a hover reveal, so touch devices get full functionality.
-      */}
       <style>{`
         @media (max-width: 860px) {
           .ats-2col { grid-template-columns: 1fr !important; }
@@ -246,14 +216,21 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         @media (max-width: 640px) {
           .ats-strengths-grid { grid-template-columns: 1fr !important; }
         }
-        .ats-rings-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-        @media (max-width: 599px) {
-          .ats-rings-grid { gap: 4px !important; }
-          .ats-rings-grid svg { width: 56px !important; height: 56px !important; }
-        }
-        @media (max-width: 480px) {
+        /* FIX: the previous middle tier (481-599px: keep 4 columns, just
+           shrink each ring's SVG to a hard-coded 56px) had a hidden
+           minimum-width problem — 4×56px rings + 3 grid gaps + the 100px
+           composite-score block sitting next to them adds up to more
+           width than many real phones actually have available inside
+           the card's padding, even after the shrink. The grid can't
+           shrink columns below that fixed 56px SVG size, so it just
+           overflowed instead of wrapping — confirmed by screenshots
+           showing rings and "Recruiter"/"Hire Chance" labels clipped at
+           the card edge. Removed that fragile tier entirely: now it's a
+           single, higher breakpoint (960px) straight from 4 columns to
+           2, always at full 72px ring size — no dependency on a shrink
+           hack surviving on every real device width. */
+        @media (max-width: 960px) {
           .ats-rings-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
-          .ats-rings-grid svg { width: 72px !important; height: 72px !important; }
         }
         .ats-keyword-chip { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; transition: transform 0.12s ease; }
         .ats-keyword-chip:hover { transform: translateY(-1px); }
