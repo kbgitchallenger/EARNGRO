@@ -105,7 +105,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</div>
           </div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }} className="ats-rings-grid">
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 8 }} className="ats-rings-grid">
             <ScoreRing score={data.ats_score} label="ATS Pass" color={scoreColor(data.ats_score)} />
             <ScoreRing score={data.recruiter_score} label="Recruiter" color={scoreColor(data.recruiter_score)} />
             <ScoreRing score={data.market_alignment} label="Market Fit" color={scoreColor(data.market_alignment)} />
@@ -209,28 +209,21 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         </div>
       )}
 
+        {/* FIX: two attempts at a fixed pixel breakpoint (480px, then
+           960px) both still overflowed on a real device — trying to
+           predict the exact width where 4 rings + the composite block
+           stop fitting is fragile; the actual available width depends on
+           the sidebar, page padding, and the device itself, not just
+           viewport width in isolation. Switched the ring row to
+           auto-fit + minmax(80px,1fr) instead: the browser now decides
+           the column count directly from real available space at every
+           width, so there's no pixel number to get wrong. */}
       <style>{`
         @media (max-width: 860px) {
           .ats-2col { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .ats-strengths-grid { grid-template-columns: 1fr !important; }
-        }
-        /* FIX: the previous middle tier (481-599px: keep 4 columns, just
-           shrink each ring's SVG to a hard-coded 56px) had a hidden
-           minimum-width problem — 4×56px rings + 3 grid gaps + the 100px
-           composite-score block sitting next to them adds up to more
-           width than many real phones actually have available inside
-           the card's padding, even after the shrink. The grid can't
-           shrink columns below that fixed 56px SVG size, so it just
-           overflowed instead of wrapping — confirmed by screenshots
-           showing rings and "Recruiter"/"Hire Chance" labels clipped at
-           the card edge. Removed that fragile tier entirely: now it's a
-           single, higher breakpoint (960px) straight from 4 columns to
-           2, always at full 72px ring size — no dependency on a shrink
-           hack surviving on every real device width. */
-        @media (max-width: 960px) {
-          .ats-rings-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
         }
         .ats-keyword-chip { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; transition: transform 0.12s ease; }
         .ats-keyword-chip:hover { transform: translateY(-1px); }
