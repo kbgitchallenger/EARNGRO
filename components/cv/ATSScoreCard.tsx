@@ -40,20 +40,31 @@ interface ATSData {
   ai_summary: string
 }
 
+// FIX: previously <svg width="72" height="72"> — a hard HTML-attribute
+// intrinsic size that no CSS grid trick could actually shrink, which is
+// why three prior attempts at this bug all failed one way or another.
+// Now the SVG has no fixed size of its own; a wrapping div
+// (.ats-ring-wrap) controls the actual pixel size via CSS, and the SVG
+// fills it at 100% — the viewBox scales the whole drawing (circles AND
+// the score text) proportionally to whatever size the wrapper resolves
+// to. This makes the ring a genuine, single point of control for size,
+// so a breakpoint can shrink it for real instead of working around it.
 const ScoreRing = ({ score, label, color }: { score: number; label: string; color: string }) => {
   const r = 28
   const circ = 2 * Math.PI * r
   const offset = circ - (score / 100) * circ
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <svg width="72" height="72" viewBox="0 0 72 72" role="img" aria-label={`${label}: ${score} out of 100`}>
-        <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6" />
-        <circle cx="36" cy="36" r={r} fill="none" stroke="#fff" strokeWidth="6"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 36 36)"
-          style={{ transition: 'stroke-dashoffset 1s ease' }} />
-        <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff" fontFamily="var(--serif)">{score}</text>
-      </svg>
+      <div className="ats-ring-wrap">
+        <svg viewBox="0 0 72 72" role="img" aria-label={`${label}: ${score} out of 100`} style={{ display: 'block', width: '100%', height: '100%' }}>
+          <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6" />
+          <circle cx="36" cy="36" r={r} fill="none" stroke="#fff" strokeWidth="6"
+            strokeDasharray={circ} strokeDashoffset={offset}
+            strokeLinecap="round" transform="rotate(-90 36 36)"
+            style={{ transition: 'stroke-dashoffset 1s ease' }} />
+          <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff" fontFamily="var(--serif)">{score}</text>
+        </svg>
+      </div>
       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textAlign: 'center' }}>{label}</span>
     </div>
   )
@@ -105,7 +116,7 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</div>
           </div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 8 }} className="ats-rings-grid">
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }} className="ats-rings-grid">
             <ScoreRing score={data.ats_score} label="ATS Pass" color={scoreColor(data.ats_score)} />
             <ScoreRing score={data.recruiter_score} label="Recruiter" color={scoreColor(data.recruiter_score)} />
             <ScoreRing score={data.market_alignment} label="Market Fit" color={scoreColor(data.market_alignment)} />
@@ -209,21 +220,30 @@ export default function ATSScoreCard({ data }: { data: ATSData }) {
         </div>
       )}
 
-        {/* FIX: two attempts at a fixed pixel breakpoint (480px, then
-           960px) both still overflowed on a real device — trying to
-           predict the exact width where 4 rings + the composite block
-           stop fitting is fragile; the actual available width depends on
-           the sidebar, page padding, and the device itself, not just
-           viewport width in isolation. Switched the ring row to
-           auto-fit + minmax(80px,1fr) instead: the browser now decides
-           the column count directly from real available space at every
-           width, so there's no pixel number to get wrong. */}
+        {/* FIX ATTEMPT #4 — this is the one that should actually hold.
+           Previous attempts (56px !important shrink, 960px breakpoint,
+           auto-fit) all worked around the SVG's fixed HTML width/height
+           attribute instead of removing it, so each either still
+           overflowed on some real width or collapsed to an ugly single
+           column. ScoreRing above no longer has a fixed intrinsic size at
+           all — .ats-ring-wrap is now the ONLY thing controlling ring
+           size, in real CSS, so this breakpoint has full control:
+           .ats-ring-wrap sets 72px by default, drops to 52px on phones.
+           2 columns of 52px rings + gap ≈ 116px — comfortably fits next
+           to the 100px composite block on any real phone width, with
+           room to spare (previous attempts were cutting it much closer,
+           which is why they kept failing on specific device widths). */}
       <style>{`
         @media (max-width: 860px) {
           .ats-2col { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .ats-strengths-grid { grid-template-columns: 1fr !important; }
+        }
+        .ats-ring-wrap { width: 72px; height: 72px; }
+        @media (max-width: 520px) {
+          .ats-rings-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .ats-ring-wrap { width: 52px; height: 52px; }
         }
         .ats-keyword-chip { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; transition: transform 0.12s ease; }
         .ats-keyword-chip:hover { transform: translateY(-1px); }
